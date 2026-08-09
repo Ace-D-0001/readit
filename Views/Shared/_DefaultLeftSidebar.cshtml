@@ -1,0 +1,60 @@
+<div class="d-flex flex-column h-100 text-muted">
+    <div class="mb-4">
+        <small class="text-uppercase fw-bold text-muted-custom tracking-wider px-3">Feeds</small>
+        <ul class="nav flex-column mt-2">
+            <li class="nav-item">
+                <a class="nav-link active-link d-flex align-items-center gap-2 py-2 px-3 text-light-custom rounded" href="/">
+                    <i class="bi bi-house-door"></i> Home
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 py-2 px-3 text-light-custom rounded" href="/Course/Index">
+                    <i class="bi bi-compass"></i> Explore Courses
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center px-3 mb-2">
+            <small class="text-uppercase fw-bold text-muted-custom tracking-wider">My Courses</small>
+            <span class="badge bg-dark-card border border-dark-border text-accent-custom">0</span>
+        </div>
+        <ul class="nav flex-column">
+            <!-- Joined courses will go here dynamically. For now, show a hint. -->
+            <li class="px-3 py-2 text-muted-custom small">
+                Join a course to see it here!
+            </li>
+        </ul>
+    </div>
+
+    <div class="mb-4">
+        <small class="text-uppercase fw-bold text-muted-custom tracking-wider px-3">Popular Courses</small>
+        <ul class="nav flex-column mt-2">
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 py-2 px-3 text-light-custom rounded" href="/Course/Details/csc440">
+                    <span class="course-dot bg-success"></span> csc440
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 py-2 px-3 text-light-custom rounded" href="/Course/Details/csc183">
+                    <span class="course-dot bg-primary"></span> csc183
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 py-2 px-3 text-light-custom rounded" href="/Course/Details/mat201">
+                    <span class="course-dot bg-warning"></span> mat201
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="mt-auto pt-4 border-top border-dark-border px-3 small text-muted-custom">
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            <a href="#" class="text-decoration-none text-muted-custom hover-light">About</a>
+            <a href="#" class="text-decoration-none text-muted-custom hover-light">Contact</a>
+            <a href="#" class="text-decoration-none text-muted-custom hover-light">Help</a>
+        </div>
+        <div>&copy; @DateTime.Now.Year ReadIt, Inc.</div>
+    </div>
+</div>
