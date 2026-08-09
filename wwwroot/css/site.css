@@ -1,173 +1,36 @@
-:root {
-  /* Reddit Dark Theme Colors */
-  --bg-main: #0B1416;
-  --bg-card: #1A1A1B;
-  --bg-elevated: #272729;
-  --border-color: #343536;
-  --text-primary: #D7DADC;
-  --text-muted: #818384;
-  --brand-orange: #FF4500;
-  --brand-orange-hover: #e03d00;
+@import url('theme.css');
+
+/* Site specific overrides or additions */
+.search-input-group {
+  background: var(--bg-body);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: 500px;
+  width: 100%;
 }
 
-body {
-  background-color: var(--bg-main);
+.search-input-group input {
+  background: transparent;
+  border: none;
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  outline: none;
+  width: 100%;
+  font-size: var(--font-size-sm);
 }
 
-/* Custom Text and BG Colors */
-.text-light-custom {
-  color: var(--text-primary) !important;
+.search-input-group input::placeholder {
+  color: var(--text-secondary);
 }
 
-.text-muted-custom {
-  color: var(--text-muted) !important;
-}
-
-.text-accent-custom {
-  color: var(--brand-orange) !important;
-}
-
-.bg-dark-card {
-  background-color: var(--bg-card) !important;
-}
-
-.bg-dark-elevated {
-  background-color: var(--bg-elevated) !important;
-}
-
-.border-dark-border {
-  border-color: var(--border-color) !important;
-}
-
-/* Navigation Link Styling */
-.nav-link {
-  color: var(--text-muted);
-  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-.nav-link:hover {
-  background-color: var(--bg-elevated);
-  color: var(--text-primary) !important;
-}
-.nav-link.active-link {
-  background-color: var(--bg-elevated);
-  color: var(--text-primary) !important;
-  font-weight: 600;
-}
-
-.hover-light:hover {
-  color: var(--text-primary) !important;
-}
-
-/* Scrollbar customization */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-main);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* Buttons */
-.btn-accent-custom {
-  background-color: var(--brand-orange);
-  color: white;
-  border: 1px solid var(--brand-orange);
-}
-.btn-accent-custom:hover, .btn-accent-custom:focus {
-  background-color: var(--brand-orange-hover);
-  border-color: var(--brand-orange-hover);
-  color: white;
-}
-
-.btn-outline-accent-custom {
-  color: var(--text-primary);
-  border-color: var(--border-color);
-  background-color: transparent;
-}
-.btn-outline-accent-custom:hover {
-  background-color: var(--bg-elevated);
-  color: var(--text-primary);
-  border-color: var(--text-muted);
-}
-
-/* Search Bar */
-.max-w-search {
-  max-width: 600px;
-}
-
-.search-bar {
-  background-color: #1A1A1B;
-  border-color: var(--border-color) !important;
-}
-.search-bar:hover, .search-bar:focus-within {
-  background-color: #272729;
-  border-color: var(--text-muted) !important;
-}
-.search-bar input {
-  color: var(--text-primary);
-  box-shadow: none !important;
-}
-.search-bar input::placeholder {
-  color: var(--text-muted);
-}
-
-/* Course Dots */
-.course-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* Reddit Card styling */
-.readit-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  transition: border-color 0.15s ease-in-out;
-}
-.readit-card:hover {
-  border-color: var(--text-muted);
-}
-
-/* Post Styling & Vote controls */
-.vote-col {
-  background-color: rgba(255, 255, 255, 0.02);
-  width: 40px;
+.post-vote-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 4px;
-  border-right: 1px solid var(--border-color);
-}
-.vote-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  padding: 0;
-  cursor: pointer;
-}
-.vote-btn:hover {
-  background-color: var(--bg-elevated);
-  border-radius: 4px;
-}
-.vote-btn.up:hover {
-  color: var(--brand-orange);
-}
-.vote-btn.down:hover {
-  color: #7193FF;
-}
-.vote-score {
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin: 4px 0;
+  padding-right: var(--space-md);
+  margin-right: var(--space-md);
+  border-right: 1px solid var(--border-default);
 }

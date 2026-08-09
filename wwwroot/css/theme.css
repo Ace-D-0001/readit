@@ -1,0 +1,206 @@
+:root {
+  /* Backgrounds */
+  --bg-body: #0e0e10;
+  --bg-panel: #1a1a1b;
+  --bg-panel-alt: #272729;
+  --bg-hover: #2a2a2b;
+
+  /* Borders */
+  --border-default: #343536;
+  --border-light: #474748;
+
+  /* Accent (orange, Reddit-style) */
+  --accent: #ff4500;
+  --accent-hover: #ff5414;
+  --accent-muted: rgba(255, 69, 0, 0.15);
+
+  /* Text */
+  --text-primary: #d7dadc;
+  --text-secondary: #818384;
+  --text-heading: #ffffff;
+
+  /* Status colors */
+  --upvote: #ff4500;
+  --downvote: #7193ff;
+  --success: #46d160;
+  --error: #ea0027;
+
+  /* Radius & spacing */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Typography */
+  --font-main: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 20px;
+}
+
+body {
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Global Layout Grid */
+.app-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  grid-template-areas: "sidebar main aside";
+  gap: var(--space-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-lg);
+  flex: 1;
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+}
+
+.app-main {
+  grid-area: main;
+  min-width: 0; /* Prevents overflow in flex/grid items */
+}
+
+.app-aside {
+  grid-area: aside;
+}
+
+/* Responsive Grid (< 900px) */
+@media (max-width: 900px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "main";
+    padding: var(--space-md);
+  }
+  .app-sidebar {
+    display: none;
+  }
+  .app-aside {
+    display: none;
+  }
+}
+
+/* Header & Footer */
+.app-header {
+  height: 56px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.app-footer {
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-default);
+  padding: var(--space-lg);
+  color: var(--text-secondary);
+}
+
+/* Reusable Components */
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  color: var(--text-primary);
+}
+.card:hover {
+  border-color: var(--border-light);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  color: #ffffff;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-outline:hover {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-left: 3px solid transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sidebar-item:hover, .sidebar-item.active {
+  background: var(--bg-hover);
+  border-left-color: var(--accent);
+  color: var(--text-heading);
+}
+
+.vote-arrow {
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+  font-size: 1.2rem;
+}
+.vote-arrow.upvoted {
+  color: var(--upvote);
+}
+.vote-arrow.downvoted {
+  color: var(--downvote);
+}
+.vote-arrow:hover {
+  color: var(--accent);
+}
+
+.flair-badge {
+  display: inline-block;
+  background: var(--accent-muted);
+  color: var(--accent);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+/* Off-canvas sidebar dark theme overrides */
+.offcanvas {
+  background-color: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border-right: 1px solid var(--border-default) !important;
+}

@@ -1,122 +1,103 @@
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Home Feed";
 }
 
-<!-- Hero Banner (Reddit announcement style) -->
-<div class="card bg-dark-card border-dark-border mb-4">
-    <div class="card-body p-4 text-center">
-        <h2 class="fw-bold text-accent-custom mb-2">Your course. Your community.</h2>
-        <p class="text-muted-custom mb-3">Find your subject page, get lecture notes, past papers, and discuss with fellow students.</p>
-        <a href="/Course/Index" class="btn btn-accent-custom rounded-pill px-4 fw-bold">Explore All Courses</a>
+<div class="d-flex flex-column gap-3">
+    <!-- Hero / Welcome Card -->
+    <div class="card p-4 text-center">
+        <h2 class="fw-bold mb-2" style="color: var(--text-heading);">Your course. Your community.</h2>
+        <p style="color: var(--text-secondary);" class="mb-3">Find your subject page, get notes, question banks, and talk to classmates.</p>
+        <div>
+            <a href="/Course" class="btn-primary">Explore All Courses</a>
+        </div>
     </div>
-</div>
 
-<!-- Home Feed Sub-header -->
-<div class="d-flex align-items-center justify-content-between mb-3 px-1">
-    <h5 class="fw-bold m-0 text-light-custom">Trending Courses</h5>
-    <div class="dropdown">
-        <button class="btn btn-outline-accent-custom btn-sm rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-fire"></i> Hot
-        </button>
-        <ul class="dropdown-menu dropdown-menu-dark">
-            <li><a class="dropdown-item" href="#">Hot</a></li>
-            <li><a class="dropdown-item" href="#">New</a></li>
-            <li><a class="dropdown-item" href="#">Top</a></li>
-        </ul>
+    <!-- Feed Filter Header -->
+    <div class="d-flex align-items-center justify-content-between px-1">
+        <h6 class="fw-bold m-0 text-uppercase" style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.5px;">Popular Posts</h6>
+        <div class="d-flex gap-2">
+            <button class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-fire"></i> Hot</button>
+            <button class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-stars"></i> New</button>
+        </div>
     </div>
-</div>
 
-<!-- Course Cards Grid -->
-<div class="row row-cols-1 g-3">
-    <!-- Course 1 -->
-    <div class="col">
-        <div class="card readit-card overflow-hidden">
-            <div class="d-flex">
-                <div class="vote-col">
-                    <button class="vote-btn up"><i class="bi bi-arrow-up-circle-fill"></i></button>
-                    <span class="vote-score text-muted-custom">1.2k</span>
-                    <button class="vote-btn down"><i class="bi bi-arrow-down-circle-fill"></i></button>
-                </div>
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 small">CSC440</span>
-                        <small class="text-muted-custom">Posted by System • 3 hours ago</small>
-                    </div>
-                    <h5 class="card-title fw-bold text-light-custom mb-2">
-                        <a href="/Course/Details/csc440" class="text-decoration-none text-light-custom hover-light">
-                            CSC440: Data Structures and Algorithms
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted-custom small mb-3">
-                        The ultimate hub for Csc440. Access notes, lecture playlists, standard books, and discuss assignments.
-                    </p>
-                    <div class="d-flex gap-3 small text-muted-custom">
-                        <span><i class="bi bi-people-fill text-accent-custom"></i> 1,240 Members</span>
-                        <span><i class="bi bi-chat-right-text"></i> 84 Discussions</span>
-                    </div>
-                </div>
+    <!-- Dummy Post 1 -->
+    <div class="card d-flex flex-row p-3">
+        <div class="post-vote-box">
+            <i class="bi bi-arrow-up-circle-fill vote-arrow upvoted"></i>
+            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--upvote);">128</span>
+            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
+        </div>
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="flair-badge">Notes</span>
+                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                    Posted in <a href="/Course/Details/CSC440" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC440</a> by u/prof_smith • 3h ago
+                </span>
+            </div>
+            <h5 class="fw-bold mb-2" style="color: var(--text-heading);">
+                <a href="/Post/1" class="text-decoration-none" style="color: var(--text-heading);">Complete Midterm Review Sheet & Practice Problems (Spring 2026)</a>
+            </h5>
+            <p style="color: var(--text-primary); font-size: var(--font-size-md);" class="mb-2">
+                Hey everyone! I compiled all the lecture notes on B-Trees, AVL Trees, and Graph Traversal algorithms into a single PDF. Check out the link attached.
+            </p>
+            <div class="d-flex align-items-center gap-3" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                <a href="/Post/1" class="text-decoration-none" style="color: var(--text-secondary);"><i class="bi bi-chat-left-text"></i> 34 Comments</a>
+                <span><i class="bi bi-share"></i> Share</span>
             </div>
         </div>
     </div>
 
-    <!-- Course 2 -->
-    <div class="col">
-        <div class="card readit-card overflow-hidden">
-            <div class="d-flex">
-                <div class="vote-col">
-                    <button class="vote-btn up"><i class="bi bi-arrow-up-circle-fill"></i></button>
-                    <span class="vote-score text-muted-custom">850</span>
-                    <button class="vote-btn down"><i class="bi bi-arrow-down-circle-fill"></i></button>
-                </div>
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50 small">CSC183</span>
-                        <small class="text-muted-custom">Posted by System • 5 hours ago</small>
-                    </div>
-                    <h5 class="card-title fw-bold text-light-custom mb-2">
-                        <a href="/Course/Details/csc183" class="text-decoration-none text-light-custom hover-light">
-                            CSC183: Introduction to Programming
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted-custom small mb-3">
-                        Welcome to Python and C++ basics. Ideal for beginners starting their coding journey.
-                    </p>
-                    <div class="d-flex gap-3 small text-muted-custom">
-                        <span><i class="bi bi-people-fill text-accent-custom"></i> 850 Members</span>
-                        <span><i class="bi bi-chat-right-text"></i> 43 Discussions</span>
-                    </div>
-                </div>
+    <!-- Dummy Post 2 -->
+    <div class="card d-flex flex-row p-3">
+        <div class="post-vote-box">
+            <i class="bi bi-arrow-up-circle-fill vote-arrow"></i>
+            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--text-secondary);">64</span>
+            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
+        </div>
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="flair-badge">Question</span>
+                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                    Posted in <a href="/Course/Details/CSC183" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC183</a> by u/coder_newbie • 5h ago
+                </span>
+            </div>
+            <h5 class="fw-bold mb-2" style="color: var(--text-heading);">
+                <a href="/Post/2" class="text-decoration-none" style="color: var(--text-heading);">Difference between list comprehension and map() in Python?</a>
+            </h5>
+            <p style="color: var(--text-primary); font-size: var(--font-size-md);" class="mb-2">
+                I'm solving assignment 2 and wondering when to prefer list comprehension over map(). Which one is considered more Pythonic?
+            </p>
+            <div class="d-flex align-items-center gap-3" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                <a href="/Post/2" class="text-decoration-none" style="color: var(--text-secondary);"><i class="bi bi-chat-left-text"></i> 18 Comments</a>
+                <span><i class="bi bi-share"></i> Share</span>
             </div>
         </div>
     </div>
 
-    <!-- Course 3 -->
-    <div class="col">
-        <div class="card readit-card overflow-hidden">
-            <div class="d-flex">
-                <div class="vote-col">
-                    <button class="vote-btn up"><i class="bi bi-arrow-up-circle-fill"></i></button>
-                    <span class="vote-score text-muted-custom">540</span>
-                    <button class="vote-btn down"><i class="bi bi-arrow-down-circle-fill"></i></button>
-                </div>
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-50 small">MAT201</span>
-                        <small class="text-muted-custom">Posted by System • 1 day ago</small>
-                    </div>
-                    <h5 class="card-title fw-bold text-light-custom mb-2">
-                        <a href="/Course/Details/mat201" class="text-decoration-none text-light-custom hover-light">
-                            MAT201: Calculus II
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted-custom small mb-3">
-                        Discuss integrations, limits, sequences, series, and advanced calculus methods.
-                    </p>
-                    <div class="d-flex gap-3 small text-muted-custom">
-                        <span><i class="bi bi-people-fill text-accent-custom"></i> 540 Members</span>
-                        <span><i class="bi bi-chat-right-text"></i> 12 Discussions</span>
-                    </div>
-                </div>
+    <!-- Dummy Post 3 -->
+    <div class="card d-flex flex-row p-3">
+        <div class="post-vote-box">
+            <i class="bi bi-arrow-up-circle-fill vote-arrow"></i>
+            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--text-secondary);">95</span>
+            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
+        </div>
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="flair-badge">Discussion</span>
+                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                    Posted in <a href="/Course/Details/CSC250" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC250</a> by u/math_geek • 1d ago
+                </span>
+            </div>
+            <h5 class="fw-bold mb-2" style="color: var(--text-heading);">
+                <a href="/Post/3" class="text-decoration-none" style="color: var(--text-heading);">Study Group forming for Discrete Mathematics Final Exam</a>
+            </h5>
+            <p style="color: var(--text-primary); font-size: var(--font-size-md);" class="mb-2">
+                We meet every Tuesday at 5 PM in the CS Lab. Reply if interested or send a DM!
+            </p>
+            <div class="d-flex align-items-center gap-3" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                <a href="/Post/3" class="text-decoration-none" style="color: var(--text-secondary);"><i class="bi bi-chat-left-text"></i> 12 Comments</a>
+                <span><i class="bi bi-share"></i> Share</span>
             </div>
         </div>
     </div>
