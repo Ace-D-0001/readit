@@ -1,134 +1,79 @@
+@model IEnumerable<Read_It.Models.Post>
+
 @{
-    ViewData["Title"] = "Home Feed";
+    ViewData["Title"] = "IUBAT ReadIt Feed";
 }
 
 <div class="d-flex flex-column gap-3">
-    <!-- Hero / Welcome Card -->
-    <div class="card p-4 text-center">
-        <h2 class="fw-bold mb-2" style="color: var(--text-heading);">Your course. Your community.</h2>
-        <p style="color: var(--text-secondary);" class="mb-3">Find your subject page, get notes, question banks, and discuss with classmates.</p>
-        <div>
-            <a href="/Course" class="btn-primary">Explore All Courses</a>
+    <!-- Hero / Welcome Banner -->
+    <div class="card p-4 text-center" style="background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-alt) 100%);">
+        <h2 class="fw-bold mb-2" style="color: var(--text-heading);">IUBAT Subject Communities</h2>
+        <p style="color: var(--text-secondary);" class="mb-3">Find your course outline, YouTube playlists, question banks, lecture notes, and discuss with classmates.</p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="/Courses" class="btn-primary">Browse All SubSubjects</a>
+            <a href="/Posts" class="btn-outline">Browse All Content</a>
         </div>
     </div>
 
     <!-- Feed Filter Header -->
     <div class="d-flex align-items-center justify-content-between px-1">
-        <h6 class="fw-bold m-0 text-uppercase" style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.5px;">Popular Discussions</h6>
+        <h6 class="fw-bold m-0 text-uppercase" style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.5px;">Recent Student & Faculty Discussions</h6>
         <div class="d-flex gap-2">
-            <button class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-fire"></i> Hot</button>
-            <button class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-stars"></i> New</button>
+            <a href="/Posts" class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-fire"></i> Hot Posts</a>
         </div>
     </div>
 
-    <!-- Post Card 1 -->
-    <div class="post-card">
-        <div class="post-vote-box">
-            <i class="bi bi-arrow-up-circle-fill vote-arrow upvoted"></i>
-            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--upvote);">128</span>
-            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
-        </div>
-        <div class="p-3 flex-grow-1">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="flair-badge">Notes</span>
-                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                    Posted in <a href="/Course/Details/CSC440" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC440</a> by u/prof_smith • 3h ago
-                </span>
-            </div>
-            <a href="/Post/1" class="post-title">
-                Complete Midterm Review Sheet & Practice Problems (Spring 2026)
-            </a>
-            <p class="post-body-preview">
-                Hey everyone! I compiled all the lecture notes on B-Trees, AVL Trees, and Graph Traversal algorithms into a single PDF. Check out the link attached in the comments section.
-            </p>
-            <div class="d-flex align-items-center gap-2 pt-2 border-top border-dark-border">
-                <a href="/Post/1#comments" class="action-btn primary-reply">
-                    <i class="bi bi-chat-left-text-fill text-accent-custom"></i>
-                    <span>34 Comments</span>
-                </a>
-                <button class="action-btn">
-                    <i class="bi bi-arrow-return-right"></i>
-                    <span>Reply</span>
-                </button>
-                <button class="action-btn ms-auto">
-                    <i class="bi bi-share"></i>
-                    <span>Share</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Dynamic Posts Feed -->
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var post in Model)
+        {
+            <div class="post-card">
+                <div class="d-flex flex-column align-items-center p-3" style="width: 48px; background: var(--bg-panel-alt);">
+                    <i class="bi bi-arrow-up-circle-fill vote-arrow upvoted"></i>
+                    <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--upvote);">@(post.UpVotes - post.DownVotes)</span>
+                    <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
+                </div>
 
-    <!-- Post Card 2 -->
-    <div class="post-card">
-        <div class="post-vote-box">
-            <i class="bi bi-arrow-up-circle-fill vote-arrow"></i>
-            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--text-secondary);">64</span>
-            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
-        </div>
-        <div class="p-3 flex-grow-1">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="flair-badge">Question</span>
-                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                    Posted in <a href="/Course/Details/CSC183" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC183</a> by u/coder_newbie • 5h ago
-                </span>
-            </div>
-            <a href="/Post/2" class="post-title">
-                Difference between list comprehension and map() in Python?
-            </a>
-            <p class="post-body-preview">
-                I'm solving assignment 2 and wondering when to prefer list comprehension over map(). Which one is considered more Pythonic?
-            </p>
-            <div class="d-flex align-items-center gap-2 pt-2 border-top border-dark-border">
-                <a href="/Post/2#comments" class="action-btn primary-reply">
-                    <i class="bi bi-chat-left-text-fill text-accent-custom"></i>
-                    <span>18 Comments</span>
-                </a>
-                <button class="action-btn">
-                    <i class="bi bi-arrow-return-right"></i>
-                    <span>Reply</span>
-                </button>
-                <button class="action-btn ms-auto">
-                    <i class="bi bi-share"></i>
-                    <span>Share</span>
-                </button>
-            </div>
-        </div>
-    </div>
+                <div class="p-3 flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="flair-badge">@post.Flair.ToString()</span>
+                        <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                            Posted in <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" class="fw-bold text-decoration-none" style="color: var(--accent);">c/@post.Course?.Code</a> 
+                            by <strong>u/@(post.User?.UserName ?? "student")</strong> • @post.CreatedAt.ToString("MMM dd")
+                        </span>
+                    </div>
 
-    <!-- Post Card 3 -->
-    <div class="post-card">
-        <div class="post-vote-box">
-            <i class="bi bi-arrow-up-circle-fill vote-arrow"></i>
-            <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--text-secondary);">95</span>
-            <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
-        </div>
-        <div class="p-3 flex-grow-1">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="flair-badge">Discussion</span>
-                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                    Posted in <a href="/Course/Details/CSC250" class="fw-bold text-decoration-none" style="color: var(--text-primary);">r/CSC250</a> by u/math_geek • 1d ago
-                </span>
+                    <!-- Post Title click zooms in to Post Details page -->
+                    <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
+                        @post.Title
+                    </a>
+
+                    <p class="post-body-preview text-truncate" style="max-width: 700px;">
+                        @post.Body
+                    </p>
+
+                    <div class="d-flex align-items-center gap-2 pt-2 border-top" style="border-color: var(--border-default) !important;">
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
+                            <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
+                            <span>@(post.Comments?.Count ?? 0) Comments</span>
+                        </a>
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                            <i class="bi bi-arrows-angle-expand"></i> Zoom In / Read Full
+                        </a>
+                        <button class="action-btn ms-auto">
+                            <i class="bi bi-share"></i> Share
+                        </button>
+                    </div>
+                </div>
             </div>
-            <a href="/Post/3" class="post-title">
-                Study Group forming for Discrete Mathematics Final Exam
-            </a>
-            <p class="post-body-preview">
-                We meet every Tuesday at 5 PM in the CS Lab. Reply to this post or join the discussion in the comments!
-            </p>
-            <div class="d-flex align-items-center gap-2 pt-2 border-top border-dark-border">
-                <a href="/Post/3#comments" class="action-btn primary-reply">
-                    <i class="bi bi-chat-left-text-fill text-accent-custom"></i>
-                    <span>12 Comments</span>
-                </a>
-                <button class="action-btn">
-                    <i class="bi bi-arrow-return-right"></i>
-                    <span>Reply</span>
-                </button>
-                <button class="action-btn ms-auto">
-                    <i class="bi bi-share"></i>
-                    <span>Share</span>
-                </button>
-            </div>
+        }
+    }
+    else
+    {
+        <div class="card p-5 text-center text-secondary">
+            <h5>No posts in feed yet</h5>
+            <p>Check out <a href="/Courses" class="text-accent-custom">All Courses</a> to explore course pages.</p>
         </div>
-    </div>
+    }
 </div>

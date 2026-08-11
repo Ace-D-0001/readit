@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Search Results";
+    var query = ViewBag.Query as string;
+    var activeType = ViewBag.ActiveType as string ?? "all";
+    var matchingCourses = ViewBag.MatchingCourses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
+    var matchingPosts = ViewBag.MatchingPosts as IEnumerable<Read_It.Models.Post> ?? Enumerable.Empty<Read_It.Models.Post>();
+
+    int coursesCount = matchingCourses.Count();
+    int postsCount = matchingPosts.Count();
+}
+
+<div class="mb-4">
+    <h2 class="h4 fw-bold mb-1" style="color: var(--text-heading);">
+        Search Results for "<span style="color: var(--accent);">@query</span>"
+    </h2>
+    <p class="text-secondary" style="font-size: var(--font-size-sm);">
+        Found @coursesCount subsubject course(s) and @postsCount content post(s).
+    </p>
+</div>
+
+<!-- Multi-Search Navigation Tabs -->
+<ul class="nav nav-tabs border-secondary mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(activeType == "all" ? "active text-accent-custom fw-bold" : "text-secondary")" href="@Url.Action("Index", "Search", new { q = query, type = "all" })" style="@(activeType == "all" ? "color: var(--accent) !important; border-bottom: 2px solid var(--accent);" : "")">
+            All (@(coursesCount + postsCount))
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(activeType == "courses" ? "active text-accent-custom fw-bold" : "text-secondary")" href="@Url.Action("Index", "Search", new { q = query, type = "courses" })" style="@(activeType == "courses" ? "color: var(--accent) !important; border-bottom: 2px solid var(--accent);" : "")">
+            SubSubjects / Courses (@coursesCount)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(activeType == "posts" ? "active text-accent-custom fw-bold" : "text-secondary")" href="@Url.Action("Index", "Search", new { q = query, type = "posts" })" style="@(activeType == "posts" ? "color: var(--accent) !important; border-bottom: 2px solid var(--accent);" : "")">
+            Content / Posts (@postsCount)
+        </a>
+    </li>
+</ul>
+
+@if (string.IsNullOrWhiteSpace(query))
+{
+    <div class="card p-5 text-center text-secondary">
+        <i class="bi bi-search fs-1 mb-2"></i>
+        <p class="mb-0">Type a keyword into the top search bar to search across IUBAT courses and student content.</p>
+    </div>
+}
+else if (coursesCount == 0 && postsCount == 0)
+{
+    <div class="card p-5 text-center text-secondary">
+        <i class="bi bi-exclamation-circle fs-1 mb-2"></i>
+        <h5>No matches found</h5>
+        <p class="mb-0">Try searching for course codes like "CSC391" or topic keywords like "Algorithm", "Database", or "Notes".</p>
+    </div>
+}
+else
+{
+    <!-- Subsubjects / Courses Section -->
+    if ((activeType == "all" || activeType == "courses") && coursesCount > 0)
+    {
+        <div class="mb-5">
+            <h5 class="fw-bold mb-3" style="color: var(--text-heading);"><i class="bi bi-journals" style="color: var(--accent);"></i> SubSubjects / Courses</h5>
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                @foreach (var course in matchingCourses)
+                {
+                    <div class="col">
+                        <a href="@Url.Action("Details", "Courses", new { code = course.Code })" class="text-decoration-none d-block h-100">
+                            <div class="card h-100 p-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 44px; height: 44px; background-color: var(--accent);">
+                                        @course.Code.Substring(0, Math.Min(3, course.Code.Length))
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold m-0" style="color: var(--text-heading);">@course.Code - @course.Title</h6>
+                                        <small class="text-secondary">@course.Department • @(course.Posts?.Count ?? 0) posts</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Content / Posts Section -->
+    if ((activeType == "all" || activeType == "posts") && postsCount > 0)
+    {
+        <div>
+            <h5 class="fw-bold mb-3" style="color: var(--text-heading);"><i class="bi bi-file-earmark-text" style="color: var(--accent);"></i> Content & Discussions</h5>
+            <div class="d-flex flex-column gap-3">
+                @foreach (var post in matchingPosts)
+                {
+                    <div class="post-card">
+                        <div class="d-flex flex-column align-items-center p-3" style="width: 48px; background: var(--bg-panel-alt);">
+                            <i class="bi bi-arrow-up-short vote-arrow fs-5"></i>
+                            <span class="fw-bold fs-6 my-1">@(post.UpVotes - post.DownVotes)</span>
+                            <i class="bi bi-arrow-down-short vote-arrow fs-5"></i>
+                        </div>
+                        <div class="p-3 w-100">
+                            <div class="d-flex align-items-center gap-2 mb-2" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                                <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" class="fw-bold text-decoration-none" style="color: var(--accent);">
+                                    c/@post.Course?.Code
+                                </a>
+                                <span>•</span>
+                                <span>Posted by u/@(post.User?.UserName ?? "student")</span>
+                                <span>•</span>
+                                <span class="flair-badge">@post.Flair.ToString()</span>
+                            </div>
+
+                            <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
+                                @post.Title
+                            </a>
+
+                            <p class="post-body-preview text-truncate" style="max-width: 750px;">
+                                @post.Body
+                            </p>
+
+                            <div class="d-flex gap-2 mt-2">
+                                <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
+                                    <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
+                                    <span>@(post.Comments?.Count ?? 0) Comments</span>
+                                </a>
+                                <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                                    Read Full Post
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}

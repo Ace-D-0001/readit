@@ -1,0 +1,33 @@
+@model IEnumerable<Read_It.Models.Course>
+
+@{
+    ViewData["Title"] = "Courses";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 700;">All Courses</h1>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var course in Model)
+    {
+        <div class="col">
+            <a href="@Url.Action("Details", "Courses", new { code = course.Code })" class="text-decoration-none h-100 d-block">
+                <div class="card h-100" style="transition: border-color 0.15s ease, background-color 0.15s ease;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background-color: var(--accent) !important;">
+                                <span class="text-white fw-bold">@course.Code.Substring(0, 3)</span>
+                            </div>
+                            <div>
+                                <h5 class="card-title m-0" style="color: var(--text-heading); font-weight: 600;">@course.Code</h5>
+                                <small class="text-secondary">@course.Department</small>
+                            </div>
+                        </div>
+                        <p class="card-text text-secondary mb-0">@course.Title</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
+</div>

@@ -1,0 +1,103 @@
+@model Read_It.Models.Post
+
+@{
+    ViewData["Title"] = Model.Title;
+    var courseResources = ViewBag.CourseResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+}
+
+<!-- Breadcrumb / Course context navigation -->
+<div class="d-flex align-items-center gap-2 mb-3" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+    <a href="/Courses" class="text-decoration-none" style="color: var(--text-secondary);">Courses</a>
+    <span>&rsaquo;</span>
+    <a href="@Url.Action("Details", "Courses", new { code = Model.Course?.Code })" class="fw-bold text-decoration-none" style="color: var(--accent);">
+        c/@Model.Course?.Code
+    </a>
+    <span>&rsaquo;</span>
+    <span class="text-truncate" style="max-width: 300px;">@Model.Title</span>
+</div>
+
+<!-- Full Zoomed-in Post Card -->
+<div class="card p-0 mb-4" style="overflow: hidden; border: 1px solid var(--border-default);">
+    <div class="d-flex">
+        <!-- Upvote / Downvote column -->
+        <div class="d-flex flex-column align-items-center p-3" style="width: 54px; background: var(--bg-panel-alt);">
+            <i class="bi bi-arrow-up-short vote-arrow fs-3"></i>
+            <span class="fw-bold fs-5 my-1" style="color: var(--text-heading);">@(Model.UpVotes - Model.DownVotes)</span>
+            <i class="bi bi-arrow-down-short vote-arrow fs-3"></i>
+        </div>
+
+        <!-- Post Content Column -->
+        <div class="p-4 flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-2" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                <a href="@Url.Action("Details", "Courses", new { code = Model.Course?.Code })" class="badge bg-secondary text-decoration-none" style="background: var(--bg-panel-alt) !important; color: var(--text-primary) !important;">
+                    c/@Model.Course?.Code
+                </a>
+                <span class="flair-badge">@Model.Flair.ToString()</span>
+                <span>•</span>
+                <span>Posted by <strong style="color: var(--text-primary);">u/@(Model.User?.UserName ?? "anonymous")</strong></span>
+                <span>•</span>
+                <span>@Model.CreatedAt.ToString("MMM dd, yyyy 'at' hh:mm tt")</span>
+            </div>
+
+            <h1 class="h3 mb-3" style="color: var(--text-heading); font-weight: 700; line-height: 1.3;">
+                @Model.Title
+            </h1>
+
+            <div class="post-body-preview fs-6 mb-4" style="white-space: pre-line; line-height: 1.7; color: var(--text-primary);">
+                @Model.Body
+            </div>
+
+            <div class="d-flex align-items-center gap-2 pt-3 border-top border-secondary" style="border-color: var(--border-default) !important;">
+                <button class="action-btn primary-reply">
+                    <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
+                    <span>@(Model.Comments?.Count ?? 0) Comments</span>
+                </button>
+                <button class="action-btn">
+                    <i class="bi bi-share"></i> Share
+                </button>
+                <button class="action-btn">
+                    <i class="bi bi-bookmark"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Comment Form Box -->
+<div class="card p-3 mb-4">
+    <h6 class="fw-bold mb-2" style="color: var(--text-heading);">Comment as <span style="color: var(--accent);">@(User.Identity?.Name ?? "Guest Student")</span></h6>
+    <form action="@Url.Action("CreateComment", "Posts")" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="postId" value="@Model.Id" />
+        <div class="comment-reply-box mb-2">
+            <textarea name="body" rows="3" placeholder="What are your thoughts on this subject?" required></textarea>
+        </div>
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn-primary py-1 px-4">Comment</button>
+        </div>
+    </form>
+</div>
+
+<!-- Threaded Comments Section -->
+<h5 class="fw-bold mb-3" style="color: var(--text-heading);">
+    Discussion (<span style="color: var(--accent);">@(Model.Comments?.Count ?? 0)</span>)
+</h5>
+
+@if (Model.Comments != null && Model.Comments.Any())
+{
+    var topLevelComments = Model.Comments.Where(c => c.ParentCommentId == null).OrderByDescending(c => c.CreatedAt);
+    
+    <div class="d-flex flex-column gap-3">
+        @foreach (var comment in topLevelComments)
+        {
+            @await Html.PartialAsync("_CommentItem", comment)
+        }
+    </div>
+}
+else
+{
+    <div class="card p-4 text-center text-secondary">
+        <i class="bi bi-chat-square-dots fs-1 mb-2"></i>
+        <p class="mb-0">No comments yet. Start the conversation!</p>
+    </div>
+}

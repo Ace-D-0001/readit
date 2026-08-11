@@ -39,7 +39,7 @@
   --font-main: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --font-size-sm: 13px;
   --font-size-md: 15px;
-  --font-size-lg: 18px;
+  --font-size-lg: 18px; /* Based on user prompt */
 }
 
 body {
@@ -266,20 +266,67 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* Comment Thread Tree Line Styles */
-.comment-node {
-  border-left: 2px solid var(--border-default);
-  padding-left: var(--space-md);
-  margin-top: var(--space-md);
-  margin-bottom: var(--space-md);
-  transition: border-color 0.15s ease;
-}
-.comment-node:hover {
-  border-left-color: var(--accent);
-}
-
+/* Off-canvas sidebar dark theme overrides */
 .offcanvas {
   background-color: var(--bg-panel) !important;
   color: var(--text-primary) !important;
   border-right: 1px solid var(--border-default) !important;
+}
+
+/* COMMENT CARD — this is the most-used component in the app, prioritize readability */
+.comment {
+  display: flex;
+  gap: 10px;
+}
+.comment-body {
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  line-height: 1.6; /* generous line-height, cramped comment text is the #1 readability failure */
+  margin: 0 0 8px;
+}
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+.comment-author { color: var(--text-primary); font-weight: 500; }
+.comment-badge-top {
+  background: var(--accent-muted);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.comment-actions {
+  display: flex;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+.comment-actions span:hover { color: var(--text-primary); cursor: pointer; }
+.comment-thread {
+  /* nested replies: indent + thread line, not indent alone — makes deep threads scannable */
+  margin-top: 14px;
+  padding-left: 16px;
+  border-left: 2px solid var(--border-default);
+}
+.comment-reply-box {
+  margin-top: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+.comment-reply-box textarea {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font-main);
+  outline: none;
 }

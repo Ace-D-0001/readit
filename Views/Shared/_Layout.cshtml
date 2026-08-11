@@ -20,14 +20,16 @@
             </a>
         </div>
 
-        <div class="search-input-group d-none d-sm-flex">
-            <i class="bi bi-search" style="color: var(--text-secondary);"></i>
-            <input type="text" placeholder="Search subReadIts e.g. CSC440" />
-        </div>
+        <!-- Functional Multi-Search Bar -->
+        <form action="/Search" method="get" class="search-input-group d-none d-sm-flex align-items-center" style="width: 450px; max-width: 100%;">
+            <i class="bi bi-search ms-2" style="color: var(--text-secondary);"></i>
+            <input type="text" name="q" placeholder="Search subsubjects (e.g. CSC391) or posts (e.g. Notes)..." class="form-control bg-transparent text-white border-0 shadow-none" style="color: var(--text-primary) !important;" />
+            <button type="submit" class="btn-primary py-1 px-3 me-1" style="font-size: 12px; border-radius: 999px;">Search</button>
+        </form>
 
         <div class="d-flex align-items-center gap-2">
-            <a href="/Account/Login" class="btn-outline">Log In</a>
-            <a href="/Account/Register" class="btn-primary">Sign Up</a>
+            <a href="/Identity/Account/Login" class="btn-outline">Log In</a>
+            <a href="/Identity/Account/Register" class="btn-primary">Sign Up</a>
         </div>
     </header>
 
@@ -36,48 +38,63 @@
         <!-- Left Sidebar -->
         <aside class="app-sidebar">
             <div class="d-flex flex-column gap-2">
-                <h6 class="text-uppercase fw-bold px-3 mb-2" style="color: var(--text-secondary); font-size: 11px; letter-spacing: 0.5px;">Your subReadIts</h6>
+                <nav class="d-flex flex-column gap-1 mb-3">
+                    <a href="/" class="sidebar-item">
+                        <i class="bi bi-house-door fs-5"></i>
+                        <span style="font-size: var(--font-size-sm); font-weight: 600;">Home Feed</span>
+                    </a>
+                    <a href="/Courses" class="sidebar-item">
+                        <i class="bi bi-journals fs-5"></i>
+                        <span style="font-size: var(--font-size-sm); font-weight: 600;">All SubSubjects</span>
+                    </a>
+                    <a href="/Posts" class="sidebar-item">
+                        <i class="bi bi-file-earmark-text fs-5"></i>
+                        <span style="font-size: var(--font-size-sm); font-weight: 600;">All Content / Posts</span>
+                    </a>
+                </nav>
+
+                <h6 class="text-uppercase fw-bold px-3 mb-2" style="color: var(--text-secondary); font-size: 11px; letter-spacing: 0.5px;">IUBAT SubSubjects</h6>
                 
-                <a href="/Course/Details/CSC440" class="sidebar-item active">
+                <a href="/Courses/Details?code=CSC247" class="sidebar-item">
                     <span class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
                     <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC440</div>
+                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC247</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">Computer Architecture</div>
+                    </div>
+                </a>
+
+                <a href="/Courses/Details?code=CSC391" class="sidebar-item">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
+                    <div>
+                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC391</div>
                         <div style="font-size: 11px; color: var(--text-secondary);">Data Structures</div>
                     </div>
                 </a>
 
-                <a href="/Course/Details/CSC183" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
-                    <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC183</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Intro to Prog</div>
-                    </div>
-                </a>
-
-                <a href="/Course/Details/CSC250" class="sidebar-item">
+                <a href="/Courses/Details?code=CSC433" class="sidebar-item">
                     <span class="rounded-circle d-flex align-items-center justify-content-center bg-warning text-dark fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
                     <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC250</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Discrete Math</div>
+                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC433</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">Database Systems</div>
                     </div>
                 </a>
 
-                <a href="/Course/Details/CSC301" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-info text-dark fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
+                <a href="/Courses/Details?code=MAT247" class="sidebar-item">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-info text-dark fw-bold" style="width: 24px; height: 24px; font-size: 10px;">M</span>
                     <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC301</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Software Eng</div>
+                        <div class="fw-bold" style="font-size: var(--font-size-sm);">MAT247</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">Numerical Analysis</div>
                     </div>
                 </a>
 
                 <hr style="border-color: var(--border-default); margin: 8px 0;" />
 
-                <a href="/Course" class="sidebar-item text-decoration-none" style="color: var(--accent);">
+                <a href="/Courses" class="sidebar-item text-decoration-none" style="color: var(--accent);">
                     <i class="bi bi-compass"></i>
                     <span style="font-size: var(--font-size-sm); font-weight: 600;">+ Explore all subReadIts</span>
                 </a>
                 
-                <a href="/Home/StyleGuide" class="sidebar-item text-decoration-none mt-2" style="color: var(--text-secondary);">
+                <a href="/Home/StyleGuide" class="sidebar-item text-decoration-none mt-1" style="color: var(--text-secondary);">
                     <i class="bi bi-palette"></i>
                     <span style="font-size: var(--font-size-sm);">Design StyleGuide</span>
                 </a>
@@ -91,15 +108,23 @@
 
         <!-- Right Aside -->
         <aside class="app-aside">
-            <div class="card">
-                <h6 class="fw-bold mb-2">About ReadIt</h6>
-                <p style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                    ReadIt is a subject-focused community platform for university courses. Access course outlines, notes, playlists, and interact with classmates.
+            <div class="card p-3 mb-3">
+                <h6 class="fw-bold mb-2" style="color: var(--text-heading);">About ReadIt — IUBAT</h6>
+                <p style="font-size: var(--font-size-sm); color: var(--text-secondary);" class="mb-3">
+                    ReadIt is a subject-focused community platform for IUBAT students and faculty. Access course outlines, notes, question banks, and discuss topics with classmates.
                 </p>
-                <hr style="border-color: var(--border-default);" />
-                <div class="text-center" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                    Coming soon
+                <div class="d-flex flex-column gap-2">
+                    <a href="/Courses" class="btn-outline w-100 text-center py-1">Browse SubSubjects</a>
+                    <a href="/Posts" class="btn-primary w-100 text-center py-1">Browse Content</a>
                 </div>
+            </div>
+
+            <div class="card p-3">
+                <h6 class="fw-bold mb-2" style="color: var(--text-heading);"><i class="bi bi-lightning-fill text-warning"></i> Quick Search Tips</h6>
+                <ul class="ps-3 mb-0 text-secondary" style="font-size: 12px; line-height: 1.6;">
+                    <li>Search course codes like <strong>CSC391</strong> or <strong>CSC433</strong></li>
+                    <li>Search topics like <strong>QuickSort</strong>, <strong>SQL</strong>, or <strong>Notes</strong></li>
+                </ul>
             </div>
         </aside>
     </div>
@@ -111,28 +136,35 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <h6 class="text-uppercase fw-bold mb-3" style="color: var(--text-secondary); font-size: 11px;">Your subReadIts</h6>
+            <form action="/Search" method="get" class="mb-3">
+                <input type="text" name="q" placeholder="Search..." class="form-control bg-dark text-white border-secondary mb-2" />
+                <button type="submit" class="btn-primary w-100 py-1">Search</button>
+            </form>
+            <nav class="d-flex flex-column gap-2 mb-4">
+                <a href="/" class="sidebar-item active"><i class="bi bi-house-door"></i> Home Feed</a>
+                <a href="/Courses" class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
+                <a href="/Posts" class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Content / Posts</a>
+            </nav>
+            <h6 class="text-uppercase fw-bold mb-3" style="color: var(--text-secondary); font-size: 11px;">IUBAT SubSubjects</h6>
             <div class="d-flex flex-column gap-2">
-                <a href="/Course/Details/CSC440" class="sidebar-item">CSC440 - Data Structures</a>
-                <a href="/Course/Details/CSC183" class="sidebar-item">CSC183 - Intro to Prog</a>
-                <a href="/Course/Details/CSC250" class="sidebar-item">CSC250 - Discrete Math</a>
-                <a href="/Course/Details/CSC301" class="sidebar-item">CSC301 - Software Eng</a>
-                <a href="/Course" class="sidebar-item" style="color: var(--accent);">+ Explore all subReadIts</a>
-                <a href="/Home/StyleGuide" class="sidebar-item" style="color: var(--text-secondary);">Design StyleGuide</a>
+                <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 - Computer Architecture</a>
+                <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 - Data Structures</a>
+                <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 - Database Systems</a>
+                <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 - Numerical Analysis</a>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="app-footer text-center">
+    <footer class="app-footer text-center mt-auto">
         <div class="d-flex justify-content-center gap-3 mb-2" style="font-size: var(--font-size-sm);">
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">About</a>
+            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">About ReadIt</a>
             <span>·</span>
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">Contact</a>
+            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">IUBAT Community</a>
             <span>·</span>
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">Privacy</a>
+            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">Privacy & Terms</a>
         </div>
-        <div style="font-size: 12px;">&copy; @DateTime.Now.Year ReadIt. All rights reserved.</div>
+        <div style="font-size: 12px;">&copy; @DateTime.Now.Year ReadIt (IUBAT Edition). Built for students.</div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

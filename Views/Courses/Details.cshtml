@@ -1,0 +1,132 @@
+@model Read_It.Models.Course
+
+@{
+    ViewData["Title"] = Model.Code + " SubSubject";
+}
+
+<!-- Course Header Card -->
+<div class="card mb-4 p-0" style="overflow: hidden;">
+    <div style="height: 120px; background: linear-gradient(90deg, var(--accent) 0%, #d83a00 100%);"></div>
+    
+    <div class="card-body position-relative p-4" style="padding-top: 50px !important;">
+        <div class="bg-primary rounded-circle border border-4 position-absolute d-flex align-items-center justify-content-center shadow" 
+             style="width: 80px; height: 80px; top: -40px; left: 24px; border-color: var(--bg-panel) !important; background-color: var(--accent) !important;">
+             <h4 class="text-white m-0 fw-bold">@Model.Code.Substring(0, Math.Min(3, Model.Code.Length))</h4>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h2 class="mb-1" style="color: var(--text-heading); font-weight: 700;">c/@Model.Code — @Model.Title</h2>
+                <small class="text-secondary d-block mb-2">@Model.Department • IUBAT Faculty of Engineering & Technology</small>
+                <p class="text-secondary mb-3" style="max-width: 800px;">@Model.Description</p>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a href="#" class="btn-primary"><i class="bi bi-plus-lg"></i> Join Community</a>
+                <a href="#" class="btn-outline"><i class="bi bi-bell"></i> Notify</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Resources Section (Course Outlines, Playlists, Question Banks, Notes) -->
+<div class="card p-3 mb-4">
+    <h5 class="fw-bold mb-3" style="color: var(--text-heading);"><i class="bi bi-folder-symlink" style="color: var(--accent);"></i> Course Resources & Links</h5>
+    
+    @if (Model.Resources != null && Model.Resources.Any())
+    {
+        <div class="row row-cols-1 row-cols-md-2 g-2">
+            @foreach (var res in Model.Resources)
+            {
+                <div class="col">
+                    <a href="@res.Url" target="_blank" class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none" style="background: var(--bg-panel-alt); border: 1px solid var(--border-default); color: var(--text-primary);">
+                        @if (res.Type == Read_It.Models.CourseResourceType.Outline)
+                        {
+                            <i class="bi bi-file-earmark-pdf fs-4 text-danger"></i>
+                        }
+                        else if (res.Type == Read_It.Models.CourseResourceType.Playlist)
+                        {
+                            <i class="bi bi-youtube fs-4 text-danger"></i>
+                        }
+                        else if (res.Type == Read_It.Models.CourseResourceType.QuestionBank)
+                        {
+                            <i class="bi bi-collection-fill fs-4 text-warning"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-journal-text fs-4 text-info"></i>
+                        }
+                        
+                        <div class="text-truncate">
+                            <div class="fw-bold text-truncate" style="font-size: var(--font-size-sm); color: var(--text-heading);">@res.Title</div>
+                            <small class="text-secondary">@res.Type.ToString()</small>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-secondary mb-0" style="font-size: var(--font-size-sm);">No resources attached yet. Students & instructors can share course outlines, notes, and playlists here!</p>
+    }
+</div>
+
+<!-- Feed Header -->
+<div class="d-flex align-items-center justify-content-between mb-3 px-1">
+    <h5 class="fw-bold m-0" style="color: var(--text-heading);">Subject Feed</h5>
+    <a href="/Posts" class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);">View All Posts</a>
+</div>
+
+<!-- SubSubject Posts Feed -->
+@if (Model.Posts != null && Model.Posts.Any())
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
+        {
+            <div class="post-card">
+                <div class="d-flex flex-column align-items-center p-3" style="width: 48px; background: var(--bg-panel-alt);">
+                    <i class="bi bi-arrow-up-short vote-arrow fs-4"></i>
+                    <span class="fw-bold fs-6 my-1">@(post.UpVotes - post.DownVotes)</span>
+                    <i class="bi bi-arrow-down-short vote-arrow fs-4"></i>
+                </div>
+                <div class="p-3 w-100">
+                    <div class="d-flex align-items-center gap-2 mb-2" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                        <span class="fw-bold" style="color: var(--text-primary);">c/@Model.Code</span>
+                        <span>•</span>
+                        <span>Posted by u/@(post.User?.UserName ?? "student")</span>
+                        <span>•</span>
+                        <span>@post.CreatedAt.ToString("MMM dd")</span>
+                        <span class="flair-badge ms-2">@post.Flair.ToString()</span>
+                    </div>
+
+                    <!-- Post Title click zooms in to Post Details page -->
+                    <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
+                        @post.Title
+                    </a>
+                    
+                    <p class="post-body-preview text-truncate" style="max-width: 750px;">
+                        @post.Body
+                    </p>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
+                            <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
+                            <span>@(post.Comments?.Count ?? 0) Comments</span>
+                        </a>
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                            <i class="bi bi-arrows-angle-expand"></i> Zoom In / Read Comments
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card p-5 text-center text-secondary">
+        <h5 class="mb-2">No posts in c/@Model.Code yet</h5>
+        <p class="mb-0">Be the first student or faculty member to create a post in this subsubject!</p>
+    </div>
+}
