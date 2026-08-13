@@ -1,0 +1,148 @@
+@model Read_It.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "u/" + (Model?.UserName ?? "user") + " — User Profile";
+
+    var posts = ViewBag.Posts as IEnumerable<Read_It.Models.Post> ?? Enumerable.Empty<Read_It.Models.Post>();
+    var comments = ViewBag.Comments as IEnumerable<Read_It.Models.Comment> ?? Enumerable.Empty<Read_It.Models.Comment>();
+    var followedCourses = ViewBag.FollowedCourses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
+    int totalKarma = ViewBag.TotalKarma ?? 0;
+    string initialLetter = (!string.IsNullOrEmpty(Model?.UserName)) ? Model.UserName.Substring(0, 1).ToUpper() : "U";
+}
+
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);">
+
+    <!-- User Header Card -->
+    <div class="card p-4">
+        <div style="display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;">
+            <!-- Avatar -->
+            <div class="avatar avatar-lg shadow" style="background: var(--accent); width: 64px; height: 64px; font-size: var(--text-xl);">
+                @initialLetter
+            </div>
+
+            <!-- Info -->
+            <div style="flex: 1; min-width: 0;">
+                <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: 2px;">
+                    u/@Model?.UserName
+                </h1>
+                <p style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: var(--sp-2);">
+                    @(string.IsNullOrEmpty(Model?.Bio) ? "IUBAT Community Member" : Model.Bio)
+                </p>
+                <div style="display: flex; gap: var(--sp-4); font-size: var(--text-xs); color: var(--text-muted); flex-wrap: wrap;">
+                    <span><i class="bi bi-trophy-fill" style="color: var(--warning);"></i> <strong>@totalKarma</strong> Karma</span>
+                    <span><i class="bi bi-file-post"></i> <strong>@posts.Count()</strong> Posts</span>
+                    <span><i class="bi bi-chat-text"></i> <strong>@comments.Count()</strong> Comments</span>
+                    <span><i class="bi bi-bookmark-heart-fill" style="color: var(--accent);"></i> <strong>@followedCourses.Count()</strong> Followed SubSubjects</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="dept-tabs">
+        <button class="dept-tab active" onclick="switchTab('posts', this)">Posts (@posts.Count())</button>
+        <button class="dept-tab" onclick="switchTab('comments', this)">Comments (@comments.Count())</button>
+        <button class="dept-tab" onclick="switchTab('following', this)">SubSubjects (@followedCourses.Count())</button>
+    </div>
+
+    <!-- User Posts Tab -->
+    <div id="tab-posts" class="tab-content" style="display: flex; flex-direction: column; gap: var(--sp-3);">
+        @if (posts.Any())
+        {
+            @foreach (var post in posts)
+            {
+                <article class="post-card">
+                    <div class="post-vote-col">
+                        <i class="bi bi-arrow-up-circle-fill" style="color: var(--upvote); font-size: 16px;"></i>
+                        <span class="vote-count" style="color: var(--upvote);">@(post.UpVotes - post.DownVotes)</span>
+                    </div>
+                    <div class="post-body-col">
+                        <div class="post-meta">
+                            <span class="flair-badge">@post.Flair.ToString()</span>
+                            <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
+                            <span>· @post.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
+                            @post.Title
+                        </a>
+                        <p class="post-preview">@post.Body</p>
+                    </div>
+                </article>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-pencil-square" style="font-size: 2rem; display: block; margin-bottom: var(--sp-2);"></i>
+                <h5>No posts published yet</h5>
+            </div>
+        }
+    </div>
+
+    <!-- User Comments Tab -->
+    <div id="tab-comments" class="tab-content" style="display: none; flex-direction: column; gap: var(--sp-3);">
+        @if (comments.Any())
+        {
+            @foreach (var comment in comments)
+            {
+                <div class="card p-3">
+                    <div class="comment-meta mb-1">
+                        <span>Commented on <a href="@Url.Action("Details", "Posts", new { id = comment.PostId })" class="fw-bold" style="color: var(--accent);">@comment.Post?.Title</a></span>
+                        <span>· @comment.CreatedAt.ToString("MMM dd")</span>
+                    </div>
+                    <p class="comment-body mb-2">@comment.Body</p>
+                    <div style="font-size: var(--text-xs); color: var(--text-muted);">
+                        <i class="bi bi-hand-thumbs-up-fill" style="color: var(--upvote);"></i> @comment.UpVotes votes
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-chat-square" style="font-size: 2rem; display: block; margin-bottom: var(--sp-2);"></i>
+                <h5>No comments posted yet</h5>
+            </div>
+        }
+    </div>
+
+    <!-- Followed SubSubjects Tab -->
+    <div id="tab-following" class="tab-content" style="display: none;">
+        @if (followedCourses.Any())
+        {
+            <div class="courses-grid">
+                @foreach (var c in followedCourses)
+                {
+                    <a href="@Url.Action("Details", "Courses", new { code = c.Code })" class="course-card">
+                        <div class="course-card-header">
+                            <div class="course-card-icon">@c.Code.Substring(0, Math.Min(3, c.Code.Length))</div>
+                            <div>
+                                <div class="course-card-title">c/@c.Code</div>
+                                <div class="course-card-code">@c.Title</div>
+                            </div>
+                        </div>
+                        <p class="course-card-desc">@c.Description</p>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-bookmark-dash" style="font-size: 2rem; display: block; margin-bottom: var(--sp-2);"></i>
+                <h5>Not following any subReadIts yet</h5>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.dept-tab').forEach(el => el.classList.remove('active'));
+    
+    const target = document.getElementById('tab-' + name);
+    if (target) target.style.display = 'flex';
+    btn.classList.add('active');
+}
+</script>

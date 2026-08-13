@@ -3,12 +3,13 @@
 @{
     ViewData["Title"] = Model.Code + " — SubReadIt";
 
-    // ViewBag data from controller
-    var videosByTopic     = ViewBag.VideosByTopic as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
-    var outlineResources  = ViewBag.OutlineResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
-    var qbResources       = ViewBag.QuestionBankResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
-    int followerCount     = ViewBag.FollowerCount ?? 0;
-    bool isFollowing      = ViewBag.IsFollowing ?? false;
+    var videosByTopic    = ViewBag.VideosByTopic as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var outlineResources = ViewBag.OutlineResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+    var qbResources      = ViewBag.QuestionBankResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+    int  followerCount   = ViewBag.FollowerCount ?? 0;
+    bool isFollowing     = ViewBag.IsFollowing ?? false;
+    string activeSort    = ViewBag.ActiveSort as string ?? "hot";
+    var userPostVotes    = ViewBag.UserPostVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
 
     var deptNames = Model.CourseDepartments
         .Select(cd => cd.Department?.Name ?? "")
@@ -17,94 +18,124 @@
 }
 
 @section RightAside {
-<!-- ═══════════════════════════════════════════════════════════
-     RIGHT COLUMN — 3-ZONE LAYOUT
-     ═══════════════════════════════════════════════════════════ -->
 
-<!-- ─────────────────────────────────────────────────────────
-     TOP ZONE — Course Info + Follow
-     ─────────────────────────────────────────────────────────-->
-<div class="card p-3 mb-3">
+<!-- ── Right Column ────────────────────────────────────────────────────────── -->
 
-    <!-- Scoped Search -->
-    <div class="mb-3" style="position: relative;">
-        <i class="bi bi-search position-absolute" style="top: 50%; transform: translateY(-50%); left: 10px; color: var(--text-secondary); font-size: 13px;"></i>
-        <input type="text" id="right-col-search" placeholder="Search resources & topics…"
-               class="form-control bg-transparent text-white border-secondary ps-4"
-               style="font-size: 12px; height: 34px;" oninput="filterRightCol(this.value)" />
+<!-- Scoped Search -->
+<div class="right-card" style="padding-bottom: var(--sp-3);">
+    <div style="position: relative;">
+        <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none;"></i>
+        <input type="text" id="right-col-search" placeholder="Filter resources & videos…"
+               oninput="filterRightCol(this.value)"
+               style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: var(--r-sm); color: var(--text-primary); font-family: var(--font); font-size: var(--text-sm); padding: 7px 12px 7px 32px; outline: none; transition: border-color var(--transition);" />
     </div>
+</div>
 
-    <!-- Course Outline -->
-    <div class="right-section mb-3" data-section-label="outline course outline syllabus">
-        <h6 class="fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-            <i class="bi bi-link-45deg text-primary fs-5"></i> Course Outline (Web Links)
-        </h6>
-        @if (outlineResources.Any())
-        {
-            @foreach (var r in outlineResources)
-            {
-                <a href="@r.Url" target="_blank" class="d-flex align-items-center gap-2 mb-1 text-decoration-none right-col-item"
-                   style="color: var(--accent); font-size: 12px;" data-label="@r.Title.ToLower() outline syllabus">
-                    <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
-                    <span class="text-truncate">@r.Title</span>
-                </a>
-            }
-        }
-        else
-        {
-            <p class="text-secondary mb-0" style="font-size: 12px;">No outline uploaded yet.</p>
-        }
+<!-- Course Outline Links -->
+<div class="right-card right-section" data-section-label="outline course outline syllabus">
+    <div class="right-card-title" style="justify-content: space-between;">
+        <span><i class="bi bi-link-45deg" style="color: var(--accent);"></i> Course Outline</span>
+        <button class="topic-add-btn" onclick="toggleForm('add-outline-form')">+ add</button>
     </div>
-
-    <!-- Question Bank -->
-    <div class="right-section mb-3" data-section-label="question bank past papers exam">
-        <h6 class="fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-            <i class="bi bi-collection-fill text-warning"></i> Question Bank
-        </h6>
-        @if (qbResources.Any())
+    @if (outlineResources.Any())
+    {
+        @foreach (var r in outlineResources)
         {
-            @foreach (var r in qbResources)
-            {
-                <a href="@r.Url" target="_blank" class="d-flex align-items-center gap-2 mb-1 text-decoration-none right-col-item"
-                   style="color: var(--accent); font-size: 12px;" data-label="@r.Title.ToLower() question bank past">
-                    <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
-                    <span class="text-truncate">@r.Title</span>
-                </a>
-            }
+            <a href="@r.Url" target="_blank" rel="noopener noreferrer"
+               class="resource-link right-col-item"
+               data-label="@r.Title.ToLower() outline syllabus">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span>@r.Title</span>
+            </a>
         }
-        else
-        {
-            <p class="text-secondary mb-0" style="font-size: 12px;">No question bank uploaded yet.</p>
-        }
-    </div>
+    }
+    else
+    {
+        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No outline links yet.</p>
+    }
 
-    <!-- Follow Button -->
-    <div class="border-top pt-3" style="border-color: var(--border-default) !important;">
-        <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post" class="d-flex align-items-center gap-2">
+    <!-- Inline Add Outline Form -->
+    <div id="add-outline-form" class="add-video-form" style="display: none;">
+        <form action="@Url.Action("AddResource", "Courses")" method="post">
             @Html.AntiForgeryToken()
-            <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary") py-1 px-3 flex-grow-1"
-                    style="font-size: 13px; font-weight: 600;">
-                @if (isFollowing)
-                {
-                    <i class="bi bi-check-circle-fill text-success me-1"></i><text>Following ✓</text>
-                }
-                else
-                {
-                    <i class="bi bi-plus-lg me-1"></i><text>Follow</text>
-                }
-            </button>
-            <span class="text-secondary" style="font-size: 12px; white-space: nowrap;">@followerCount followers</span>
+            <input type="hidden" name="code" value="@Model.Code" />
+            <input type="hidden" name="type" value="@Read_It.Models.CourseResourceType.Outline" />
+            <input type="text" name="title" placeholder="Outline Title (e.g. Google Doc link)" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="url"  name="url"   placeholder="Web URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <div style="display: flex; gap: var(--sp-2);">
+                <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add Link</button>
+                <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-outline-form')">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
-<!-- ─────────────────────────────────────────────────────────
-     MIDDLE ZONE — Best YouTube Videos by Topic
-     ─────────────────────────────────────────────────────────-->
-<div class="card p-3 mb-3">
-    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-        <i class="bi bi-youtube text-danger fs-5"></i> Best YouTube Videos by Topic
-    </h6>
+<!-- Question Bank -->
+<div class="right-card right-section" data-section-label="question bank past papers exam">
+    <div class="right-card-title" style="justify-content: space-between;">
+        <span><i class="bi bi-collection-fill" style="color: var(--warning);"></i> Question Bank</span>
+        <button class="topic-add-btn" onclick="toggleForm('add-qb-form')">+ add</button>
+    </div>
+    @if (qbResources.Any())
+    {
+        @foreach (var r in qbResources)
+        {
+            <a href="@r.Url" target="_blank" rel="noopener noreferrer"
+               class="resource-link right-col-item"
+               data-label="@r.Title.ToLower() question bank past">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span>@r.Title</span>
+            </a>
+        }
+    }
+    else
+    {
+        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No question bank links yet.</p>
+    }
+
+    <!-- Inline Add Question Bank Form -->
+    <div id="add-qb-form" class="add-video-form" style="display: none;">
+        <form action="@Url.Action("AddResource", "Courses")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="code" value="@Model.Code" />
+            <input type="hidden" name="type" value="@Read_It.Models.CourseResourceType.QuestionBank" />
+            <input type="text" name="title" placeholder="Folder Title (e.g. Drive Question Bank)" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="url"  name="url"   placeholder="Web URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <div style="display: flex; gap: var(--sp-2);">
+                <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add Link</button>
+                <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-qb-form')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Follow Button -->
+<div class="right-card">
+    <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post">
+        @Html.AntiForgeryToken()
+        <div style="display: flex; align-items: center; gap: var(--sp-3);">
+            <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary")" style="flex: 1;">
+                @if (isFollowing)
+                {
+                    <i class="bi bi-check-circle-fill"></i> <text>Following</text>
+                }
+                else
+                {
+                    <i class="bi bi-plus-lg"></i> <text>Follow</text>
+                }
+            </button>
+            <span style="font-size: var(--text-xs); color: var(--text-secondary); white-space: nowrap;">
+                @followerCount followers
+            </span>
+        </div>
+    </form>
+</div>
+
+<!-- YouTube Videos by Topic -->
+<div class="right-card right-section" data-section-label="video youtube">
+    <div class="right-card-title">
+        <i class="bi bi-youtube" style="color: #ff0000;"></i> Best Videos by Topic
+    </div>
 
     @if (videosByTopic != null && videosByTopic.Cast<object>().Any())
     {
@@ -115,76 +146,62 @@
             var videoList = topicVideos.ToList();
             string topicName = group.Topic as string ?? "";
 
-            <div class="mb-3 right-section" data-section-label="@topicName.ToLower() video youtube">
-
-                <!-- Topic heading -->
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="fw-bold" style="font-size: 12px; color: var(--accent);">📌 @topicName</span>
+            <div class="right-section" data-section-label="@topicName.ToLower() video youtube">
+                <div class="topic-heading">
+                    <span class="topic-name">📌 @topicName</span>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <button type="button" class="btn p-0 border-0"
-                                style="font-size: 11px; color: var(--text-secondary);"
-                                onclick="toggleAddVideo('@topicName', '@Model.Code')">
-                            + add video
-                        </button>
+                        <button class="topic-add-btn" onclick="toggleForm('add-video-form-@(Uri.EscapeDataString(topicName))')">+ add</button>
                     }
                 </div>
 
-                <!-- Video entries -->
                 @for (int i = 0; i < videoList.Count; i++)
                 {
-                    var video = videoList[i];
+                    var video   = videoList[i];
                     bool isBest = i == 0;
-                    <div class="d-flex align-items-start gap-2 mb-2 right-col-item"
-                         data-label="@video.Title.ToLower() @topicName.ToLower() video">
-                        <div class="d-flex flex-column align-items-center gap-1 flex-shrink-0" style="width: 28px;">
-                            <form action="@Url.Action("UpvoteVideo", "Courses")" method="post" class="m-0 p-0">
+
+                    <div class="video-entry right-col-item" data-label="@video.Title.ToLower() @topicName.ToLower() video">
+                        <div class="video-upvote-col">
+                            <form action="@Url.Action("UpvoteVideo", "Courses")" method="post" style="margin: 0;">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="videoId" value="@video.Id" />
                                 <input type="hidden" name="code"    value="@Model.Code" />
-                                <button type="submit" class="btn p-0 border-0" style="color: var(--text-secondary); line-height: 1;"
-                                        title="Upvote">
-                                    <i class="bi bi-arrow-up-circle-fill" style="color: var(--upvote, #ff4500); font-size: 14px;"></i>
+                                <button type="submit" class="vote-arrow up" title="Upvote" style="font-size: 14px;">
+                                    <i class="bi bi-arrow-up-circle-fill"></i>
                                 </button>
                             </form>
-                            <span style="font-size: 10px; color: var(--text-secondary);">@video.UpVotes</span>
+                            <span style="font-size: 10px; color: var(--text-muted);">@video.UpVotes</span>
                         </div>
-                        <div class="flex-grow-1 min-width-0">
-                            <a href="@video.VideoUrl" target="_blank" class="text-decoration-none d-flex align-items-start gap-1"
-                               style="font-size: 12px; color: @(isBest ? "var(--accent)" : "var(--text-primary)"); font-weight: @(isBest ? "600" : "400"); line-height: 1.35;">
+                        <div style="flex: 1; min-width: 0;">
+                            <a href="@video.VideoUrl" target="_blank" rel="noopener noreferrer" class="video-link @(isBest ? "best" : "")">
                                 @if (isBest)
                                 {
-                                    <i class="bi bi-star-fill flex-shrink-0" style="color: gold; font-size: 11px; margin-top: 1px;"></i>
+                                    <i class="bi bi-star-fill" style="color: gold; flex-shrink: 0; margin-top: 2px; font-size: 10px;"></i>
                                 }
                                 else
                                 {
-                                    <i class="bi bi-play-circle flex-shrink-0" style="color: var(--text-secondary); font-size: 11px; margin-top: 1px;"></i>
+                                    <i class="bi bi-play-circle" style="color: var(--text-muted); flex-shrink: 0; margin-top: 2px; font-size: 11px;"></i>
                                 }
-                                <span class="text-truncate">@video.Title</span>
+                                <span style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">@video.Title</span>
                             </a>
                             @if (isBest)
                             {
-                                <span style="font-size: 10px; color: gold;">⭐ Best in topic</span>
+                                <div style="font-size: 10px; color: gold; margin-top: 2px;">⭐ Best in topic</div>
                             }
                         </div>
                     </div>
                 }
 
-                <!-- Hidden add-video inline form -->
-                <div id="add-video-form-@(Uri.EscapeDataString(topicName))" style="display: none;"
-                     class="mt-2 p-2 rounded" style="background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                <div id="add-video-form-@(Uri.EscapeDataString(topicName))" class="add-video-form" style="display: none;">
                     <form action="@Url.Action("AddVideo", "Courses")" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="code"  value="@Model.Code" />
                         <input type="hidden" name="topic" value="@topicName" />
-                        <input type="text" name="title" placeholder="Video title" required
-                               class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
-                        <input type="url"  name="videoUrl" placeholder="YouTube URL" required
-                               class="form-control form-control-sm bg-transparent text-white border-secondary mb-2" style="font-size: 12px;" />
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn-primary py-0 px-2" style="font-size: 11px;">Add</button>
-                            <button type="button" class="action-btn py-0 px-1" style="font-size: 11px;"
-                                    onclick="toggleAddVideo('@topicName', '@Model.Code')">Cancel</button>
+                        <input type="text" name="title"    placeholder="Video title" required class="form-control" style="margin-bottom: var(--sp-2);" />
+                        <input type="url"  name="videoUrl" placeholder="YouTube URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+                        <div style="display: flex; gap: var(--sp-2);">
+                            <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add</button>
+                            <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-video-form-@(Uri.EscapeDataString(topicName))')">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -193,25 +210,24 @@
     }
     else
     {
-        <p class="text-secondary mb-0" style="font-size: 12px;">No videos submitted yet. Be the first!</p>
+        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No videos submitted yet.</p>
     }
 
-    <!-- New topic: add video under a brand-new topic heading -->
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <div class="border-top pt-3 mt-2" style="border-color: var(--border-default) !important;">
-            <button type="button" class="action-btn" style="font-size: 12px; color: var(--accent);"
-                    onclick="document.getElementById('new-topic-form').style.display='block'; this.style.display='none';">
+        <div style="border-top: 1px solid var(--border-default); margin-top: var(--sp-3); padding-top: var(--sp-3);">
+            <button class="action-btn" style="font-size: var(--text-xs); color: var(--accent); width: 100%; justify-content: center;"
+                    onclick="toggleForm('new-topic-form')">
                 <i class="bi bi-plus-circle"></i> Submit video under new topic
             </button>
-            <div id="new-topic-form" style="display: none;">
+            <div id="new-topic-form" class="add-video-form" style="display: none;">
                 <form action="@Url.Action("AddVideo", "Courses")" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="code" value="@Model.Code" />
-                    <input type="text" name="topic"    placeholder="Topic (e.g. Recursion)"  required class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
-                    <input type="text" name="title"    placeholder="Video title"              required class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
-                    <input type="url"  name="videoUrl" placeholder="YouTube URL"              required class="form-control form-control-sm bg-transparent text-white border-secondary mb-2" style="font-size: 12px;" />
-                    <button type="submit" class="btn-primary py-0 px-2" style="font-size: 11px;">Submit</button>
+                    <input type="text" name="topic"    placeholder="Topic (e.g. Recursion)" required class="form-control" style="margin-bottom: var(--sp-2);" />
+                    <input type="text" name="title"    placeholder="Video title"            required class="form-control" style="margin-bottom: var(--sp-2);" />
+                    <input type="url"  name="videoUrl" placeholder="YouTube URL"            required class="form-control" style="margin-bottom: var(--sp-2);" />
+                    <button type="submit" class="btn-primary" style="padding: 4px 14px; font-size: 12px;">Submit</button>
                 </form>
             </div>
         </div>
@@ -219,7 +235,7 @@
 </div>
 
 <!-- ─────────────────────────────────────────────────────────
-     BOTTOM ZONE — Placeholder (reserved for future feature)
+     RESERVED BOTTOM ZONE (UNCHANGED USER PREFERENCE)
      ─────────────────────────────────────────────────────────-->
 <div class="card p-3 text-center" style="border-style: dashed; border-color: var(--border-light); opacity: 0.6;">
     <i class="bi bi-hourglass-split mb-1 fs-4 text-secondary"></i>
@@ -227,118 +243,140 @@
 </div>
 
 <script>
-// Right-column keyword filter (no page reload)
 function filterRightCol(q) {
     q = q.toLowerCase().trim();
     document.querySelectorAll('.right-col-item').forEach(el => {
         const label = (el.dataset.label || '') + ' ' + el.innerText.toLowerCase();
         el.style.display = (!q || label.includes(q)) ? '' : 'none';
     });
-    // Show/hide section wrappers based on whether they have visible children
     document.querySelectorAll('.right-section').forEach(section => {
         const visItems = section.querySelectorAll('.right-col-item:not([style*="display: none"])');
         section.style.display = (!q || section.dataset.sectionLabel?.includes(q) || visItems.length > 0) ? '' : 'none';
     });
 }
-// Toggle inline add-video form per topic
-function toggleAddVideo(topic, code) {
-    const id = 'add-video-form-' + encodeURIComponent(topic);
+function toggleForm(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 </script>
 }
 
-<!-- ═══════════════════════════════════════════════════════════
-     MAIN (CENTER COLUMN) CONTENT
-     ═══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MAIN CENTER COLUMN
+     ══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Course Header Banner -->
-<div class="card mb-4 p-0" style="overflow: hidden;">
-    <div style="height: 120px; background: linear-gradient(90deg, var(--accent) 0%, #d83a00 100%);"></div>
-
-    <div class="card-body position-relative p-4" style="padding-top: 50px !important;">
-        <div class="rounded-circle border border-4 position-absolute d-flex align-items-center justify-content-center shadow"
-             style="width: 80px; height: 80px; top: -40px; left: 24px; border-color: var(--bg-panel) !important; background-color: var(--accent) !important;">
-             <h4 class="text-white m-0 fw-bold">@Model.Code.Substring(0, Math.Min(3, Model.Code.Length))</h4>
+<div class="course-banner fade-up">
+    <div class="course-banner-gradient"></div>
+    <div class="course-banner-body">
+        <div class="course-banner-icon">
+            @Model.Code.Substring(0, Math.Min(3, Model.Code.Length))
         </div>
-
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-3);">
             <div>
-                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                    <h2 class="mb-0" style="color: var(--text-heading); font-weight: 700;">c/@Model.Code — @Model.Title</h2>
+                <div style="display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-1);">
+                    <h1 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-heading); margin: 0;">
+                        c/@Model.Code — @Model.Title
+                    </h1>
                     @if (Model.IsGeneral)
                     {
-                        <span class="badge rounded-pill" style="background: var(--accent); color: #fff; font-size: 12px; padding: 3px 10px;">General</span>
+                        <span class="flair-badge">General</span>
                     }
                     else
                     {
                         @foreach (var n in deptNames)
                         {
-                            <span class="badge rounded-pill" style="background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: 12px; padding: 3px 10px;">@n</span>
+                            <span style="display: inline-flex; align-items: center; background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: var(--text-xs); font-weight: 600; padding: 2px 8px; border-radius: var(--r-full);">@n</span>
                         }
                     }
                 </div>
-                <p class="text-secondary mb-0" style="max-width: 700px;">@Model.Description</p>
+                <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0; max-width: 600px; line-height: 1.6;">@Model.Description</p>
             </div>
+            <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary">
+                <i class="bi bi-plus-lg"></i> Create Post
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Post Feed Header -->
-<div class="d-flex align-items-center justify-content-between mb-3 px-1">
-    <h5 class="fw-bold m-0" style="color: var(--text-heading);">Subject Feed</h5>
-    <a href="/Posts" class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);">View All Posts</a>
+<!-- Post Feed Header & Sorting -->
+<div class="feed-label">
+    <h6>Subject Feed</h6>
+    <div class="dept-tabs" style="margin-bottom: 0;">
+        <a href="@Url.Action("Details", "Courses", new { code = Model.Code, sort = "hot" })" class="dept-tab @(activeSort == "hot" ? "active" : "")">
+            <i class="bi bi-fire"></i> Hot
+        </a>
+        <a href="@Url.Action("Details", "Courses", new { code = Model.Code, sort = "top" })" class="dept-tab @(activeSort == "top" ? "active" : "")">
+            <i class="bi bi-star"></i> Top
+        </a>
+        <a href="@Url.Action("Details", "Courses", new { code = Model.Code, sort = "new" })" class="dept-tab @(activeSort == "new" ? "active" : "")">
+            <i class="bi bi-sparkles"></i> New
+        </a>
+    </div>
 </div>
 
-<!-- SubSubject Posts Feed (center column — unchanged) -->
+<!-- Posts Feed -->
 @if (Model.Posts != null && Model.Posts.Any())
 {
-    <div class="d-flex flex-column gap-3">
-        @foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
+    <div style="display: flex; flex-direction: column; gap: var(--sp-3);">
+        @foreach (var post in Model.Posts)
         {
-            <div class="post-card">
-                <div class="d-flex flex-column align-items-center p-3" style="width: 48px; background: var(--bg-panel-alt);">
-                    <i class="bi bi-arrow-up-short vote-arrow fs-4"></i>
-                    <span class="fw-bold fs-6 my-1">@(post.UpVotes - post.DownVotes)</span>
-                    <i class="bi bi-arrow-down-short vote-arrow fs-4"></i>
-                </div>
-                <div class="p-3 w-100">
-                    <div class="d-flex align-items-center gap-2 mb-2" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                        <span class="fw-bold" style="color: var(--text-primary);">c/@Model.Code</span>
-                        <span>•</span>
-                        <span>Posted by u/@(post.User?.UserName ?? "student")</span>
-                        <span>•</span>
-                        <span>@post.CreatedAt.ToString("MMM dd")</span>
-                        <span class="flair-badge ms-2">@post.Flair.ToString()</span>
-                    </div>
+            int myVote = userPostVotes.ContainsKey(post.Id) ? userPostVotes[post.Id] : 0;
 
+            <article class="post-card">
+                <div class="post-vote-col">
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@post.Id" />
+                        <input type="hidden" name="targetType" value="post" />
+                        <input type="hidden" name="direction" value="1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" type="submit" title="Upvote">
+                            <i class="bi bi-arrow-up-short" style="font-size: 20px;"></i>
+                        </button>
+                    </form>
+
+                    <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
+
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@post.Id" />
+                        <input type="hidden" name="targetType" value="post" />
+                        <input type="hidden" name="direction" value="-1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" type="submit" title="Downvote">
+                            <i class="bi bi-arrow-down-short" style="font-size: 20px;"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="post-body-col">
+                    <div class="post-meta">
+                        <span class="flair-badge">@post.Flair.ToString()</span>
+                        <span>c/@Model.Code &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a> &nbsp;·&nbsp; @post.CreatedAt.ToString("MMM dd")</span>
+                    </div>
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
                         @post.Title
                     </a>
-
-                    <p class="post-body-preview text-truncate" style="max-width: 700px;">
-                        @post.Body
-                    </p>
-
-                    <div class="d-flex gap-2 mt-3">
-                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
-                            <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
-                            <span>@(post.Comments?.Count ?? 0) Comments</span>
+                    <p class="post-preview">@post.Body</p>
+                    <div class="post-actions">
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                            <i class="bi bi-chat-left-text" style="color: var(--accent);"></i>
+                            @(post.Comments?.Count ?? 0) Comments
                         </a>
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
                             <i class="bi bi-arrows-angle-expand"></i> Read Full
                         </a>
                     </div>
                 </div>
-            </div>
+            </article>
         }
     </div>
 }
 else
 {
-    <div class="card p-5 text-center text-secondary">
-        <h5 class="mb-2">No posts in c/@Model.Code yet</h5>
-        <p class="mb-0">Be the first to create a post in this community!</p>
+    <div class="empty-state">
+        <i class="bi bi-chat-square" style="font-size: 2.5rem; display: block; margin-bottom: var(--sp-3);"></i>
+        <h5>No posts in c/@Model.Code yet</h5>
+        <p><a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" style="color: var(--accent);">Create the first post</a> in this subReadIt!</p>
     </div>
 }

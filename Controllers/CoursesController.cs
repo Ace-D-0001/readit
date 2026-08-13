@@ -21,7 +21,6 @@ namespace Read_It.Controllers
         // GET /Courses?deptId=N
         public async Task<IActionResult> Index(int? deptId)
         {
-            // Load departments for filter pills
             var departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
             ViewBag.Departments  = departments;
             ViewBag.ActiveDeptId = deptId;
@@ -35,7 +34,6 @@ namespace Read_It.Controllers
 
             if (deptId.HasValue)
             {
-                // Show: General courses PLUS courses linked to the selected department
                 query = query.Where(c => c.IsGeneral ||
                     c.CourseDepartments.Any(cd => cd.DepartmentId == deptId.Value));
             }
@@ -44,10 +42,11 @@ namespace Read_It.Controllers
             return View(courses);
         }
 
-        // GET /Courses/Details?code=CSC391
-        public async Task<IActionResult> Details(string code)
+        // GET /Courses/Details?code=CSC391&sort=hot|top|new
+        public async Task<IActionResult> Details(string code, string sort = "hot")
         {
             if (string.IsNullOrEmpty(code)) return NotFound();
+            ViewBag.ActiveSort = sort.ToLower();
 
             var course = await _context.Courses
                 .Include(c => c.Posts)
@@ -76,27 +75,37 @@ namespace Read_It.Controllers
                 .ToList();
 
             ViewBag.VideosByTopic = videosByTopic;
-
-            // Follower count
             ViewBag.FollowerCount = course.Followers.Count;
 
-            // Is current user following?
+            // Is current user following & vote states
             bool isFollowing = false;
-            if (User.Identity?.IsAuthenticated == true)
+            var userPostVotes = new Dictionary<int, int>();
+            string? currentUserId = GetCurrentUserId();
+
+            if (!string.IsNullOrEmpty(currentUserId))
             {
-                var currentUser = await _context.Users
-                    .FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
-                if (currentUser != null)
-                {
-                    isFollowing = await _context.CourseFollows
-                        .AnyAsync(cf => cf.UserId == currentUser.Id && cf.CourseId == course.Id);
-                }
+                isFollowing = await _context.CourseFollows
+                    .AnyAsync(cf => cf.UserId == currentUserId && cf.CourseId == course.Id);
+
+                userPostVotes = await _context.Votes
+                    .Where(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Post)
+                    .ToDictionaryAsync(v => v.TargetId, v => v.VoteValue);
             }
+
             ViewBag.IsFollowing = isFollowing;
+            ViewBag.UserPostVotes = userPostVotes;
 
             // Outline & Question Bank resources for right column
-            ViewBag.OutlineResources     = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
-            ViewBag.QuestionBankResources= course.Resources.Where(r => r.Type == CourseResourceType.QuestionBank).ToList();
+            ViewBag.OutlineResources      = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
+            ViewBag.QuestionBankResources = course.Resources.Where(r => r.Type == CourseResourceType.QuestionBank).ToList();
+
+            // Post sorting
+            if (sort.ToLower() == "top")
+                course.Posts = course.Posts.OrderByDescending(p => p.UpVotes - p.DownVotes).ToList();
+            else if (sort.ToLower() == "new")
+                course.Posts = course.Posts.OrderByDescending(p => p.CreatedAt).ToList();
+            else
+                course.Posts = course.Posts.OrderByDescending(p => p.IsPinned).ThenByDescending(p => p.CreatedAt).ToList();
 
             return View(course);
         }
@@ -109,21 +118,46 @@ namespace Read_It.Controllers
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
             if (course == null) return NotFound();
 
-            if (User.Identity?.IsAuthenticated != true)
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
-
-            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
-            if (currentUser == null) return Unauthorized();
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             var existing = await _context.CourseFollows
-                .FirstOrDefaultAsync(cf => cf.UserId == currentUser.Id && cf.CourseId == course.Id);
+                .FirstOrDefaultAsync(cf => cf.UserId == currentUserId && cf.CourseId == course.Id);
 
             if (existing != null)
-                _context.CourseFollows.Remove(existing);   // Unfollow
+                _context.CourseFollows.Remove(existing);
             else
-                _context.CourseFollows.Add(new CourseFollow { UserId = currentUser.Id, CourseId = course.Id });
+                _context.CourseFollows.Add(new CourseFollow { UserId = currentUserId, CourseId = course.Id, FollowedAt = DateTime.UtcNow });
 
             await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Details), new { code });
+        }
+
+        // POST /Courses/AddResource
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddResource(string code, CourseResourceType type, string title, string url)
+        {
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
+            if (course == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(url))
+            {
+                _context.CourseResources.Add(new CourseResource
+                {
+                    CourseId = course.Id,
+                    Type = type,
+                    Title = title.Trim(),
+                    Url = url.Trim(),
+                    UploadedByUserId = currentUserId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
             return RedirectToAction(nameof(Details), new { code });
         }
 
@@ -135,23 +169,31 @@ namespace Read_It.Controllers
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
             if (course == null) return NotFound();
 
-            if (User.Identity?.IsAuthenticated != true)
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
-
-            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
-            if (currentUser == null) return Unauthorized();
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             if (!string.IsNullOrWhiteSpace(topic) && !string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(videoUrl))
             {
-                _context.CourseVideos.Add(new CourseVideo
+                var video = new CourseVideo
                 {
                     CourseId           = course.Id,
                     Topic              = topic.Trim(),
                     Title              = title.Trim(),
                     VideoUrl           = videoUrl.Trim(),
-                    SubmittedByUserId  = currentUser.Id,
+                    SubmittedByUserId  = currentUserId,
                     SubmittedAt        = DateTime.UtcNow,
                     UpVotes            = 1
+                };
+                _context.CourseVideos.Add(video);
+                await _context.SaveChangesAsync();
+
+                // Add submitter vote
+                _context.Votes.Add(new Vote
+                {
+                    UserId = currentUserId,
+                    TargetType = VoteTargetType.Video,
+                    TargetId = video.Id,
+                    VoteValue = 1
                 });
                 await _context.SaveChangesAsync();
             }
@@ -167,10 +209,38 @@ namespace Read_It.Controllers
             var video = await _context.CourseVideos.FindAsync(videoId);
             if (video != null)
             {
-                video.UpVotes++;
-                await _context.SaveChangesAsync();
+                var currentUserId = GetCurrentUserId();
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    var existingVote = await _context.Votes
+                        .FirstOrDefaultAsync(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Video && v.TargetId == videoId);
+
+                    if (existingVote != null)
+                    {
+                        // Undo vote
+                        _context.Votes.Remove(existingVote);
+                        video.UpVotes = Math.Max(0, video.UpVotes - 1);
+                    }
+                    else
+                    {
+                        // Add vote
+                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = VoteTargetType.Video, TargetId = videoId, VoteValue = 1 });
+                        video.UpVotes++;
+                    }
+                    await _context.SaveChangesAsync();
+                }
             }
             return RedirectToAction(nameof(Details), new { code });
+        }
+
+        private string? GetCurrentUserId()
+        {
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                var u = _context.Users.FirstOrDefault(usr => usr.UserName == User.Identity.Name);
+                if (u != null) return u.Id;
+            }
+            return _context.Users.Select(u => u.Id).FirstOrDefault();
         }
     }
 }

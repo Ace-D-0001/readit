@@ -1,79 +1,113 @@
 @model IEnumerable<Read_It.Models.Post>
 
 @{
-    ViewData["Title"] = "IUBAT ReadIt Feed";
+    ViewData["Title"] = "IUBAT ReadIt — Home Feed";
+    string activeSort = ViewBag.ActiveSort as string ?? "hot";
+    var userVotes = ViewBag.UserVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
-<div class="d-flex flex-column gap-3">
-    <!-- Hero / Welcome Banner -->
-    <div class="card p-4 text-center" style="background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-alt) 100%);">
-        <h2 class="fw-bold mb-2" style="color: var(--text-heading);">IUBAT Subject Communities</h2>
-        <p style="color: var(--text-secondary);" class="mb-3">Find your course outline, YouTube playlists, question banks, lecture notes, and discuss with classmates.</p>
-        <div class="d-flex justify-content-center gap-2">
-            <a href="/Courses" class="btn-primary">Browse All SubSubjects</a>
-            <a href="/Posts" class="btn-outline">Browse All Content</a>
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);">
+
+    <!-- Hero Banner -->
+    <div class="hero-card fade-up">
+        <h2>IUBAT Subject Communities</h2>
+        <p>Find your course outline, YouTube playlists, question banks, lecture notes — and discuss with classmates.</p>
+        <div class="hero-btns">
+            <a href="/Posts/Create" class="btn-primary"><i class="bi bi-pencil-square"></i> Create Post</a>
+            <a href="/Courses"      class="btn-outline">Browse All SubSubjects</a>
         </div>
     </div>
 
-    <!-- Feed Filter Header -->
-    <div class="d-flex align-items-center justify-content-between px-1">
-        <h6 class="fw-bold m-0 text-uppercase" style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.5px;">Recent Student & Faculty Discussions</h6>
-        <div class="d-flex gap-2">
-            <a href="/Posts" class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);"><i class="bi bi-fire"></i> Hot Posts</a>
+    <!-- Feed Label & Sorting Tabs -->
+    <div class="feed-label">
+        <h6>Recent Student &amp; Faculty Discussions</h6>
+        <div class="dept-tabs" style="margin-bottom: 0;">
+            <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
+                <i class="bi bi-fire"></i> Hot
+            </a>
+            <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
+                <i class="bi bi-star"></i> Top
+            </a>
+            <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
+                <i class="bi bi-sparkles"></i> New
+            </a>
         </div>
     </div>
 
-    <!-- Dynamic Posts Feed -->
+    <!-- Posts Feed -->
     @if (Model != null && Model.Any())
     {
         @foreach (var post in Model)
         {
-            <div class="post-card">
-                <div class="d-flex flex-column align-items-center p-3" style="width: 48px; background: var(--bg-panel-alt);">
-                    <i class="bi bi-arrow-up-circle-fill vote-arrow upvoted"></i>
-                    <span class="fw-bold my-1" style="font-size: var(--font-size-sm); color: var(--upvote);">@(post.UpVotes - post.DownVotes)</span>
-                    <i class="bi bi-arrow-down-circle-fill vote-arrow"></i>
+            int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
+
+            <article class="post-card fade-up">
+                <!-- Vote column -->
+                <div class="post-vote-col">
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@post.Id" />
+                        <input type="hidden" name="targetType" value="post" />
+                        <input type="hidden" name="direction" value="1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" type="submit">
+                            <i class="bi bi-arrow-up-circle-fill"></i>
+                        </button>
+                    </form>
+
+                    <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
+
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@post.Id" />
+                        <input type="hidden" name="targetType" value="post" />
+                        <input type="hidden" name="direction" value="-1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" type="submit">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
+                        </button>
+                    </form>
                 </div>
 
-                <div class="p-3 flex-grow-1">
-                    <div class="d-flex align-items-center gap-2 mb-2">
+                <!-- Body column -->
+                <div class="post-body-col">
+                    <div class="post-meta">
                         <span class="flair-badge">@post.Flair.ToString()</span>
-                        <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                            Posted in <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" class="fw-bold text-decoration-none" style="color: var(--accent);">c/@post.Course?.Code</a> 
-                            by <strong>u/@(post.User?.UserName ?? "student")</strong> • @post.CreatedAt.ToString("MMM dd")
+                        <span>
+                            <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
+                            &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a>
+                            &nbsp;·&nbsp; @post.CreatedAt.ToString("MMM dd")
                         </span>
                     </div>
 
-                    <!-- Post Title click zooms in to Post Details page -->
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
                         @post.Title
                     </a>
 
-                    <p class="post-body-preview text-truncate" style="max-width: 700px;">
-                        @post.Body
-                    </p>
+                    <p class="post-preview">@post.Body</p>
 
-                    <div class="d-flex align-items-center gap-2 pt-2 border-top" style="border-color: var(--border-default) !important;">
-                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
-                            <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
-                            <span>@(post.Comments?.Count ?? 0) Comments</span>
+                    <div class="post-actions">
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                            <i class="bi bi-chat-left-text" style="color: var(--accent);"></i>
+                            @(post.Comments?.Count ?? 0) Comments
                         </a>
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
-                            <i class="bi bi-arrows-angle-expand"></i> Zoom In / Read Full
+                            <i class="bi bi-arrows-angle-expand"></i> Read Full
                         </a>
-                        <button class="action-btn ms-auto">
+                        <button class="action-btn" style="margin-left: auto;" onclick="navigator.clipboard.writeText(window.location.origin + '/Posts/Details/@post.Id'); alert('Link copied!');">
                             <i class="bi bi-share"></i> Share
                         </button>
                     </div>
                 </div>
-            </div>
+            </article>
         }
     }
     else
     {
-        <div class="card p-5 text-center text-secondary">
-            <h5>No posts in feed yet</h5>
-            <p>Check out <a href="/Courses" class="text-accent-custom">All Courses</a> to explore course pages.</p>
+        <div class="empty-state">
+            <i class="bi bi-journal-x" style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: var(--sp-3);"></i>
+            <h5>No posts in the feed yet</h5>
+            <p>Check out <a href="/Courses" style="color: var(--accent);">All Courses</a> to explore course pages.</p>
         </div>
     }
 </div>

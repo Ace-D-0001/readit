@@ -4,183 +4,208 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReadIt</title>
+    <meta name="description" content="ReadIt — IUBAT student community for course resources, YouTube playlists, question banks and discussions." />
     <link rel="icon" type="image/svg+xml" href="~/images/logo-mark.svg" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <!-- Header -->
-    <header class="app-header d-flex align-items-center justify-content-between px-3 px-md-4">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn text-light d-md-none p-0 border-0 fs-4" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="/" class="text-decoration-none d-flex align-items-center gap-2">
-                <img src="~/images/logo.svg" alt="ReadIt Logo" style="height: 38px; width: auto;" />
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header class="app-header">
+    <div class="header-left">
+        <!-- Mobile hamburger -->
+        <button class="hamburger-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <!-- Logo -->
+        <a href="/" aria-label="ReadIt Home">
+            <img src="~/images/logo.svg" alt="ReadIt" style="height: 36px; width: auto;" />
+        </a>
+    </div>
+
+    <!-- Search bar — hidden on mobile via CSS -->
+    <form action="/Search" method="get" class="search-input-group" role="search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="q" placeholder="Search courses or posts…" autocomplete="off" aria-label="Search" />
+        <button type="submit" class="search-btn">Search</button>
+    </form>
+
+    <div class="header-right">
+        <!-- Create Post Action -->
+        <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
+            <i class="bi bi-plus-lg"></i> Create Post
+        </a>
+
+        <!-- User Profile Link -->
+        <a href="/User/Details" class="btn-ghost" title="My Profile" style="padding: 6px 10px;">
+            <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
+        </a>
+    </div>
+</header>
+
+<!-- ── Main 3-column grid ─────────────────────────────────────────────────── -->
+<div class="app-grid">
+
+    <!-- Left Sidebar -->
+    <aside class="app-sidebar">
+        <div style="position: sticky; top: calc(var(--header-h) + 16px);">
+            <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
+                <a href="/" class="sidebar-item">
+                    <i class="bi bi-house-door"></i>
+                    <span>Home Feed</span>
+                </a>
+                <a href="/Courses" class="sidebar-item">
+                    <i class="bi bi-journals"></i>
+                    <span>All SubSubjects</span>
+                </a>
+                <a href="/Posts" class="sidebar-item">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>All Posts</span>
+                </a>
+                <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent); font-weight: 600;">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>+ Create Post</span>
+                </a>
+                <a href="/User/Details" class="sidebar-item">
+                    <i class="bi bi-person-badge"></i>
+                    <span>My Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">IUBAT SubSubjects</div>
+
+            <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
+                <a href="/Courses/Details?code=CSC247" class="sidebar-item">
+                    <span class="avatar avatar-sm" style="background: #22c55e;">C</span>
+                    <div>
+                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC247</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Computer Architecture</div>
+                    </div>
+                </a>
+                <a href="/Courses/Details?code=CSC391" class="sidebar-item">
+                    <span class="avatar avatar-sm" style="background: #3b82f6;">C</span>
+                    <div>
+                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC391</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Data Structures</div>
+                    </div>
+                </a>
+                <a href="/Courses/Details?code=CSC433" class="sidebar-item">
+                    <span class="avatar avatar-sm" style="background: #a855f7;">C</span>
+                    <div>
+                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC433</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Database Systems</div>
+                    </div>
+                </a>
+                <a href="/Courses/Details?code=MAT247" class="sidebar-item">
+                    <span class="avatar avatar-sm" style="background: #0ea5e9;">M</span>
+                    <div>
+                        <div style="font-size: var(--text-sm); font-weight: 600;">MAT247</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Numerical Analysis</div>
+                    </div>
+                </a>
+            </nav>
+
+            <hr class="divider" />
+
+            <a href="/Courses" class="sidebar-item" style="color: var(--accent);">
+                <i class="bi bi-compass"></i>
+                <span style="font-weight: 600;">Explore all subReadIts</span>
             </a>
         </div>
+    </aside>
 
-        <!-- Functional Multi-Search Bar -->
-        <form action="/Search" method="get" class="search-input-group d-none d-sm-flex align-items-center" style="width: 450px; max-width: 100%;">
-            <i class="bi bi-search ms-2" style="color: var(--text-secondary);"></i>
-            <input type="text" name="q" placeholder="Search subsubjects (e.g. CSC391) or posts (e.g. Notes)..." class="form-control bg-transparent text-white border-0 shadow-none" style="color: var(--text-primary) !important;" />
-            <button type="submit" class="btn-primary py-1 px-3 me-1" style="font-size: 12px; border-radius: 999px;">Search</button>
-        </form>
+    <!-- Main Content -->
+    <main class="app-main">
+        @RenderBody()
+    </main>
 
-        <div class="d-flex align-items-center gap-2">
-            <a href="/Identity/Account/Login" class="btn-outline">Log In</a>
-            <a href="/Identity/Account/Register" class="btn-primary">Sign Up</a>
-        </div>
-    </header>
-
-    <!-- Global App Grid -->
-    <div class="app-grid">
-        <!-- Left Sidebar -->
-        <aside class="app-sidebar">
-            <div class="d-flex flex-column gap-2">
-                <nav class="d-flex flex-column gap-1 mb-3">
-                    <a href="/" class="sidebar-item">
-                        <i class="bi bi-house-door fs-5"></i>
-                        <span style="font-size: var(--font-size-sm); font-weight: 600;">Home Feed</span>
-                    </a>
-                    <a href="/Courses" class="sidebar-item">
-                        <i class="bi bi-journals fs-5"></i>
-                        <span style="font-size: var(--font-size-sm); font-weight: 600;">All SubSubjects</span>
-                    </a>
-                    <a href="/Posts" class="sidebar-item">
-                        <i class="bi bi-file-earmark-text fs-5"></i>
-                        <span style="font-size: var(--font-size-sm); font-weight: 600;">All Content / Posts</span>
-                    </a>
-                </nav>
-
-                <h6 class="text-uppercase fw-bold px-3 mb-2" style="color: var(--text-secondary); font-size: 11px; letter-spacing: 0.5px;">IUBAT SubSubjects</h6>
-                
-                <a href="/Courses/Details?code=CSC247" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
-                    <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC247</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Computer Architecture</div>
-                    </div>
-                </a>
-
-                <a href="/Courses/Details?code=CSC391" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
-                    <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC391</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Data Structures</div>
-                    </div>
-                </a>
-
-                <a href="/Courses/Details?code=CSC433" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-warning text-dark fw-bold" style="width: 24px; height: 24px; font-size: 10px;">C</span>
-                    <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">CSC433</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Database Systems</div>
-                    </div>
-                </a>
-
-                <a href="/Courses/Details?code=MAT247" class="sidebar-item">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center bg-info text-dark fw-bold" style="width: 24px; height: 24px; font-size: 10px;">M</span>
-                    <div>
-                        <div class="fw-bold" style="font-size: var(--font-size-sm);">MAT247</div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">Numerical Analysis</div>
-                    </div>
-                </a>
-
-                <hr style="border-color: var(--border-default); margin: 8px 0;" />
-
-                <a href="/Courses" class="sidebar-item text-decoration-none" style="color: var(--accent);">
-                    <i class="bi bi-compass"></i>
-                    <span style="font-size: var(--font-size-sm); font-weight: 600;">+ Explore all subReadIts</span>
-                </a>
-                
-                <a href="/Home/StyleGuide" class="sidebar-item text-decoration-none mt-1" style="color: var(--text-secondary);">
-                    <i class="bi bi-palette"></i>
-                    <span style="font-size: var(--font-size-sm);">Design StyleGuide</span>
-                </a>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="app-main">
-            @RenderBody()
-        </main>
-
-        <!-- Right Aside - can be overridden by individual pages via section RightAside -->
-
-        <aside class="app-aside">
+    <!-- Right Aside -->
+    <aside class="app-aside">
+        <div style="position: sticky; top: calc(var(--header-h) + 16px);">
             @if (IsSectionDefined("RightAside"))
             {
                 @await RenderSectionAsync("RightAside", required: false)
             }
             else
             {
-                <!-- Default right aside content -->
-                <div class="card p-3 mb-3">
-                    <h6 class="fw-bold mb-2" style="color: var(--text-heading);">About ReadIt — IUBAT</h6>
-                    <p style="font-size: var(--font-size-sm); color: var(--text-secondary);" class="mb-3">
-                        ReadIt is a subject-focused community platform for IUBAT students and faculty.
+                <div class="right-card">
+                    <div class="right-card-title">
+                        <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
+                    </div>
+                    <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
+                        ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
                     </p>
-                    <div class="d-flex flex-column gap-2">
-                        <a href="/Courses" class="btn-outline w-100 text-center py-1">Browse SubSubjects</a>
-                        <a href="/Posts" class="btn-primary w-100 text-center py-1">Browse Content</a>
+                    <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+                        <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
+                        <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
                     </div>
                 </div>
-                <div class="card p-3">
-                    <h6 class="fw-bold mb-2" style="color: var(--text-heading);"><i class="bi bi-lightning-fill text-warning"></i> Quick Search Tips</h6>
-                    <ul class="ps-3 mb-0 text-secondary" style="font-size: 12px; line-height: 1.6;">
-                        <li>Search course codes like <strong>CSC391</strong></li>
-                        <li>Search topics like <strong>SQL</strong> or <strong>Notes</strong></li>
+                <div class="right-card">
+                    <div class="right-card-title">
+                        <i class="bi bi-lightning-fill" style="color: var(--warning);"></i> Quick Search Tips
+                    </div>
+                    <ul style="font-size: var(--text-sm); color: var(--text-secondary); padding-left: var(--sp-5); margin: 0; line-height: 1.8;">
+                        <li>Course codes like <strong>CSC391</strong></li>
+                        <li>Topics like <strong>SQL</strong> or <strong>Notes</strong></li>
+                        <li>Flair like <strong>Question</strong> or <strong>Meme</strong></li>
                     </ul>
                 </div>
             }
-        </aside>
+        </div>
+    </aside>
+</div>
+
+<!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header">
+        <img src="~/images/logo.svg" alt="ReadIt" style="height: 30px; width: auto;" />
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
+    <div class="offcanvas-body" style="display: flex; flex-direction: column; gap: var(--sp-1);">
 
-    <!-- Offcanvas Mobile Sidebar -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-        <div class="offcanvas-header border-bottom border-secondary">
-            <h5 class="offcanvas-title" id="mobileSidebarLabel">
-                <img src="~/images/logo.svg" alt="ReadIt Logo" style="height: 32px; width: auto;" />
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <form action="/Search" method="get" class="mb-3">
-                <input type="text" name="q" placeholder="Search..." class="form-control bg-dark text-white border-secondary mb-2" />
-                <button type="submit" class="btn-primary w-100 py-1">Search</button>
-            </form>
-            <nav class="d-flex flex-column gap-2 mb-4">
-                <a href="/" class="sidebar-item active"><i class="bi bi-house-door"></i> Home Feed</a>
-                <a href="/Courses" class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
-                <a href="/Posts" class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Content / Posts</a>
-            </nav>
-            <h6 class="text-uppercase fw-bold mb-3" style="color: var(--text-secondary); font-size: 11px;">IUBAT SubSubjects</h6>
-            <div class="d-flex flex-column gap-2">
-                <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 - Computer Architecture</a>
-                <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 - Data Structures</a>
-                <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 - Database Systems</a>
-                <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 - Numerical Analysis</a>
-            </div>
-        </div>
+        <!-- Mobile search -->
+        <form action="/Search" method="get" class="offcanvas-search" role="search">
+            <i class="bi bi-search" style="color: var(--text-muted); font-size: 14px;"></i>
+            <input type="text" name="q" placeholder="Search…" autocomplete="off" />
+            <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Go</button>
+        </form>
+
+        <div class="sidebar-label">Navigation</div>
+        <a href="/"             class="sidebar-item"><i class="bi bi-house-door"></i> Home Feed</a>
+        <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
+        <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
+        <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Posts</a>
+        <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
+
+        <hr class="divider" />
+        <div class="sidebar-label">IUBAT SubSubjects</div>
+
+        <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 — Computer Architecture</a>
+        <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 — Data Structures</a>
+        <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 — Database Systems</a>
+        <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 — Numerical Analysis</a>
     </div>
+</div>
 
-    <!-- Footer -->
-    <footer class="app-footer text-center mt-auto">
-        <div class="d-flex justify-content-center gap-3 mb-2" style="font-size: var(--font-size-sm);">
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">About ReadIt</a>
-            <span>·</span>
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">IUBAT Community</a>
-            <span>·</span>
-            <a href="#" class="text-decoration-none" style="color: var(--text-secondary);">Privacy & Terms</a>
-        </div>
-        <div style="font-size: 12px;">&copy; @DateTime.Now.Year ReadIt (IUBAT Edition). Built for students.</div>
-    </footer>
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="app-footer">
+    <div style="display: flex; justify-content: center; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-2);">
+        <a href="#">About ReadIt</a>
+        <span style="color: var(--border-light);">·</span>
+        <a href="#">IUBAT Community</a>
+        <span style="color: var(--border-light);">·</span>
+        <a href="#">Privacy & Terms</a>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--text-muted);">
+        &copy; @DateTime.Now.Year ReadIt — IUBAT Edition. Built for students.
+    </div>
+</footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

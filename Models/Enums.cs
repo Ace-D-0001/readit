@@ -21,7 +21,8 @@ namespace Read_It.Models
     public enum VoteTargetType
     {
         Post,
-        Comment
+        Comment,
+        Video
     }
 
     public enum CourseRole
