@@ -14,5 +14,8 @@ namespace Read_It.Models
         public virtual ICollection<CourseMembership> Memberships { get; set; } = new List<CourseMembership>();
         public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
         public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
+        /// <summary>Subject pages (courses) this user follows individually.</summary>
+        public virtual ICollection<CourseFollow> Following { get; set; } = new List<CourseFollow>();
     }
 }

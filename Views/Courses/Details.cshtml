@@ -1,84 +1,297 @@
 @model Read_It.Models.Course
 
 @{
-    ViewData["Title"] = Model.Code + " SubSubject";
+    ViewData["Title"] = Model.Code + " — SubReadIt";
+
+    // ViewBag data from controller
+    var videosByTopic     = ViewBag.VideosByTopic as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var outlineResources  = ViewBag.OutlineResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+    var qbResources       = ViewBag.QuestionBankResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+    int followerCount     = ViewBag.FollowerCount ?? 0;
+    bool isFollowing      = ViewBag.IsFollowing ?? false;
+
+    var deptNames = Model.CourseDepartments
+        .Select(cd => cd.Department?.Name ?? "")
+        .Where(n => !string.IsNullOrEmpty(n))
+        .ToList();
 }
 
-<!-- Course Header Card -->
+@section RightAside {
+<!-- ═══════════════════════════════════════════════════════════
+     RIGHT COLUMN — 3-ZONE LAYOUT
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- ─────────────────────────────────────────────────────────
+     TOP ZONE — Course Info + Follow
+     ─────────────────────────────────────────────────────────-->
+<div class="card p-3 mb-3">
+
+    <!-- Scoped Search -->
+    <div class="mb-3" style="position: relative;">
+        <i class="bi bi-search position-absolute" style="top: 50%; transform: translateY(-50%); left: 10px; color: var(--text-secondary); font-size: 13px;"></i>
+        <input type="text" id="right-col-search" placeholder="Search resources & topics…"
+               class="form-control bg-transparent text-white border-secondary ps-4"
+               style="font-size: 12px; height: 34px;" oninput="filterRightCol(this.value)" />
+    </div>
+
+    <!-- Course Outline -->
+    <div class="right-section mb-3" data-section-label="outline course outline syllabus">
+        <h6 class="fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+            <i class="bi bi-link-45deg text-primary fs-5"></i> Course Outline (Web Links)
+        </h6>
+        @if (outlineResources.Any())
+        {
+            @foreach (var r in outlineResources)
+            {
+                <a href="@r.Url" target="_blank" class="d-flex align-items-center gap-2 mb-1 text-decoration-none right-col-item"
+                   style="color: var(--accent); font-size: 12px;" data-label="@r.Title.ToLower() outline syllabus">
+                    <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
+                    <span class="text-truncate">@r.Title</span>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="text-secondary mb-0" style="font-size: 12px;">No outline uploaded yet.</p>
+        }
+    </div>
+
+    <!-- Question Bank -->
+    <div class="right-section mb-3" data-section-label="question bank past papers exam">
+        <h6 class="fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+            <i class="bi bi-collection-fill text-warning"></i> Question Bank
+        </h6>
+        @if (qbResources.Any())
+        {
+            @foreach (var r in qbResources)
+            {
+                <a href="@r.Url" target="_blank" class="d-flex align-items-center gap-2 mb-1 text-decoration-none right-col-item"
+                   style="color: var(--accent); font-size: 12px;" data-label="@r.Title.ToLower() question bank past">
+                    <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
+                    <span class="text-truncate">@r.Title</span>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="text-secondary mb-0" style="font-size: 12px;">No question bank uploaded yet.</p>
+        }
+    </div>
+
+    <!-- Follow Button -->
+    <div class="border-top pt-3" style="border-color: var(--border-default) !important;">
+        <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post" class="d-flex align-items-center gap-2">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary") py-1 px-3 flex-grow-1"
+                    style="font-size: 13px; font-weight: 600;">
+                @if (isFollowing)
+                {
+                    <i class="bi bi-check-circle-fill text-success me-1"></i><text>Following ✓</text>
+                }
+                else
+                {
+                    <i class="bi bi-plus-lg me-1"></i><text>Follow</text>
+                }
+            </button>
+            <span class="text-secondary" style="font-size: 12px; white-space: nowrap;">@followerCount followers</span>
+        </form>
+    </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────
+     MIDDLE ZONE — Best YouTube Videos by Topic
+     ─────────────────────────────────────────────────────────-->
+<div class="card p-3 mb-3">
+    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--text-heading); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+        <i class="bi bi-youtube text-danger fs-5"></i> Best YouTube Videos by Topic
+    </h6>
+
+    @if (videosByTopic != null && videosByTopic.Cast<object>().Any())
+    {
+        @foreach (var group in videosByTopic)
+        {
+            var topicVideos = group.Videos as IEnumerable<Read_It.Models.CourseVideo>;
+            if (topicVideos == null) continue;
+            var videoList = topicVideos.ToList();
+            string topicName = group.Topic as string ?? "";
+
+            <div class="mb-3 right-section" data-section-label="@topicName.ToLower() video youtube">
+
+                <!-- Topic heading -->
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold" style="font-size: 12px; color: var(--accent);">📌 @topicName</span>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <button type="button" class="btn p-0 border-0"
+                                style="font-size: 11px; color: var(--text-secondary);"
+                                onclick="toggleAddVideo('@topicName', '@Model.Code')">
+                            + add video
+                        </button>
+                    }
+                </div>
+
+                <!-- Video entries -->
+                @for (int i = 0; i < videoList.Count; i++)
+                {
+                    var video = videoList[i];
+                    bool isBest = i == 0;
+                    <div class="d-flex align-items-start gap-2 mb-2 right-col-item"
+                         data-label="@video.Title.ToLower() @topicName.ToLower() video">
+                        <div class="d-flex flex-column align-items-center gap-1 flex-shrink-0" style="width: 28px;">
+                            <form action="@Url.Action("UpvoteVideo", "Courses")" method="post" class="m-0 p-0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="videoId" value="@video.Id" />
+                                <input type="hidden" name="code"    value="@Model.Code" />
+                                <button type="submit" class="btn p-0 border-0" style="color: var(--text-secondary); line-height: 1;"
+                                        title="Upvote">
+                                    <i class="bi bi-arrow-up-circle-fill" style="color: var(--upvote, #ff4500); font-size: 14px;"></i>
+                                </button>
+                            </form>
+                            <span style="font-size: 10px; color: var(--text-secondary);">@video.UpVotes</span>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <a href="@video.VideoUrl" target="_blank" class="text-decoration-none d-flex align-items-start gap-1"
+                               style="font-size: 12px; color: @(isBest ? "var(--accent)" : "var(--text-primary)"); font-weight: @(isBest ? "600" : "400"); line-height: 1.35;">
+                                @if (isBest)
+                                {
+                                    <i class="bi bi-star-fill flex-shrink-0" style="color: gold; font-size: 11px; margin-top: 1px;"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-play-circle flex-shrink-0" style="color: var(--text-secondary); font-size: 11px; margin-top: 1px;"></i>
+                                }
+                                <span class="text-truncate">@video.Title</span>
+                            </a>
+                            @if (isBest)
+                            {
+                                <span style="font-size: 10px; color: gold;">⭐ Best in topic</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Hidden add-video inline form -->
+                <div id="add-video-form-@(Uri.EscapeDataString(topicName))" style="display: none;"
+                     class="mt-2 p-2 rounded" style="background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                    <form action="@Url.Action("AddVideo", "Courses")" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="code"  value="@Model.Code" />
+                        <input type="hidden" name="topic" value="@topicName" />
+                        <input type="text" name="title" placeholder="Video title" required
+                               class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
+                        <input type="url"  name="videoUrl" placeholder="YouTube URL" required
+                               class="form-control form-control-sm bg-transparent text-white border-secondary mb-2" style="font-size: 12px;" />
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn-primary py-0 px-2" style="font-size: 11px;">Add</button>
+                            <button type="button" class="action-btn py-0 px-1" style="font-size: 11px;"
+                                    onclick="toggleAddVideo('@topicName', '@Model.Code')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="text-secondary mb-0" style="font-size: 12px;">No videos submitted yet. Be the first!</p>
+    }
+
+    <!-- New topic: add video under a brand-new topic heading -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="border-top pt-3 mt-2" style="border-color: var(--border-default) !important;">
+            <button type="button" class="action-btn" style="font-size: 12px; color: var(--accent);"
+                    onclick="document.getElementById('new-topic-form').style.display='block'; this.style.display='none';">
+                <i class="bi bi-plus-circle"></i> Submit video under new topic
+            </button>
+            <div id="new-topic-form" style="display: none;">
+                <form action="@Url.Action("AddVideo", "Courses")" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="code" value="@Model.Code" />
+                    <input type="text" name="topic"    placeholder="Topic (e.g. Recursion)"  required class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
+                    <input type="text" name="title"    placeholder="Video title"              required class="form-control form-control-sm bg-transparent text-white border-secondary mb-1" style="font-size: 12px;" />
+                    <input type="url"  name="videoUrl" placeholder="YouTube URL"              required class="form-control form-control-sm bg-transparent text-white border-secondary mb-2" style="font-size: 12px;" />
+                    <button type="submit" class="btn-primary py-0 px-2" style="font-size: 11px;">Submit</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ─────────────────────────────────────────────────────────
+     BOTTOM ZONE — Placeholder (reserved for future feature)
+     ─────────────────────────────────────────────────────────-->
+<div class="card p-3 text-center" style="border-style: dashed; border-color: var(--border-light); opacity: 0.6;">
+    <i class="bi bi-hourglass-split mb-1 fs-4 text-secondary"></i>
+    <p class="text-secondary mb-0" style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;">Coming Soon<br><span style="font-size: 10px;">Reserved for a future feature</span></p>
+</div>
+
+<script>
+// Right-column keyword filter (no page reload)
+function filterRightCol(q) {
+    q = q.toLowerCase().trim();
+    document.querySelectorAll('.right-col-item').forEach(el => {
+        const label = (el.dataset.label || '') + ' ' + el.innerText.toLowerCase();
+        el.style.display = (!q || label.includes(q)) ? '' : 'none';
+    });
+    // Show/hide section wrappers based on whether they have visible children
+    document.querySelectorAll('.right-section').forEach(section => {
+        const visItems = section.querySelectorAll('.right-col-item:not([style*="display: none"])');
+        section.style.display = (!q || section.dataset.sectionLabel?.includes(q) || visItems.length > 0) ? '' : 'none';
+    });
+}
+// Toggle inline add-video form per topic
+function toggleAddVideo(topic, code) {
+    const id = 'add-video-form-' + encodeURIComponent(topic);
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+}
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN (CENTER COLUMN) CONTENT
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Course Header Banner -->
 <div class="card mb-4 p-0" style="overflow: hidden;">
     <div style="height: 120px; background: linear-gradient(90deg, var(--accent) 0%, #d83a00 100%);"></div>
-    
+
     <div class="card-body position-relative p-4" style="padding-top: 50px !important;">
-        <div class="bg-primary rounded-circle border border-4 position-absolute d-flex align-items-center justify-content-center shadow" 
+        <div class="rounded-circle border border-4 position-absolute d-flex align-items-center justify-content-center shadow"
              style="width: 80px; height: 80px; top: -40px; left: 24px; border-color: var(--bg-panel) !important; background-color: var(--accent) !important;">
              <h4 class="text-white m-0 fw-bold">@Model.Code.Substring(0, Math.Min(3, Model.Code.Length))</h4>
         </div>
 
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
-                <h2 class="mb-1" style="color: var(--text-heading); font-weight: 700;">c/@Model.Code — @Model.Title</h2>
-                <small class="text-secondary d-block mb-2">@Model.Department • IUBAT Faculty of Engineering & Technology</small>
-                <p class="text-secondary mb-3" style="max-width: 800px;">@Model.Description</p>
-            </div>
-
-            <div class="d-flex gap-2">
-                <a href="#" class="btn-primary"><i class="bi bi-plus-lg"></i> Join Community</a>
-                <a href="#" class="btn-outline"><i class="bi bi-bell"></i> Notify</a>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h2 class="mb-0" style="color: var(--text-heading); font-weight: 700;">c/@Model.Code — @Model.Title</h2>
+                    @if (Model.IsGeneral)
+                    {
+                        <span class="badge rounded-pill" style="background: var(--accent); color: #fff; font-size: 12px; padding: 3px 10px;">General</span>
+                    }
+                    else
+                    {
+                        @foreach (var n in deptNames)
+                        {
+                            <span class="badge rounded-pill" style="background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: 12px; padding: 3px 10px;">@n</span>
+                        }
+                    }
+                </div>
+                <p class="text-secondary mb-0" style="max-width: 700px;">@Model.Description</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Course Resources Section (Course Outlines, Playlists, Question Banks, Notes) -->
-<div class="card p-3 mb-4">
-    <h5 class="fw-bold mb-3" style="color: var(--text-heading);"><i class="bi bi-folder-symlink" style="color: var(--accent);"></i> Course Resources & Links</h5>
-    
-    @if (Model.Resources != null && Model.Resources.Any())
-    {
-        <div class="row row-cols-1 row-cols-md-2 g-2">
-            @foreach (var res in Model.Resources)
-            {
-                <div class="col">
-                    <a href="@res.Url" target="_blank" class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none" style="background: var(--bg-panel-alt); border: 1px solid var(--border-default); color: var(--text-primary);">
-                        @if (res.Type == Read_It.Models.CourseResourceType.Outline)
-                        {
-                            <i class="bi bi-file-earmark-pdf fs-4 text-danger"></i>
-                        }
-                        else if (res.Type == Read_It.Models.CourseResourceType.Playlist)
-                        {
-                            <i class="bi bi-youtube fs-4 text-danger"></i>
-                        }
-                        else if (res.Type == Read_It.Models.CourseResourceType.QuestionBank)
-                        {
-                            <i class="bi bi-collection-fill fs-4 text-warning"></i>
-                        }
-                        else
-                        {
-                            <i class="bi bi-journal-text fs-4 text-info"></i>
-                        }
-                        
-                        <div class="text-truncate">
-                            <div class="fw-bold text-truncate" style="font-size: var(--font-size-sm); color: var(--text-heading);">@res.Title</div>
-                            <small class="text-secondary">@res.Type.ToString()</small>
-                        </div>
-                    </a>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <p class="text-secondary mb-0" style="font-size: var(--font-size-sm);">No resources attached yet. Students & instructors can share course outlines, notes, and playlists here!</p>
-    }
-</div>
-
-<!-- Feed Header -->
+<!-- Post Feed Header -->
 <div class="d-flex align-items-center justify-content-between mb-3 px-1">
     <h5 class="fw-bold m-0" style="color: var(--text-heading);">Subject Feed</h5>
     <a href="/Posts" class="btn-outline py-1 px-3" style="font-size: var(--font-size-sm);">View All Posts</a>
 </div>
 
-<!-- SubSubject Posts Feed -->
+<!-- SubSubject Posts Feed (center column — unchanged) -->
 @if (Model.Posts != null && Model.Posts.Any())
 {
     <div class="d-flex flex-column gap-3">
@@ -100,12 +313,11 @@
                         <span class="flair-badge ms-2">@post.Flair.ToString()</span>
                     </div>
 
-                    <!-- Post Title click zooms in to Post Details page -->
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
                         @post.Title
                     </a>
-                    
-                    <p class="post-body-preview text-truncate" style="max-width: 750px;">
+
+                    <p class="post-body-preview text-truncate" style="max-width: 700px;">
                         @post.Body
                     </p>
 
@@ -115,7 +327,7 @@
                             <span>@(post.Comments?.Count ?? 0) Comments</span>
                         </a>
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
-                            <i class="bi bi-arrows-angle-expand"></i> Zoom In / Read Comments
+                            <i class="bi bi-arrows-angle-expand"></i> Read Full
                         </a>
                     </div>
                 </div>
@@ -127,6 +339,6 @@ else
 {
     <div class="card p-5 text-center text-secondary">
         <h5 class="mb-2">No posts in c/@Model.Code yet</h5>
-        <p class="mb-0">Be the first student or faculty member to create a post in this subsubject!</p>
+        <p class="mb-0">Be the first to create a post in this community!</p>
     </div>
 }

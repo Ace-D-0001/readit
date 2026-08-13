@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReadIt</title>
+    <link rel="icon" type="image/svg+xml" href="~/images/logo-mark.svg" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -15,8 +16,8 @@
             <button class="btn text-light d-md-none p-0 border-0 fs-4" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <a href="/" class="text-decoration-none fw-bold fs-4 d-flex align-items-center gap-2" style="color: var(--accent);">
-                <i class="bi bi-book-half"></i> ReadIt
+            <a href="/" class="text-decoration-none d-flex align-items-center gap-2">
+                <img src="~/images/logo.svg" alt="ReadIt Logo" style="height: 38px; width: auto;" />
             </a>
         </div>
 
@@ -106,33 +107,43 @@
             @RenderBody()
         </main>
 
-        <!-- Right Aside -->
-        <aside class="app-aside">
-            <div class="card p-3 mb-3">
-                <h6 class="fw-bold mb-2" style="color: var(--text-heading);">About ReadIt — IUBAT</h6>
-                <p style="font-size: var(--font-size-sm); color: var(--text-secondary);" class="mb-3">
-                    ReadIt is a subject-focused community platform for IUBAT students and faculty. Access course outlines, notes, question banks, and discuss topics with classmates.
-                </p>
-                <div class="d-flex flex-column gap-2">
-                    <a href="/Courses" class="btn-outline w-100 text-center py-1">Browse SubSubjects</a>
-                    <a href="/Posts" class="btn-primary w-100 text-center py-1">Browse Content</a>
-                </div>
-            </div>
+        <!-- Right Aside - can be overridden by individual pages via section RightAside -->
 
-            <div class="card p-3">
-                <h6 class="fw-bold mb-2" style="color: var(--text-heading);"><i class="bi bi-lightning-fill text-warning"></i> Quick Search Tips</h6>
-                <ul class="ps-3 mb-0 text-secondary" style="font-size: 12px; line-height: 1.6;">
-                    <li>Search course codes like <strong>CSC391</strong> or <strong>CSC433</strong></li>
-                    <li>Search topics like <strong>QuickSort</strong>, <strong>SQL</strong>, or <strong>Notes</strong></li>
-                </ul>
-            </div>
+        <aside class="app-aside">
+            @if (IsSectionDefined("RightAside"))
+            {
+                @await RenderSectionAsync("RightAside", required: false)
+            }
+            else
+            {
+                <!-- Default right aside content -->
+                <div class="card p-3 mb-3">
+                    <h6 class="fw-bold mb-2" style="color: var(--text-heading);">About ReadIt — IUBAT</h6>
+                    <p style="font-size: var(--font-size-sm); color: var(--text-secondary);" class="mb-3">
+                        ReadIt is a subject-focused community platform for IUBAT students and faculty.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/Courses" class="btn-outline w-100 text-center py-1">Browse SubSubjects</a>
+                        <a href="/Posts" class="btn-primary w-100 text-center py-1">Browse Content</a>
+                    </div>
+                </div>
+                <div class="card p-3">
+                    <h6 class="fw-bold mb-2" style="color: var(--text-heading);"><i class="bi bi-lightning-fill text-warning"></i> Quick Search Tips</h6>
+                    <ul class="ps-3 mb-0 text-secondary" style="font-size: 12px; line-height: 1.6;">
+                        <li>Search course codes like <strong>CSC391</strong></li>
+                        <li>Search topics like <strong>SQL</strong> or <strong>Notes</strong></li>
+                    </ul>
+                </div>
+            }
         </aside>
     </div>
 
     <!-- Offcanvas Mobile Sidebar -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
         <div class="offcanvas-header border-bottom border-secondary">
-            <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: var(--accent);"><i class="bi bi-book-half"></i> ReadIt</h5>
+            <h5 class="offcanvas-title" id="mobileSidebarLabel">
+                <img src="~/images/logo.svg" alt="ReadIt Logo" style="height: 32px; width: auto;" />
+            </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">

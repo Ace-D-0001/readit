@@ -62,14 +62,28 @@ namespace Read_It.Migrations
                     Code = table.Column<string>(type: "TEXT", nullable: false),
                     Title = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
-                    Department = table.Column<string>(type: "TEXT", nullable: false),
                     IconImageUrl = table.Column<string>(type: "TEXT", nullable: true),
                     BannerImageUrl = table.Column<string>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsGeneral = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Courses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Departments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Abbreviation = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Departments", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -201,6 +215,31 @@ namespace Read_It.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CourseFollows",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    CourseId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FollowedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseFollows", x => new { x.UserId, x.CourseId });
+                    table.ForeignKey(
+                        name: "FK_CourseFollows_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseFollows_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CourseMemberships",
                 columns: table => new
                 {
@@ -256,6 +295,37 @@ namespace Read_It.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CourseVideos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CourseId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Topic = table.Column<string>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: false),
+                    VideoUrl = table.Column<string>(type: "TEXT", nullable: false),
+                    SubmittedByUserId = table.Column<string>(type: "TEXT", nullable: false),
+                    UpVotes = table.Column<int>(type: "INTEGER", nullable: false),
+                    SubmittedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseVideos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CourseVideos_AspNetUsers_SubmittedByUserId",
+                        column: x => x.SubmittedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CourseVideos_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Posts",
                 columns: table => new
                 {
@@ -284,6 +354,30 @@ namespace Read_It.Migrations
                         name: "FK_Posts_Courses_CourseId",
                         column: x => x.CourseId,
                         principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CourseDepartments",
+                columns: table => new
+                {
+                    CourseId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DepartmentId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseDepartments", x => new { x.CourseId, x.DepartmentId });
+                    table.ForeignKey(
+                        name: "FK_CourseDepartments_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseDepartments_Departments_DepartmentId",
+                        column: x => x.DepartmentId,
+                        principalTable: "Departments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -378,6 +472,16 @@ namespace Read_It.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CourseDepartments_DepartmentId",
+                table: "CourseDepartments",
+                column: "DepartmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseFollows_CourseId",
+                table: "CourseFollows",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CourseMemberships_CourseId",
                 table: "CourseMemberships",
                 column: "CourseId");
@@ -391,6 +495,16 @@ namespace Read_It.Migrations
                 name: "IX_CourseResources_UploadedByUserId",
                 table: "CourseResources",
                 column: "UploadedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseVideos_CourseId",
+                table: "CourseVideos",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseVideos_SubmittedByUserId",
+                table: "CourseVideos",
+                column: "SubmittedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Posts_CourseId",
@@ -430,10 +544,19 @@ namespace Read_It.Migrations
                 name: "Comments");
 
             migrationBuilder.DropTable(
+                name: "CourseDepartments");
+
+            migrationBuilder.DropTable(
+                name: "CourseFollows");
+
+            migrationBuilder.DropTable(
                 name: "CourseMemberships");
 
             migrationBuilder.DropTable(
                 name: "CourseResources");
+
+            migrationBuilder.DropTable(
+                name: "CourseVideos");
 
             migrationBuilder.DropTable(
                 name: "Votes");
@@ -443,6 +566,9 @@ namespace Read_It.Migrations
 
             migrationBuilder.DropTable(
                 name: "Posts");
+
+            migrationBuilder.DropTable(
+                name: "Departments");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

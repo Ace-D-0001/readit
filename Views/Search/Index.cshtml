@@ -71,7 +71,11 @@ else
                                     </div>
                                     <div>
                                         <h6 class="fw-bold m-0" style="color: var(--text-heading);">@course.Code - @course.Title</h6>
-                                        <small class="text-secondary">@course.Department • @(course.Posts?.Count ?? 0) posts</small>
+                                        <small class="text-secondary">
+                                            @if (course.IsGeneral) { <span>General Course</span> }
+                                            else { @string.Join(", ", course.CourseDepartments.Select(cd => cd.Department?.Abbreviation ?? "").Where(s => s != "")) }
+                                            • @(course.Posts?.Count ?? 0) posts
+                                        </small>
                                     </div>
                                 </div>
                             </div>

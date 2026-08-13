@@ -274,16 +274,15 @@ namespace Read_It.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("IconImageUrl")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsGeneral")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -292,6 +291,39 @@ namespace Read_It.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("Read_It.Models.CourseDepartment", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("CourseId", "DepartmentId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("CourseDepartments");
+                });
+
+            modelBuilder.Entity("Read_It.Models.CourseFollow", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FollowedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "CourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CourseFollows");
                 });
 
             modelBuilder.Entity("Read_It.Models.CourseMembership", b =>
@@ -348,6 +380,65 @@ namespace Read_It.Migrations
                     b.HasIndex("UploadedByUserId");
 
                     b.ToTable("CourseResources");
+                });
+
+            modelBuilder.Entity("Read_It.Models.CourseVideo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubmittedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UpVotes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("VideoUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.ToTable("CourseVideos");
+                });
+
+            modelBuilder.Entity("Read_It.Models.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Abbreviation")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("Read_It.Models.Post", b =>
@@ -498,6 +589,44 @@ namespace Read_It.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Read_It.Models.CourseDepartment", b =>
+                {
+                    b.HasOne("Read_It.Models.Course", "Course")
+                        .WithMany("CourseDepartments")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Read_It.Models.Department", "Department")
+                        .WithMany("CourseDepartments")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("Read_It.Models.CourseFollow", b =>
+                {
+                    b.HasOne("Read_It.Models.Course", "Course")
+                        .WithMany("Followers")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Read_It.Models.ApplicationUser", "User")
+                        .WithMany("Following")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Read_It.Models.CourseMembership", b =>
                 {
                     b.HasOne("Read_It.Models.Course", "Course")
@@ -534,6 +663,25 @@ namespace Read_It.Migrations
                     b.Navigation("UploadedByUser");
                 });
 
+            modelBuilder.Entity("Read_It.Models.CourseVideo", b =>
+                {
+                    b.HasOne("Read_It.Models.Course", "Course")
+                        .WithMany("Videos")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Read_It.Models.ApplicationUser", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
             modelBuilder.Entity("Read_It.Models.Post", b =>
                 {
                     b.HasOne("Read_It.Models.Course", "Course")
@@ -568,6 +716,8 @@ namespace Read_It.Migrations
                 {
                     b.Navigation("Comments");
 
+                    b.Navigation("Following");
+
                     b.Navigation("Memberships");
 
                     b.Navigation("Posts");
@@ -580,11 +730,22 @@ namespace Read_It.Migrations
 
             modelBuilder.Entity("Read_It.Models.Course", b =>
                 {
+                    b.Navigation("CourseDepartments");
+
+                    b.Navigation("Followers");
+
                     b.Navigation("Memberships");
 
                     b.Navigation("Posts");
 
                     b.Navigation("Resources");
+
+                    b.Navigation("Videos");
+                });
+
+            modelBuilder.Entity("Read_It.Models.Department", b =>
+                {
+                    b.Navigation("CourseDepartments");
                 });
 
             modelBuilder.Entity("Read_It.Models.Post", b =>

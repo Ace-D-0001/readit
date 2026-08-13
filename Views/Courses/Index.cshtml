@@ -1,33 +1,98 @@
 @model IEnumerable<Read_It.Models.Course>
 
 @{
-    ViewData["Title"] = "Courses";
+    ViewData["Title"] = "All SubSubjects — ReadIt IUBAT";
+    var departments  = ViewBag.Departments as IEnumerable<Read_It.Models.Department> ?? Enumerable.Empty<Read_It.Models.Department>();
+    int? activeDeptId = ViewBag.ActiveDeptId as int?;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 700;">All Courses</h1>
+<!-- Header -->
+<div class="mb-4">
+    <h1 class="h3 fw-bold mb-1" style="color: var(--text-heading);">All SubSubjects</h1>
+    <p class="text-secondary mb-0" style="font-size: var(--font-size-sm);">Browse every course community at IUBAT. General courses appear in every department view.</p>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-    @foreach (var course in Model)
+<!-- Department Filter Pills -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="@Url.Action("Index", "Courses")"
+       class="py-1 px-3 rounded-pill text-decoration-none fw-semibold"
+       style="font-size: var(--font-size-sm);
+              background: @(activeDeptId == null ? "var(--accent)" : "var(--bg-panel-alt)");
+              color: @(activeDeptId == null ? "#fff" : "var(--text-secondary)");
+              border: 1px solid @(activeDeptId == null ? "var(--accent)" : "var(--border-default)");">
+        All
+    </a>
+    @foreach (var dept in departments)
     {
-        <div class="col">
-            <a href="@Url.Action("Details", "Courses", new { code = course.Code })" class="text-decoration-none h-100 d-block">
-                <div class="card h-100" style="transition: border-color 0.15s ease, background-color 0.15s ease;">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background-color: var(--accent) !important;">
-                                <span class="text-white fw-bold">@course.Code.Substring(0, 3)</span>
-                            </div>
-                            <div>
-                                <h5 class="card-title m-0" style="color: var(--text-heading); font-weight: 600;">@course.Code</h5>
-                                <small class="text-secondary">@course.Department</small>
-                            </div>
-                        </div>
-                        <p class="card-text text-secondary mb-0">@course.Title</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+        <a href="@Url.Action("Index", "Courses", new { deptId = dept.Id })"
+           class="py-1 px-3 rounded-pill text-decoration-none fw-semibold"
+           style="font-size: var(--font-size-sm);
+                  background: @(activeDeptId == dept.Id ? "var(--accent)" : "var(--bg-panel-alt)");
+                  color: @(activeDeptId == dept.Id ? "#fff" : "var(--text-secondary)");
+                  border: 1px solid @(activeDeptId == dept.Id ? "var(--accent)" : "var(--border-default)");">
+            @dept.Abbreviation
+        </a>
     }
 </div>
+
+<!-- Course Cards Grid -->
+@if (Model != null && Model.Any())
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var course in Model)
+        {
+            var deptNames = course.CourseDepartments
+                .Select(cd => cd.Department?.Abbreviation ?? "")
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList();
+
+            <div class="col">
+                <a href="@Url.Action("Details", "Courses", new { code = course.Code })" class="text-decoration-none h-100 d-block">
+                    <div class="card h-100 p-3" style="transition: border-color 0.15s ease, background-color 0.15s ease;">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <!-- Course icon -->
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 text-white fw-bold"
+                                 style="width: 48px; height: 48px; background-color: var(--accent); font-size: 13px;">
+                                @course.Code.Substring(0, Math.Min(3, course.Code.Length))
+                            </div>
+
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                    <h5 class="card-title m-0 fw-bold" style="color: var(--text-heading);">@course.Code</h5>
+                                    @if (course.IsGeneral)
+                                    {
+                                        <!-- General badge — orange -->
+                                        <span class="badge rounded-pill" style="background: var(--accent); color: #fff; font-size: 10px; padding: 2px 8px;">General</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var abbr in deptNames)
+                                        {
+                                            <span class="badge rounded-pill" style="background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: 10px; padding: 2px 8px;">@abbr</span>
+                                        }
+                                    }
+                                </div>
+                                <p class="text-secondary mb-0" style="font-size: var(--font-size-sm);">@course.Title</p>
+                            </div>
+                        </div>
+
+                        <p class="text-secondary mb-3" style="font-size: 12px; line-height: 1.5;">@course.Description</p>
+
+                        <div class="d-flex gap-3 mt-auto" style="font-size: 12px; color: var(--text-secondary);">
+                            <span><i class="bi bi-file-post"></i> @(course.Posts?.Count ?? 0) posts</span>
+                            <span><i class="bi bi-person-check"></i> @(course.Followers?.Count ?? 0) followers</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card p-5 text-center text-secondary">
+        <i class="bi bi-search fs-1 mb-2"></i>
+        <h5>No courses found</h5>
+        <p class="mb-0">Try selecting a different department or <a href="@Url.Action("Index", "Courses")" style="color: var(--accent);">view all courses</a>.</p>
+    </div>
+}

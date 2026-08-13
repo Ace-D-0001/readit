@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120">
+  <g id="logo-mark" fill="#FF4500">
+    <!-- Left & Right Open Book Chat Bubble -->
+    <path d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
+    <path d="M 112 42 C 112 34, 116 28, 124 26 L 132 24 C 140 22, 148 28, 148 36 L 148 84 C 148 92, 140 98, 132 96 L 112 92 Z" />
+    <path d="M 44 26 L 96 36 L 96 92 L 44 82 Z" fill="#FF5414" />
+    <path d="M 108 42 C 108 34, 114 27, 124 25 L 134 23 C 142 21, 148 27, 148 35 L 148 83 C 148 90, 142 96, 134 94 L 108 90 Z" fill="#FF4500" />
+    
+    <!-- Outer Speech Bubble / Book Base Contour -->
+    <path d="M 32 30 C 22 30 16 38 16 48 L 16 72 C 16 82 22 90 32 90 L 32 106 C 32 110 37 112 40 109 L 56 94 L 98 94 C 108 94 116 86 116 76 L 116 68 L 128 68 C 136 68 142 62 142 54 L 142 38 C 142 30 136 24 128 24 L 96 24 C 92 24 88 22 84 20 L 48 20 C 38 20 32 24 32 30 Z" />
+    <path d="M 116 40 L 126 38 C 132 37, 136 41, 136 47 L 136 75 C 136 81, 132 85, 126 84 L 116 82 Z" fill="#FF4500" />
+
+    <!-- Cute Eyes -->
+    <circle cx="58" cy="56" r="6.5" fill="#FFFFFF" />
+    <circle cx="94" cy="56" r="6.5" fill="#FFFFFF" />
+  </g>
+
+  <!-- Brand Name Typography -->
+  <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+</svg>
