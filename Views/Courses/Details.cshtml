@@ -265,7 +265,9 @@
     </div>
 
     <!-- Real Embedded YouTube Video / Audio Container -->
-    <div id="sp-yt-frame" style="margin-bottom: 8px;"></div>
+    <div id="sp-yt-frame" style="margin-bottom: 8px;">
+        <div id="yt-player-element"></div>
+    </div>
 
     <!-- Track Info -->
     <div class="sp-track-row" style="margin-bottom: 6px;">
@@ -273,6 +275,13 @@
             <div id="sp-title" class="sp-track-title">Lofi Hip Hop Radio</div>
             <div id="sp-artist" class="sp-track-artist">Lofi Girl (Live 24/7)</div>
         </div>
+    </div>
+
+    <!-- Interactive Time Progress Slider (Drag / Seek to any position!) -->
+    <div class="sp-progress-wrapper" style="margin-bottom: 8px;">
+        <span id="sp-time-current">0:00</span>
+        <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline to jump to any part of song" />
+        <span id="sp-time-total">LIVE</span>
     </div>
 
     <!-- Controls & Volume -->
