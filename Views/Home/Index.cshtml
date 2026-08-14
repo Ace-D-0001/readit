@@ -8,54 +8,66 @@
 
 <div style="display: flex; flex-direction: column; gap: var(--sp-4);">
 
-    <!-- Hero / Night-Before-Exam Emergency Banner -->
-    <div class="hero-card fade-up" style="border: 1.5px solid var(--accent); background: linear-gradient(135deg, rgba(255, 69, 0, 0.1) 0%, var(--bg-panel) 100%);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: var(--sp-2);">
-            <span class="flair-badge" style="background: var(--accent); color: #fff;">🚨 Night Before Exam?</span>
-            <h2 style="margin: 0; font-size: var(--text-2xl);">IUBAT Exam &amp; Study Community</h2>
-        </div>
-        <p style="color: var(--text-primary); font-size: var(--text-md); max-width: 600px; margin: 0 auto var(--sp-4);">
-            Instant access to course outlines, solved past papers, lecture cheat sheets, and emergency Q&amp;A.
+    <!-- Clean Hero Banner -->
+    <div class="hero-card fade-up">
+        <h2 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: var(--sp-2);">
+            IUBAT SubSubjects
+        </h2>
+        <p style="color: var(--text-secondary); font-size: var(--text-md); max-width: 540px; margin: 0 auto var(--sp-4);">
+            Select a subReadIt community to view course outlines, question banks, video playlists, and student discussions.
         </p>
 
-        <!-- Quick SubSubject Exam Shortcuts -->
-        <div style="display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-4);">
-            <a href="/Courses/Details?code=CSC391" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
-                ⚡ <strong>CSC391</strong> Data Structures &amp; Papers
+        <!-- SubSubject Quick Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-5); text-align: left;">
+            <a href="/Courses/Details?code=CSC247" class="card p-3" style="display: flex; align-items: center; gap: var(--sp-3); transition: border-color 0.15s ease;">
+                <span class="avatar avatar-sm" style="background: #22c55e; flex-shrink: 0;">C</span>
+                <div>
+                    <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-heading);">CSC247</div>
+                    <div style="font-size: var(--text-xs); color: var(--text-secondary);">Computer Architecture</div>
+                </div>
             </a>
-            <a href="/Courses/Details?code=CSC433" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
-                ⚡ <strong>CSC433</strong> DBMS &amp; Past Queries
+            <a href="/Courses/Details?code=CSC391" class="card p-3" style="display: flex; align-items: center; gap: var(--sp-3); transition: border-color 0.15s ease;">
+                <span class="avatar avatar-sm" style="background: #3b82f6; flex-shrink: 0;">C</span>
+                <div>
+                    <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-heading);">CSC391</div>
+                    <div style="font-size: var(--text-xs); color: var(--text-secondary);">Data Structures</div>
+                </div>
             </a>
-            <a href="/Courses/Details?code=CSC247" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
-                ⚡ <strong>CSC247</strong> Architecture Papers
+            <a href="/Courses/Details?code=CSC433" class="card p-3" style="display: flex; align-items: center; gap: var(--sp-3); transition: border-color 0.15s ease;">
+                <span class="avatar avatar-sm" style="background: #a855f7; flex-shrink: 0;">C</span>
+                <div>
+                    <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-heading);">CSC433</div>
+                    <div style="font-size: var(--text-xs); color: var(--text-secondary);">Database Systems</div>
+                </div>
             </a>
-            <a href="/Courses/Details?code=MAT247" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
-                ⚡ <strong>MAT247</strong> Numerical Solved Papers
+            <a href="/Courses/Details?code=MAT247" class="card p-3" style="display: flex; align-items: center; gap: var(--sp-3); transition: border-color 0.15s ease;">
+                <span class="avatar avatar-sm" style="background: #0ea5e9; flex-shrink: 0;">M</span>
+                <div>
+                    <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-heading);">MAT247</div>
+                    <div style="font-size: var(--text-xs); color: var(--text-secondary);">Numerical Analysis</div>
+                </div>
             </a>
         </div>
 
         <div class="hero-btns">
-            <a href="/Posts/Create" class="btn-primary"><i class="bi bi-question-circle-fill"></i> Ask an Urgent Question</a>
-            <a href="/Courses"      class="btn-outline">Browse All SubSubjects</a>
+            <a href="/Courses"      class="btn-primary">Explore All SubReadIts</a>
+            <a href="/Posts/Create" class="btn-outline"><i class="bi bi-pencil-square"></i> Create Post</a>
         </div>
     </div>
 
-    <!-- Feed Label & Sorting / Flair Tabs -->
+    <!-- Feed Label & Sorting Tabs -->
     <div class="feed-label">
-        <h6>Recent Student &amp; Faculty Discussions</h6>
-        <div style="display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;">
-            <!-- Sort Pills -->
-            <div class="dept-tabs" style="margin-bottom: 0;">
-                <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
-                    <i class="bi bi-fire"></i> Hot
-                </a>
-                <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
-                    <i class="bi bi-star"></i> Top
-                </a>
-                <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
-                    <i class="bi bi-sparkles"></i> New
-                </a>
-            </div>
+        <h6>Recent Discussions</h6>
+        <div class="dept-tabs" style="margin-bottom: 0;">
+            <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
+                <i class="bi bi-fire"></i> Hot
+            </a>
+            <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
+                <i class="bi bi-star"></i> Top
+            </a>
+            <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
+                <i class="bi bi-sparkles"></i> New
+            </a>
         </div>
     </div>
 
@@ -65,7 +77,6 @@
         @foreach (var post in Model)
         {
             int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
-            bool isExamRelated = post.Flair == Read_It.Models.PostFlair.Question || post.Flair == Read_It.Models.PostFlair.Notes || post.Flair == Read_It.Models.PostFlair.Announcement;
 
             <article class="post-card fade-up">
                 <!-- Vote column -->
@@ -98,11 +109,7 @@
                 <!-- Body column -->
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="flair-badge" style="@(post.Flair == Read_It.Models.PostFlair.Notes ? "background: rgba(70, 209, 96, 0.15); color: #46d160;" : "")">
-                            @if (post.Flair == Read_It.Models.PostFlair.Notes) { <i class="bi bi-file-earmark-text-fill"></i> }
-                            else if (post.Flair == Read_It.Models.PostFlair.Question) { <i class="bi bi-question-circle-fill"></i> }
-                            @post.Flair.ToString()
-                        </span>
+                        <span class="flair-badge">@post.Flair.ToString()</span>
                         <span>
                             <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
                             &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a>
