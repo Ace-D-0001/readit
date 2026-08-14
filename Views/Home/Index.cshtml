@@ -8,29 +8,54 @@
 
 <div style="display: flex; flex-direction: column; gap: var(--sp-4);">
 
-    <!-- Hero Banner -->
-    <div class="hero-card fade-up">
-        <h2>IUBAT Subject Communities</h2>
-        <p>Find your course outline, YouTube playlists, question banks, lecture notes — and discuss with classmates.</p>
+    <!-- Hero / Night-Before-Exam Emergency Banner -->
+    <div class="hero-card fade-up" style="border: 1.5px solid var(--accent); background: linear-gradient(135deg, rgba(255, 69, 0, 0.1) 0%, var(--bg-panel) 100%);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: var(--sp-2);">
+            <span class="flair-badge" style="background: var(--accent); color: #fff;">🚨 Night Before Exam?</span>
+            <h2 style="margin: 0; font-size: var(--text-2xl);">IUBAT Exam &amp; Study Community</h2>
+        </div>
+        <p style="color: var(--text-primary); font-size: var(--text-md); max-width: 600px; margin: 0 auto var(--sp-4);">
+            Instant access to course outlines, solved past papers, lecture cheat sheets, and emergency Q&amp;A.
+        </p>
+
+        <!-- Quick SubSubject Exam Shortcuts -->
+        <div style="display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-4);">
+            <a href="/Courses/Details?code=CSC391" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
+                ⚡ <strong>CSC391</strong> Data Structures &amp; Papers
+            </a>
+            <a href="/Courses/Details?code=CSC433" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
+                ⚡ <strong>CSC433</strong> DBMS &amp; Past Queries
+            </a>
+            <a href="/Courses/Details?code=CSC247" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
+                ⚡ <strong>CSC247</strong> Architecture Papers
+            </a>
+            <a href="/Courses/Details?code=MAT247" class="btn-outline" style="font-size: var(--text-xs); padding: 5px 12px; border-color: var(--border-default); color: var(--text-primary);">
+                ⚡ <strong>MAT247</strong> Numerical Solved Papers
+            </a>
+        </div>
+
         <div class="hero-btns">
-            <a href="/Posts/Create" class="btn-primary"><i class="bi bi-pencil-square"></i> Create Post</a>
+            <a href="/Posts/Create" class="btn-primary"><i class="bi bi-question-circle-fill"></i> Ask an Urgent Question</a>
             <a href="/Courses"      class="btn-outline">Browse All SubSubjects</a>
         </div>
     </div>
 
-    <!-- Feed Label & Sorting Tabs -->
+    <!-- Feed Label & Sorting / Flair Tabs -->
     <div class="feed-label">
         <h6>Recent Student &amp; Faculty Discussions</h6>
-        <div class="dept-tabs" style="margin-bottom: 0;">
-            <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
-                <i class="bi bi-fire"></i> Hot
-            </a>
-            <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
-                <i class="bi bi-star"></i> Top
-            </a>
-            <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
-                <i class="bi bi-sparkles"></i> New
-            </a>
+        <div style="display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;">
+            <!-- Sort Pills -->
+            <div class="dept-tabs" style="margin-bottom: 0;">
+                <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
+                    <i class="bi bi-fire"></i> Hot
+                </a>
+                <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
+                    <i class="bi bi-star"></i> Top
+                </a>
+                <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
+                    <i class="bi bi-sparkles"></i> New
+                </a>
+            </div>
         </div>
     </div>
 
@@ -40,6 +65,7 @@
         @foreach (var post in Model)
         {
             int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
+            bool isExamRelated = post.Flair == Read_It.Models.PostFlair.Question || post.Flair == Read_It.Models.PostFlair.Notes || post.Flair == Read_It.Models.PostFlair.Announcement;
 
             <article class="post-card fade-up">
                 <!-- Vote column -->
@@ -72,7 +98,11 @@
                 <!-- Body column -->
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="flair-badge">@post.Flair.ToString()</span>
+                        <span class="flair-badge" style="@(post.Flair == Read_It.Models.PostFlair.Notes ? "background: rgba(70, 209, 96, 0.15); color: #46d160;" : "")">
+                            @if (post.Flair == Read_It.Models.PostFlair.Notes) { <i class="bi bi-file-earmark-text-fill"></i> }
+                            else if (post.Flair == Read_It.Models.PostFlair.Question) { <i class="bi bi-question-circle-fill"></i> }
+                            @post.Flair.ToString()
+                        </span>
                         <span>
                             <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
                             &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a>

@@ -15,6 +15,9 @@
         .Select(cd => cd.Department?.Name ?? "")
         .Where(n => !string.IsNullOrEmpty(n))
         .ToList();
+
+    var firstOutline = outlineResources.FirstOrDefault();
+    var firstQb = qbResources.FirstOrDefault();
 }
 
 @section RightAside {
@@ -299,6 +302,37 @@ function toggleForm(id) {
     </div>
 </div>
 
+<!-- ⚡ Night-Before-Exam Quick Kit Box -->
+<div class="card p-3 mb-4" style="background: linear-gradient(135deg, rgba(255, 69, 0, 0.12) 0%, var(--bg-panel) 100%); border: 1.5px solid var(--accent);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-lightning-charge-fill" style="color: var(--accent); font-size: 18px;"></i>
+            <span style="font-weight: 800; color: var(--text-heading); font-size: var(--text-md); text-transform: uppercase; letter-spacing: 0.5px;">
+                @Model.Code Exam Survival Kit
+            </span>
+        </div>
+        <span style="font-size: var(--text-xs); color: var(--text-secondary);">Everything you need for exam night</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-2);">
+        @if (firstQb != null)
+        {
+            <a href="@firstQb.Url" target="_blank" class="btn-outline" style="text-align: left; justify-content: flex-start; font-size: 12px; padding: 8px 12px; background: var(--bg-panel);">
+                <i class="bi bi-collection-fill" style="color: var(--warning);"></i> Past Exam Q-Bank
+            </a>
+        }
+        @if (firstOutline != null)
+        {
+            <a href="@firstOutline.Url" target="_blank" class="btn-outline" style="text-align: left; justify-content: flex-start; font-size: 12px; padding: 8px 12px; background: var(--bg-panel);">
+                <i class="bi bi-link-45deg text-primary"></i> Syllabus &amp; Topics
+            </a>
+        }
+        <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-outline" style="text-align: left; justify-content: flex-start; font-size: 12px; padding: 8px 12px; background: var(--bg-panel);">
+            <i class="bi bi-question-circle-fill text-danger"></i> Ask Exam Question
+        </a>
+    </div>
+</div>
+
 <!-- Post Feed Header & Sorting -->
 <div class="feed-label">
     <h6>Subject Feed</h6>
@@ -351,7 +385,11 @@ function toggleForm(id) {
                 </div>
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="flair-badge">@post.Flair.ToString()</span>
+                        <span class="flair-badge" style="@(post.Flair == Read_It.Models.PostFlair.Notes ? "background: rgba(70, 209, 96, 0.15); color: #46d160;" : "")">
+                            @if (post.Flair == Read_It.Models.PostFlair.Notes) { <i class="bi bi-file-earmark-text-fill"></i> }
+                            else if (post.Flair == Read_It.Models.PostFlair.Question) { <i class="bi bi-question-circle-fill"></i> }
+                            @post.Flair.ToString()
+                        </span>
                         <span>c/@Model.Code &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a> &nbsp;·&nbsp; @post.CreatedAt.ToString("MMM dd")</span>
                     </div>
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
