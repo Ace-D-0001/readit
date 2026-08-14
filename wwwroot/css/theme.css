@@ -699,15 +699,28 @@ input, textarea, select { font-family: var(--font); }
 .text-sm      { font-size: var(--text-sm) !important; }
 .text-xs      { font-size: var(--text-xs) !important; }
 .fw-700       { font-weight: 700 !important; }
-/* ── Study Music Player Widget (Left Bottom Area) ───────────────────────── */
+/* ── Floating Sticky Study Music Player (Fixed Bottom-Right Corner) ───────── */
 .study-player-card {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 310px;
   background: #141416;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 12px;
-  margin-top: var(--sp-4);
-  position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  z-index: 9999;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.study-player-card.minimized {
+  width: 250px;
+  padding: 8px 12px;
+}
+.study-player-card.minimized .sp-hide-minimized {
+  display: none !important;
 }
 
 .sp-header {
