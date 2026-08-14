@@ -4,6 +4,7 @@
     ViewData["Title"] = "All Content & Posts";
     var searchQuery = ViewData["SearchQuery"] as string;
     var selectedFlair = ViewData["SelectedFlair"] as Read_It.Models.PostFlair?;
+    var userVotes = ViewBag.UserVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -37,46 +38,62 @@
 <!-- Posts Feed -->
 @if (Model != null && Model.Any())
 {
-    <div class="d-flex flex-column gap-3">
+    <div style="display: flex; flex-direction: column; gap: var(--sp-3);">
         @foreach (var post in Model)
         {
-            <div class="post-card">
-                <div class="d-flex flex-column align-items-center p-3" style="width: 50px; background: var(--bg-panel-alt);">
-                    <i class="bi bi-arrow-up-short vote-arrow fs-4"></i>
-                    <span class="fw-bold fs-6 my-1">@(post.UpVotes - post.DownVotes)</span>
-                    <i class="bi bi-arrow-down-short vote-arrow fs-4"></i>
+            int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
+            string authorName = post.User?.UserName ?? "student";
+            string flairClass = "flair-" + post.Flair.ToString().ToLower();
+
+            <article class="post-card fade-up" onclick="if (!event.target.closest('a, button, input, form')) window.location.href='@Url.Action("Details", "Posts", new { id = post.Id })';">
+                <div class="post-vote-col">
+                    <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" type="button" title="Upvote" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
+                        <i class="bi bi-arrow-up-circle-fill"></i>
+                    </button>
+
+                    <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
+
+                    <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" type="button" title="Downvote" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
+                        <i class="bi bi-arrow-down-circle-fill"></i>
+                    </button>
                 </div>
-                <div class="p-3 w-100">
-                    <div class="d-flex align-items-center gap-2 mb-2" style="font-size: var(--font-size-sm); color: var(--text-secondary);">
-                        <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" class="fw-bold text-decoration-none" style="color: var(--accent);">
+
+                <div class="post-body-col">
+                    <div class="post-meta">
+                        <span class="avatar avatar-sm" style="background: var(--accent); width: 22px; height: 22px; font-size: 10px;">
+                            @authorName.Substring(0, 1).ToUpper()
+                        </span>
+                        <a href="@Url.Action("Details", "User", new { username = authorName })" style="color: var(--text-heading); font-weight: 700;">
+                            u/@authorName
+                        </a>
+                        <span>·</span>
+                        <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" style="color: var(--accent); font-weight: 600;">
                             c/@post.Course?.Code
                         </a>
-                        <span>•</span>
-                        <span>Posted by u/@(post.User?.UserName ?? "student")</span>
-                        <span>•</span>
+                        <span class="flair-badge @flairClass">@post.Flair.ToString()</span>
+                        <span>·</span>
                         <span>@post.CreatedAt.ToString("MMM dd")</span>
-                        <span class="flair-badge ms-2">@post.Flair.ToString()</span>
                     </div>
 
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
                         @post.Title
                     </a>
-                    
-                    <p class="post-body-preview text-truncate" style="max-width: 750px;">
-                        @post.Body
-                    </p>
+                    <p class="post-preview">@post.Body</p>
 
-                    <div class="d-flex gap-2 mt-3">
-                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn primary-reply">
+                    <div class="post-actions">
+                        <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
                             <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
-                            <span>@(post.Comments?.Count ?? 0) Comments</span>
+                            @(post.Comments?.Count ?? 0) Comments
                         </a>
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
-                            <i class="bi bi-eye"></i> Zoom In / Read Full
+                            <i class="bi bi-arrow-right-circle"></i> Read Full
                         </a>
+                        <button class="action-btn" style="margin-left: auto;" onclick="navigator.clipboard.writeText(window.location.origin + '/Posts/Details/@post.Id'); alert('Link copied!');">
+                            <i class="bi bi-share-fill"></i> Share
+                        </button>
                     </div>
                 </div>
-            </div>
+            </article>
         }
     </div>
 }

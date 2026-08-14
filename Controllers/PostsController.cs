@@ -59,7 +59,6 @@ namespace Read_It.Controllers
                     .ToList();
             }
 
-            // Fetch user vote state & current user ID
             var userVotes = new Dictionary<int, int>();
             string? currentUserId = GetCurrentUserId();
             if (!string.IsNullOrEmpty(currentUserId))
@@ -232,7 +231,85 @@ namespace Read_It.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Posts/Vote
+        // POST: /Posts/VoteApi (AJAX — No Page Reload!)
+        [HttpPost]
+        public async Task<IActionResult> VoteApi([FromBody] VoteRequestModel request)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Json(new { success = false, message = "Unauthorized" });
+            }
+
+            VoteTargetType typeEnum = request.TargetType.ToLower() == "comment" ? VoteTargetType.Comment : VoteTargetType.Post;
+            int voteVal = request.Direction > 0 ? 1 : -1;
+            int newScore = 0;
+            int userVote = 0;
+
+            var existingVote = await _context.Votes
+                .FirstOrDefaultAsync(v => v.UserId == currentUserId && v.TargetType == typeEnum && v.TargetId == request.TargetId);
+
+            if (typeEnum == VoteTargetType.Post)
+            {
+                var post = await _context.Posts.FindAsync(request.TargetId);
+                if (post != null)
+                {
+                    if (existingVote == null)
+                    {
+                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = request.TargetId, VoteValue = voteVal });
+                        if (voteVal == 1) post.UpVotes++; else post.DownVotes++;
+                        userVote = voteVal;
+                    }
+                    else if (existingVote.VoteValue == voteVal)
+                    {
+                        _context.Votes.Remove(existingVote);
+                        if (voteVal == 1) post.UpVotes--; else post.DownVotes--;
+                        userVote = 0;
+                    }
+                    else
+                    {
+                        existingVote.VoteValue = voteVal;
+                        if (voteVal == 1) { post.UpVotes++; post.DownVotes--; }
+                        else { post.DownVotes++; post.UpVotes--; }
+                        userVote = voteVal;
+                    }
+                    await _context.SaveChangesAsync();
+                    newScore = post.UpVotes - post.DownVotes;
+                }
+            }
+            else if (typeEnum == VoteTargetType.Comment)
+            {
+                var comment = await _context.Comments.FindAsync(request.TargetId);
+                if (comment != null)
+                {
+                    if (existingVote == null)
+                    {
+                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = request.TargetId, VoteValue = voteVal });
+                        if (voteVal == 1) comment.UpVotes++; else comment.DownVotes++;
+                        userVote = voteVal;
+                    }
+                    else if (existingVote.VoteValue == voteVal)
+                    {
+                        _context.Votes.Remove(existingVote);
+                        if (voteVal == 1) comment.UpVotes--; else comment.DownVotes--;
+                        userVote = 0;
+                    }
+                    else
+                    {
+                        existingVote.VoteValue = voteVal;
+                        if (voteVal == 1) { comment.UpVotes++; comment.DownVotes--; }
+                        else { comment.DownVotes++; comment.UpVotes--; }
+                        userVote = voteVal;
+                    }
+                    await _context.SaveChangesAsync();
+                    newScore = comment.UpVotes;
+                }
+            }
+
+            return Json(new { success = true, score = newScore, userVote = userVote });
+        }
+
+        // POST: /Posts/Vote (Fallback HTML Form)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Vote(int targetId, string targetType, int direction, string? returnUrl)
@@ -269,30 +346,6 @@ namespace Read_It.Controllers
                         existingVote.VoteValue = voteVal;
                         if (voteVal == 1) { post.UpVotes++; post.DownVotes--; }
                         else { post.DownVotes++; post.UpVotes--; }
-                    }
-                    await _context.SaveChangesAsync();
-                }
-            }
-            else if (typeEnum == VoteTargetType.Comment)
-            {
-                var comment = await _context.Comments.FindAsync(targetId);
-                if (comment != null)
-                {
-                    if (existingVote == null)
-                    {
-                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = targetId, VoteValue = voteVal });
-                        if (voteVal == 1) comment.UpVotes++; else comment.DownVotes++;
-                    }
-                    else if (existingVote.VoteValue == voteVal)
-                    {
-                        _context.Votes.Remove(existingVote);
-                        if (voteVal == 1) comment.UpVotes--; else comment.DownVotes--;
-                    }
-                    else
-                    {
-                        existingVote.VoteValue = voteVal;
-                        if (voteVal == 1) { comment.UpVotes++; comment.DownVotes--; }
-                        else { comment.DownVotes++; comment.UpVotes--; }
                     }
                     await _context.SaveChangesAsync();
                 }
@@ -345,5 +398,12 @@ namespace Read_It.Controllers
             }
             return _context.Users.Select(u => u.Id).FirstOrDefault();
         }
+    }
+
+    public class VoteRequestModel
+    {
+        public int TargetId { get; set; }
+        public string TargetType { get; set; } = "post";
+        public int Direction { get; set; }
     }
 }

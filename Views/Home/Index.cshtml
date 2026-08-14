@@ -80,38 +80,24 @@
             string authorName = post.User?.UserName ?? "student";
             string flairClass = "flair-" + post.Flair.ToString().ToLower();
 
-            <article class="post-card fade-up">
-                <!-- Vote column -->
+            <article class="post-card fade-up" onclick="if (!event.target.closest('a, button, input, form')) window.location.href='@Url.Action("Details", "Posts", new { id = post.Id })';">
+                <!-- Integrated Vote Column -->
                 <div class="post-vote-col">
-                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="targetId" value="@post.Id" />
-                        <input type="hidden" name="targetType" value="post" />
-                        <input type="hidden" name="direction" value="1" />
-                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                        <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" type="submit">
-                            <i class="bi bi-arrow-up-circle-fill"></i>
-                        </button>
-                    </form>
+                    <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" type="button" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
+                        <i class="bi bi-arrow-up-circle-fill"></i>
+                    </button>
 
                     <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
 
-                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="targetId" value="@post.Id" />
-                        <input type="hidden" name="targetType" value="post" />
-                        <input type="hidden" name="direction" value="-1" />
-                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                        <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" type="submit">
-                            <i class="bi bi-arrow-down-circle-fill"></i>
-                        </button>
-                    </form>
+                    <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" type="button" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
+                        <i class="bi bi-arrow-down-circle-fill"></i>
+                    </button>
                 </div>
 
-                <!-- Body column -->
+                <!-- Body Column -->
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="avatar avatar-sm" style="background: var(--accent); width: 20px; height: 20px; font-size: 10px;">
+                        <span class="avatar avatar-sm" style="background: var(--accent); width: 22px; height: 22px; font-size: 10px;">
                             @authorName.Substring(0, 1).ToUpper()
                         </span>
                         <a href="@Url.Action("Details", "User", new { username = authorName })" style="color: var(--text-heading); font-weight: 700;">

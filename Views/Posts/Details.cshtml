@@ -23,30 +23,16 @@
 <div class="post-detail-card fade-up">
     <div class="post-detail-header">
         <!-- Upvote / Downvote column -->
-        <div class="post-detail-vote-col">
-            <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="targetId" value="@Model.Id" />
-                <input type="hidden" name="targetType" value="post" />
-                <input type="hidden" name="direction" value="1" />
-                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                <button class="vote-arrow up @(userPostVote == 1 ? "upvoted" : "")" title="Upvote" type="submit">
-                    <i class="bi bi-arrow-up-circle-fill" style="font-size: 22px;"></i>
-                </button>
-            </form>
+        <div class="post-detail-vote-col post-vote-col">
+            <button class="vote-arrow up @(userPostVote == 1 ? "upvoted" : "")" title="Upvote" type="button" onclick="asyncVote(this, @Model.Id, 'post', 1, event)">
+                <i class="bi bi-arrow-up-circle-fill" style="font-size: 22px;"></i>
+            </button>
 
             <span class="vote-count @(userPostVote == 1 ? "text-accent" : "")" style="font-size: var(--text-md);">@(Model.UpVotes - Model.DownVotes)</span>
 
-            <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="targetId" value="@Model.Id" />
-                <input type="hidden" name="targetType" value="post" />
-                <input type="hidden" name="direction" value="-1" />
-                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                <button class="vote-arrow down @(userPostVote == -1 ? "downvoted" : "")" title="Downvote" type="submit">
-                    <i class="bi bi-arrow-down-circle-fill" style="font-size: 22px;"></i>
-                </button>
-            </form>
+            <button class="vote-arrow down @(userPostVote == -1 ? "downvoted" : "")" title="Downvote" type="button" onclick="asyncVote(this, @Model.Id, 'post', -1, event)">
+                <i class="bi bi-arrow-down-circle-fill" style="font-size: 22px;"></i>
+            </button>
         </div>
 
         <!-- Post Content Column -->
