@@ -113,6 +113,74 @@
                 <i class="bi bi-compass"></i>
                 <span style="font-weight: 600;">Explore all subReadIts</span>
             </a>
+
+            <!-- ── Study Music Player Widget ──────────────────────────────────── -->
+            <div id="study-player" class="study-player-card">
+                <div class="sp-header">
+                    <div class="sp-title-badge">
+                        <i class="bi bi-music-note-beaming"></i> Study Beats
+                    </div>
+                    <div class="sp-eq">
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Genre Chips -->
+                <div class="sp-stations-row">
+                    <button type="button" class="sp-station-chip active" data-query="lofi">🎧 Lofi</button>
+                    <button type="button" class="sp-station-chip" data-query="focus">🧠 Focus</button>
+                    <button type="button" class="sp-station-chip" data-query="piano">🎹 Piano</button>
+                    <button type="button" class="sp-station-chip" data-query="synthwave">🌆 Synth</button>
+                    <button type="button" class="sp-station-chip" data-query="jazz">☕ Jazz</button>
+                </div>
+
+                <!-- Live Song Search Input -->
+                <div class="sp-search-wrapper">
+                    <i class="bi bi-search sp-search-icon"></i>
+                    <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search song or artist…" autocomplete="off" />
+                    <div id="sp-search-results" class="sp-search-results"></div>
+                </div>
+
+                <!-- Track Info & Cover Art -->
+                <div class="sp-track-row">
+                    <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
+                    <div class="sp-track-info">
+                        <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
+                        <div id="sp-artist" class="sp-track-artist">Chillhop & Study</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="sp-progress-wrapper">
+                    <span id="sp-time-current">0:00</span>
+                    <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" />
+                    <span id="sp-time-total">0:30</span>
+                </div>
+
+                <!-- Controls & Volume -->
+                <div class="sp-controls-row">
+                    <button type="button" id="sp-prev-btn" class="sp-btn-subtle" title="Previous"><i class="bi bi-skip-start-fill"></i></button>
+                    <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
+                    <button type="button" id="sp-next-btn" class="sp-btn-subtle" title="Next"><i class="bi bi-skip-end-fill"></i></button>
+                    <div style="display: flex; align-items: center; gap: 4px; width: 60px;">
+                        <i class="bi bi-volume-up-fill" style="font-size: 10px; color: #71717a;"></i>
+                        <input type="range" id="sp-volume" class="sp-slider" value="0.8" min="0" max="1" step="0.05" />
+                    </div>
+                </div>
+
+                <!-- Ambient Noise Layer -->
+                <div class="sp-ambient-row">
+                    <button type="button" id="sp-rain-btn" class="sp-ambient-btn">
+                        <i class="bi bi-cloud-rain-fill"></i> Rain
+                    </button>
+                    <button type="button" id="sp-cafe-btn" class="sp-ambient-btn">
+                        <i class="bi bi-cup-hot-fill"></i> Cafe Noise
+                    </button>
+                </div>
+            </div>
         </div>
     </aside>
 
@@ -206,6 +274,7 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/study-player.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
