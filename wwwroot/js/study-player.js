@@ -1,16 +1,16 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — MASSIVE MULTI-SOURCE UNLIMITED SEARCH ENGINE
-   - Parallel Multi-Source Search (Audius + YouTube/Invidious + Jamendo + Archive.org)
-   - 15 to 25 Full-Length Songs per query (0 30-second previews!)
-   - Native HTML5 Audio Engine & Direct YouTube Full Embed Backup
-   - Non-stop PJAX continuous playback across page navigation
+   STUDY MUSIC PLAYER — HIGH-END SPOTIFY/APPLE MUSIC SEARCH & FULL PLAYBACK
+   - Ultra-rich search engine (iTunes High-Res Metadata + YouTube Full Engine + Audius)
+   - 100% Full Song Playback (NO 30s limits!)
+   - Native HTML5 Audio & YouTube Embed Dual Engine
+   - Sticky Floating Bottom-Right Dock with PJAX non-stop page navigation
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    initFullWorkMusicPlayer();
+    initRichMusicPlayer();
 });
 
-function initFullWorkMusicPlayer() {
+function initRichMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
@@ -39,7 +39,7 @@ function initFullWorkMusicPlayer() {
     let isYtMode = false;
     let isUserSeeking = false;
 
-    // Guaranteed 24/7 Live High-Bitrate Study Radio Streams
+    // Preset 24/7 Live Radio Streams
     const realStations = {
         lofi: {
             title: "Lofi Study Beats (24/7)",
@@ -61,7 +61,7 @@ function initFullWorkMusicPlayer() {
         },
         synthwave: {
             title: "Synthwave Night Drive",
-            artist: "Chillwave & Retrowave",
+            artist: "Chillwave Beats",
             cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80",
             url: "https://stream.zeno.fm/4xDzrJKXOOY"
         },
@@ -92,12 +92,12 @@ function initFullWorkMusicPlayer() {
                 loadFullTrack(realStations[key]);
                 playTrack();
             } else {
-                searchFullTracks(key + ' chill');
+                searchFullTracks(key + ' chill study');
             }
         });
     });
 
-    // ── Core Playback Control ────────────────────────────────────────────────
+    // ── Playback Controls ───────────────────────────────────────────────────
     function loadFullTrack(track) {
         if (!track) return;
         isYtMode = false;
@@ -141,12 +141,7 @@ function initFullWorkMusicPlayer() {
 
     function playTrack() {
         if (isYtMode) return;
-        audio.play().then(() => {
-            setPlayingState(true);
-        }).catch(err => {
-            console.log('Play notice:', err);
-            setPlayingState(false);
-        });
+        audio.play().then(() => setPlayingState(true)).catch(() => setPlayingState(false));
     }
 
     function pauseTrack() {
@@ -164,11 +159,8 @@ function initFullWorkMusicPlayer() {
     if (playBtn) {
         playBtn.addEventListener('click', () => {
             if (isYtMode) return;
-            if (isPlaying) {
-                pauseTrack();
-            } else {
-                playTrack();
-            }
+            if (isPlaying) pauseTrack();
+            else playTrack();
         });
     }
 
@@ -176,7 +168,7 @@ function initFullWorkMusicPlayer() {
     audio.addEventListener('pause', () => setPlayingState(false));
     audio.addEventListener('ended', () => setPlayingState(false));
 
-    // ── Timeline Progress & Drag Seek Bar ────────────────────────────────────
+    // ── Timeline Progress Slider ─────────────────────────────────────────────
     audio.addEventListener('timeupdate', () => {
         if (isUserSeeking || isYtMode) return;
         const current = audio.currentTime || 0;
@@ -235,7 +227,7 @@ function initFullWorkMusicPlayer() {
         });
     }
 
-    // ── MASSIVE MULTI-SOURCE PARALLEL SEARCH ENGINE ───────────────────────────
+    // ── HIGH-END MULTI-SOURCE SEARCH ENGINE (iTunes + YouTube + Audius) ───────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -252,91 +244,80 @@ function initFullWorkMusicPlayer() {
     async function searchFullTracks(query) {
         try {
             if (searchResults) {
-                searchResults.innerHTML = `<div style="padding: 8px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-arrow-repeat spin"></i> Searching all sources…</div>`;
+                searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching music databases…</div>`;
                 searchResults.style.display = 'block';
             }
 
-            // Parallel fetch from 4 major full-length music databases
-            const [audiusRes, invRes, jamRes, archiveRes] = await Promise.allSettled([
+            // Parallel query across iTunes High-Res Metadata + Audius + YouTube Streams
+            const [itunesRes, audiusRes, invRes] = await Promise.allSettled([
+                fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=10`),
                 fetch(`https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=READIT`),
-                fetch(`https://inv.tux.pizza/api/v1/search?q=${encodeURIComponent(query)}&type=video`),
-                fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=56d30200&format=json&limit=10&search=${encodeURIComponent(query)}`),
-                fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(query)}+AND+mediatype:audio&fl[]=identifier,title,creator&rows=6&output=json`)
+                fetch(`https://inv.tux.pizza/api/v1/search?q=${encodeURIComponent(query)}&type=video`)
             ]);
 
-            const combinedList = [];
+            const combinedResults = [];
 
-            // 1. YouTube Quick Embed Action (Plays ANY video on YouTube!)
-            combinedList.push({
-                type: 'youtube_search',
-                title: `▶ Play Full YouTube Audio: "${query}"`,
-                artist: 'Official Full Song Search',
+            // 1. YouTube Direct Action (Plays ANY video on YouTube!)
+            combinedResults.push({
+                type: 'youtube_full',
+                badge: 'YouTube',
+                badgeClass: 'sp-badge-yt',
+                title: `Play Full YouTube Audio: "${query}"`,
+                artist: 'Official 100% Full Song',
                 cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
                 query: query + ' official audio'
             });
 
-            // 2. Parse Audius Results
+            // 2. Parse iTunes High-Res Song Metadata (Plays full song via YouTube auto-match!)
+            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
+                const data = await itunesRes.value.json();
+                if (data.results) {
+                    data.results.forEach(t => {
+                        const art = t.artworkUrl100 ? t.artworkUrl100.replace('100x100bb', '300x300bb') : t.artworkUrl60;
+                        combinedResults.push({
+                            type: 'youtube_full',
+                            badge: 'Full Song',
+                            badgeClass: 'sp-badge-yt',
+                            title: t.trackName,
+                            artist: t.artistName,
+                            cover: art,
+                            query: `${t.artistName} ${t.trackName} official audio`
+                        });
+                    });
+                }
+            }
+
+            // 3. Parse Audius Results (Direct 100% Full Stream)
             if (audiusRes.status === 'fulfilled' && audiusRes.value.ok) {
-                const data = await audiusRes.value.json();
-                if (data.data) {
-                    data.data.slice(0, 6).forEach(t => {
-                        combinedList.push({
-                            type: 'audio',
+                const audData = await audiusRes.value.json();
+                if (audData.data) {
+                    audData.data.slice(0, 6).forEach(t => {
+                        const art = t.artwork ? t.artwork['150x150'] || t.artwork['480x480'] : 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80';
+                        combinedResults.push({
+                            type: 'audio_stream',
+                            badge: 'Audius',
+                            badgeClass: 'sp-badge-audius',
                             title: t.title,
-                            artist: t.user ? t.user.name + ' (Audius)' : 'Full Track',
-                            cover: t.artwork ? t.artwork['150x150'] || t.artwork['480x480'] : 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80',
+                            artist: t.user ? t.user.name : 'Full Track',
+                            cover: art,
                             url: `https://api.audius.co/v1/tracks/${t.id}/stream?app_name=READIT`
                         });
                     });
                 }
             }
 
-            // 3. Parse Invidious / YouTube Audio Results
-            if (invRes.status === 'fulfilled' && invRes.value.ok) {
-                const invData = await invRes.value.json();
-                if (Array.isArray(invData)) {
-                    invData.slice(0, 6).forEach(t => {
-                        combinedList.push({
-                            type: 'audio',
-                            title: t.title,
-                            artist: (t.author || 'YouTube') + ' (Full Stream)',
-                            cover: t.videoThumbnails ? t.videoThumbnails[0]?.url : 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
-                            url: `https://inv.tux.pizza/latest_version?id=${t.videoId}&itag=140`
-                        });
-                    });
-                }
-            }
-
-            // 4. Parse Jamendo Results
-            if (jamRes.status === 'fulfilled' && jamRes.value.ok) {
-                const jamData = await jamRes.value.json();
-                if (jamData.results) {
-                    jamData.results.slice(0, 6).forEach(t => {
-                        if (t.audio) {
-                            combinedList.push({
-                                type: 'audio',
-                                title: t.name,
-                                artist: (t.artist_name || 'Jamendo') + ' (Full Track)',
-                                cover: t.image || 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
-                                url: t.audio
-                            });
-                        }
-                    });
-                }
-            }
-
-            renderCombinedResults(combinedList);
+            renderRichSearchDrawer(combinedResults);
         } catch (err) {
-            console.error('Search engine error:', err);
+            console.error('Search error:', err);
         }
     }
 
-    function renderCombinedResults(items) {
+    function renderRichSearchDrawer(items) {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
         if (items.length === 0) {
-            searchResults.innerHTML = `<div style="padding: 10px; font-size: 11px; color: #a1a1aa; text-align: center;">No songs found. Try another search term!</div>`;
+            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">No tracks found. Try another search!</div>`;
             searchResults.style.display = 'block';
             return;
         }
@@ -345,24 +326,25 @@ function initFullWorkMusicPlayer() {
             const div = document.createElement('div');
             div.className = 'sp-search-item';
             
-            if (t.type === 'youtube_search') {
+            if (t.type === 'youtube_full' && t.title.startsWith('Play Full YouTube Audio:')) {
                 div.style.background = 'rgba(255, 69, 0, 0.15)';
-                div.style.borderLeft = '3px solid var(--accent)';
+                div.style.border = '1px solid rgba(255, 69, 0, 0.3)';
             }
 
             div.innerHTML = `
                 <img src="${t.cover}" class="sp-search-art" alt="" />
                 <div style="flex: 1; min-width: 0;">
                     <div class="sp-search-title">${t.title}</div>
-                    <div class="sp-search-artist" style="color: ${t.type === 'youtube_search' ? 'var(--accent)' : '#a1a1aa'};">${t.artist}</div>
+                    <div class="sp-search-artist">${t.artist}</div>
                 </div>
-                <i class="bi bi-${t.type === 'youtube_search' ? 'youtube' : 'play-circle-fill'}" style="color: var(--accent); font-size: 20px;"></i>
+                <span class="sp-source-badge ${t.badgeClass}">${t.badge}</span>
+                <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 20px; flex-shrink: 0;"></i>
             `;
 
             div.addEventListener('click', () => {
-                if (t.type === 'youtube_search') {
-                    playYouTubeEmbed(t.query, t.title.replace('▶ Play Full YouTube Audio: ', ''), t.artist, t.cover);
-                } else {
+                if (t.type === 'youtube_full') {
+                    playYouTubeEmbed(t.query, t.title.replace('Play Full YouTube Audio: ', ''), t.artist, t.cover);
+                } else if (t.type === 'audio_stream') {
                     loadFullTrack(t);
                     playTrack();
                 }
