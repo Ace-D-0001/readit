@@ -77,6 +77,8 @@
         @foreach (var post in Model)
         {
             int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
+            string authorName = post.User?.UserName ?? "student";
+            string flairClass = "flair-" + post.Flair.ToString().ToLower();
 
             <article class="post-card fade-up">
                 <!-- Vote column -->
@@ -109,12 +111,19 @@
                 <!-- Body column -->
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="flair-badge">@post.Flair.ToString()</span>
-                        <span>
-                            <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
-                            &nbsp;·&nbsp; Posted by <a href="@Url.Action("Details", "User", new { username = post.User?.UserName })" style="color: var(--text-primary);">u/@(post.User?.UserName ?? "student")</a>
-                            &nbsp;·&nbsp; @post.CreatedAt.ToString("MMM dd")
+                        <span class="avatar avatar-sm" style="background: var(--accent); width: 20px; height: 20px; font-size: 10px;">
+                            @authorName.Substring(0, 1).ToUpper()
                         </span>
+                        <a href="@Url.Action("Details", "User", new { username = authorName })" style="color: var(--text-heading); font-weight: 700;">
+                            u/@authorName
+                        </a>
+                        <span>·</span>
+                        <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" style="color: var(--accent); font-weight: 600;">
+                            c/@post.Course?.Code
+                        </a>
+                        <span class="flair-badge @flairClass">@post.Flair.ToString()</span>
+                        <span>·</span>
+                        <span>@post.CreatedAt.ToString("MMM dd")</span>
                     </div>
 
                     <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
@@ -125,14 +134,14 @@
 
                     <div class="post-actions">
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
-                            <i class="bi bi-chat-left-text" style="color: var(--accent);"></i>
+                            <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
                             @(post.Comments?.Count ?? 0) Comments
                         </a>
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
-                            <i class="bi bi-arrows-angle-expand"></i> Read Full
+                            <i class="bi bi-arrow-right-circle"></i> Read Full
                         </a>
                         <button class="action-btn" style="margin-left: auto;" onclick="navigator.clipboard.writeText(window.location.origin + '/Posts/Details/@post.Id'); alert('Link copied!');">
-                            <i class="bi bi-share"></i> Share
+                            <i class="bi bi-share-fill"></i> Share
                         </button>
                     </div>
                 </div>
