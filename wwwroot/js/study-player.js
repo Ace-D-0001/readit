@@ -1,10 +1,8 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — RELIABLE AUDIO STREAMING ENGINE
-   Uses multiple real audio sources that actually play:
-   1. Audius API — direct MP3 streaming (indie music, remixes, lofi)
-   2. Free Music Archive (Jamendo) — licensed full tracks
-   3. Invidious proxy audio — YouTube audio extraction
-   Sticky floating bottom-right dock, persists across pages.
+   STUDY MUSIC PLAYER — FULL SONG STREAMING ENGINE
+   Primary: Backend proxy → YouTube audio (all famous songs work!)
+   Secondary: Audius (indie/electronic) + Jamendo (licensed tracks)
+   All audio plays via native HTML5 <audio> — full length, seekable.
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,7 +17,7 @@ function initStudyMusicPlayer() {
     audio.crossOrigin = 'anonymous';
     audio.preload = 'auto';
 
-    // DOM elements
+    // DOM refs
     const playBtn = document.getElementById('sp-play-btn');
     const playIcon = document.getElementById('sp-play-icon');
     const titleEl = document.getElementById('sp-title');
@@ -41,24 +39,15 @@ function initStudyMusicPlayer() {
     let currentPlaylist = [];
     let currentIndex = 0;
 
-    // ── Multiple Invidious instances to try (fallback chain) ──────────────
-    const INVIDIOUS_INSTANCES = [
-        'https://inv.tux.pizza',
-        'https://invidious.fdn.fr',
-        'https://yewtu.be',
-        'https://vid.puffyan.us',
-        'https://invidious.privacyredirect.com'
-    ];
-
-    // ── Restore volume ──────────────────────────────────────────────────────
+    // ── Volume restore ──────────────────────────────────────────────────────
     const savedVol = localStorage.getItem('sp_vol') || 0.8;
     audio.volume = parseFloat(savedVol);
     if (volumeSlider) volumeSlider.value = audio.volume;
 
-    // ── Load default station on first visit ─────────────────────────────────
+    // ── Default station ─────────────────────────────────────────────────────
     loadStation('lofi');
 
-    // ── Station chip handlers ───────────────────────────────────────────────
+    // ── Station chips ───────────────────────────────────────────────────────
     document.querySelectorAll('.sp-station-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const key = chip.dataset.query;
@@ -68,27 +57,25 @@ function initStudyMusicPlayer() {
         });
     });
 
-    // ── Load a preset station ───────────────────────────────────────────────
     async function loadStation(key) {
-        const stationQueries = {
-            lofi: 'lofi hip hop chill beats',
-            focus: 'deep focus study ambient',
-            piano: 'peaceful piano relaxing',
-            synthwave: 'synthwave chillwave retrowave',
-            jazz: 'jazz hop coffee shop beats'
+        const queries = {
+            lofi: 'lofi hip hop chill beats to study',
+            focus: 'deep focus study music ambient',
+            piano: 'relaxing piano music study',
+            synthwave: 'synthwave chill retrowave',
+            jazz: 'jazz lofi coffee shop'
         };
-        const query = stationQueries[key] || key;
-        await searchAndPlay(query);
+        await searchAndPlay(queries[key] || key);
     }
 
-    // ── Core: search for tracks and auto-play the first result ──────────────
+    // ── Core: search + auto-play first result ───────────────────────────────
     async function searchAndPlay(query) {
         updateUI('Searching…', query, null);
         setPlayingState(false);
         audio.pause();
         if (frameDiv) frameDiv.style.display = 'none';
 
-        const tracks = await fetchTracks(query);
+        const tracks = await fetchAllTracks(query);
         if (tracks.length > 0) {
             currentPlaylist = tracks;
             currentIndex = 0;
@@ -98,34 +85,52 @@ function initStudyMusicPlayer() {
         }
     }
 
-    // ── Fetch tracks from multiple sources ──────────────────────────────────
-    async function fetchTracks(query) {
-        const results = [];
+    // ── Fetch from ALL sources in parallel ──────────────────────────────────
+    async function fetchAllTracks(query) {
+        const allResults = [];
 
-        // Launch all searches in parallel
-        const [audiusRes, jamendoRes, invRes] = await Promise.allSettled([
-            fetchAudiusTracks(query),
-            fetchJamendoTracks(query),
-            fetchInvidiousTracks(query)
+        const [proxyRes, audiusRes, jamendoRes] = await Promise.allSettled([
+            fetchFromProxy(query),
+            fetchFromAudius(query),
+            fetchFromJamendo(query)
         ]);
 
-        if (audiusRes.status === 'fulfilled') results.push(...audiusRes.value);
-        if (jamendoRes.status === 'fulfilled') results.push(...jamendoRes.value);
-        if (invRes.status === 'fulfilled') results.push(...invRes.value);
+        // Proxy results (YouTube) go first — these have the famous songs
+        if (proxyRes.status === 'fulfilled') allResults.push(...proxyRes.value);
+        if (audiusRes.status === 'fulfilled') allResults.push(...audiusRes.value);
+        if (jamendoRes.status === 'fulfilled') allResults.push(...jamendoRes.value);
 
-        return results;
+        return allResults;
     }
 
-    // ── Audius: direct streaming, works great ───────────────────────────────
-    async function fetchAudiusTracks(query) {
+    // ── PRIMARY: Our backend proxy (YouTube via Invidious, server-side) ────
+    async function fetchFromProxy(query) {
+        try {
+            const res = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.map(t => ({
+                title: t.title,
+                artist: t.artist,
+                cover: t.cover,
+                url: t.streamUrl,   // /api/music/stream/{videoId}
+                duration: t.duration || 0,
+                source: 'YouTube',
+                badgeClass: 'sp-badge-yt'
+            }));
+        } catch { return []; }
+    }
+
+    // ── Audius (indie, electronic, lofi) ─────────────────────────────────────
+    async function fetchFromAudius(query) {
         try {
             const res = await fetch(`https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=READIT`);
             if (!res.ok) return [];
             const data = await res.json();
             if (!data.data) return [];
-            return data.data.slice(0, 8).map(t => ({
+            return data.data.slice(0, 5).map(t => ({
                 title: t.title,
-                artist: t.user?.name || 'Unknown Artist',
+                artist: t.user?.name || 'Unknown',
                 cover: t.artwork?.['480x480'] || t.artwork?.['150x150'] || null,
                 url: `https://api.audius.co/v1/tracks/${t.id}/stream?app_name=READIT`,
                 duration: t.duration || 0,
@@ -135,11 +140,10 @@ function initStudyMusicPlayer() {
         } catch { return []; }
     }
 
-    // ── Jamendo: free licensed music, full streams ──────────────────────────
-    async function fetchJamendoTracks(query) {
+    // ── Jamendo (free licensed music) ────────────────────────────────────────
+    async function fetchFromJamendo(query) {
         try {
-            const clientId = '5b6e5f02';
-            const res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=${clientId}&format=json&limit=8&namesearch=${encodeURIComponent(query)}&include=musicinfo&audioformat=mp32`);
+            const res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=5b6e5f02&format=json&limit=5&namesearch=${encodeURIComponent(query)}&include=musicinfo&audioformat=mp32`);
             if (!res.ok) return [];
             const data = await res.json();
             if (!data.results) return [];
@@ -147,7 +151,7 @@ function initStudyMusicPlayer() {
                 title: t.name,
                 artist: t.artist_name || 'Unknown',
                 cover: t.album_image || t.image || null,
-                url: t.audio,  // Jamendo gives direct MP3 URLs
+                url: t.audio,
                 duration: parseInt(t.duration) || 0,
                 source: 'Jamendo',
                 badgeClass: 'sp-badge-jamendo'
@@ -155,67 +159,7 @@ function initStudyMusicPlayer() {
         } catch { return []; }
     }
 
-    // ── Invidious: extract audio stream URLs from YouTube ────────────────────
-    async function fetchInvidiousTracks(query) {
-        // First, search for video IDs
-        let videos = [];
-        for (const instance of INVIDIOUS_INSTANCES) {
-            try {
-                const res = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`, { signal: AbortSignal.timeout(5000) });
-                if (!res.ok) continue;
-                const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    videos = data.slice(0, 6);
-                    break;
-                }
-            } catch { continue; }
-        }
-        if (videos.length === 0) return [];
-
-        // For each video, try to get the audio stream URL
-        const tracks = [];
-        for (const v of videos.slice(0, 4)) {
-            const audioUrl = await getInvidiousAudioUrl(v.videoId);
-            if (audioUrl) {
-                tracks.push({
-                    title: v.title,
-                    artist: v.author || 'YouTube',
-                    cover: v.videoThumbnails?.[0]?.url || null,
-                    url: audioUrl,
-                    duration: v.lengthSeconds || 0,
-                    source: 'YouTube',
-                    badgeClass: 'sp-badge-yt'
-                });
-            }
-        }
-        return tracks;
-    }
-
-    async function getInvidiousAudioUrl(videoId) {
-        for (const instance of INVIDIOUS_INSTANCES) {
-            try {
-                const res = await fetch(`${instance}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(5000) });
-                if (!res.ok) continue;
-                const data = await res.json();
-                // Find the best audio-only adaptive format
-                if (data.adaptiveFormats) {
-                    const audioFormats = data.adaptiveFormats
-                        .filter(f => f.type && f.type.startsWith('audio/'))
-                        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-                    if (audioFormats.length > 0) {
-                        return audioFormats[0].url;
-                    }
-                }
-                // Fallback to format streams
-                if (data.formatStreams && data.formatStreams.length > 0) {
-                    return data.formatStreams[0].url;
-                }
-            } catch { continue; }
-        }
-        return null;
-    }
-
-    // ── Playback from playlist ──────────────────────────────────────────────
+    // ── Play from playlist ──────────────────────────────────────────────────
     async function playFromPlaylist(index) {
         if (index < 0 || index >= currentPlaylist.length) return;
         currentIndex = index;
@@ -227,13 +171,13 @@ function initStudyMusicPlayer() {
         audio.src = track.url;
         if (progressBar) progressBar.value = 0;
         if (timeCurrent) timeCurrent.textContent = '0:00';
-        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : 'FULL';
+        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : '—';
 
         try {
             await audio.play();
             setPlayingState(true);
         } catch (e) {
-            console.warn('Autoplay blocked, click play to start:', e);
+            console.warn('Autoplay blocked:', e);
             setPlayingState(false);
         }
     }
@@ -245,13 +189,11 @@ function initStudyMusicPlayer() {
     }
 
     // ── Play / Pause ────────────────────────────────────────────────────────
-    function playTrack() {
-        audio.play().then(() => setPlayingState(true)).catch(() => setPlayingState(false));
-    }
-
-    function pauseTrack() {
-        audio.pause();
-        setPlayingState(false);
+    if (playBtn) {
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) { audio.pause(); setPlayingState(false); }
+            else { audio.play().then(() => setPlayingState(true)).catch(() => {}); }
+        });
     }
 
     function setPlayingState(playing) {
@@ -260,224 +202,169 @@ function initStudyMusicPlayer() {
         eqBars.forEach(bar => bar.classList.toggle('playing', playing));
     }
 
-    if (playBtn) {
-        playBtn.addEventListener('click', () => {
-            if (isPlaying) pauseTrack();
-            else playTrack();
-        });
-    }
-
     audio.addEventListener('play', () => setPlayingState(true));
     audio.addEventListener('pause', () => setPlayingState(false));
     audio.addEventListener('ended', () => {
-        // Auto-play next track in playlist
         if (currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
             playFromPlaylist(currentIndex + 1);
         } else {
             setPlayingState(false);
         }
     });
-
     audio.addEventListener('error', () => {
-        console.warn('Track failed to load, trying next…');
-        // Skip to next track on error
+        console.warn('Track failed, skipping to next…');
         if (currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
             playFromPlaylist(currentIndex + 1);
         }
     });
 
-    // ── Timeline progress ───────────────────────────────────────────────────
+    // ── Progress bar ────────────────────────────────────────────────────────
     audio.addEventListener('timeupdate', () => {
         if (isUserSeeking) return;
-        const current = audio.currentTime || 0;
-        const duration = audio.duration || 0;
-
-        if (duration > 0 && !isNaN(duration)) {
-            const pct = (current / duration) * 100;
-            if (progressBar) progressBar.value = pct;
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
-            if (timeTotal) timeTotal.textContent = formatTime(duration);
+        const cur = audio.currentTime || 0;
+        const dur = audio.duration || 0;
+        if (dur > 0 && !isNaN(dur)) {
+            if (progressBar) progressBar.value = (cur / dur) * 100;
+            if (timeCurrent) timeCurrent.textContent = formatTime(cur);
+            if (timeTotal) timeTotal.textContent = formatTime(dur);
         } else {
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
+            if (timeCurrent) timeCurrent.textContent = formatTime(cur);
         }
     });
 
     if (progressBar) {
         progressBar.addEventListener('mousedown', () => { isUserSeeking = true; });
         progressBar.addEventListener('touchstart', () => { isUserSeeking = true; });
-
         progressBar.addEventListener('input', (e) => {
             const pct = parseFloat(e.target.value);
-            if (audio.duration && !isNaN(audio.duration)) {
+            if (audio.duration && !isNaN(audio.duration))
                 if (timeCurrent) timeCurrent.textContent = formatTime((pct / 100) * audio.duration);
-            }
         });
-
-        const handleSeek = (e) => {
+        const seekEnd = (e) => {
             const pct = parseFloat(e.target.value);
-            if (audio.duration && !isNaN(audio.duration)) {
+            if (audio.duration && !isNaN(audio.duration))
                 audio.currentTime = (pct / 100) * audio.duration;
-            }
             isUserSeeking = false;
         };
-        progressBar.addEventListener('change', handleSeek);
-        progressBar.addEventListener('mouseup', handleSeek);
-        progressBar.addEventListener('touchend', handleSeek);
+        progressBar.addEventListener('change', seekEnd);
+        progressBar.addEventListener('mouseup', seekEnd);
+        progressBar.addEventListener('touchend', seekEnd);
     }
 
-    function formatTime(secs) {
-        if (isNaN(secs) || secs < 0) return '0:00';
-        const m = Math.floor(secs / 60);
-        const s = Math.floor(secs % 60);
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    function formatTime(s) {
+        if (isNaN(s) || s < 0) return '0:00';
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return `${m}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
     // ── Volume ──────────────────────────────────────────────────────────────
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
-            const vol = parseFloat(e.target.value);
-            audio.volume = vol;
-            localStorage.setItem('sp_vol', vol);
+            const v = parseFloat(e.target.value);
+            audio.volume = v;
+            localStorage.setItem('sp_vol', v);
         });
     }
 
     // ── Search UI ───────────────────────────────────────────────────────────
-    let searchDebounce = null;
+    let debounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchDebounce);
-            const query = e.target.value.trim();
-            if (query.length < 2) {
-                if (searchResults) searchResults.style.display = 'none';
-                return;
-            }
-            searchDebounce = setTimeout(() => runSearchUI(query), 350);
+            clearTimeout(debounce);
+            const q = e.target.value.trim();
+            if (q.length < 2) { if (searchResults) searchResults.style.display = 'none'; return; }
+            debounce = setTimeout(() => showSearchResults(q), 350);
         });
-
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const query = searchInput.value.trim();
-                if (query.length >= 2) {
-                    clearTimeout(searchDebounce);
+                const q = searchInput.value.trim();
+                if (q.length >= 2) {
+                    clearTimeout(debounce);
                     if (searchResults) searchResults.style.display = 'none';
                     searchInput.value = '';
-                    searchAndPlay(query);
+                    searchAndPlay(q);
                 }
             }
         });
     }
 
-    async function runSearchUI(query) {
+    async function showSearchResults(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--accent); font-size: 12px;">
-            <i class="bi bi-music-note-beamed" style="animation: spin 1s linear infinite;"></i> Searching…
-        </div>`;
+        searchResults.innerHTML = `<div style="padding:16px;text-align:center;color:var(--accent);font-size:12px">
+            <i class="bi bi-music-note-beamed" style="animation:spin 1s linear infinite"></i> Searching…</div>`;
         searchResults.style.display = 'block';
 
-        const tracks = await fetchTracks(query);
-
+        const tracks = await fetchAllTracks(query);
         if (tracks.length === 0) {
-            searchResults.innerHTML = `<div style="padding: 16px; text-align: center; color: #71717a; font-size: 12px;">
-                No results found. Try different keywords.
-            </div>`;
+            searchResults.innerHTML = `<div style="padding:16px;text-align:center;color:#71717a;font-size:12px">No results. Try different keywords.</div>`;
             return;
         }
 
         searchResults.innerHTML = '';
-        tracks.forEach((t, idx) => {
-            const item = document.createElement('div');
-            item.className = 'sp-search-item';
-            const coverUrl = t.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80';
-            const durationStr = t.duration ? formatTime(t.duration) : '';
+        tracks.forEach((t, i) => {
+            const el = document.createElement('div');
+            el.className = 'sp-search-item';
+            const img = t.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80';
+            const dur = t.duration ? formatTime(t.duration) : '';
 
-            item.innerHTML = `
-                <img src="${coverUrl}" class="sp-search-art" alt="" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80'" />
-                <div style="flex: 1; min-width: 0;">
-                    <div class="sp-search-title">${escapeHtml(t.title)}</div>
-                    <div class="sp-search-artist">${escapeHtml(t.artist)}${durationStr ? ' · ' + durationStr : ''}</div>
+            el.innerHTML = `
+                <img src="${img}" class="sp-search-art" alt="" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'" />
+                <div style="flex:1;min-width:0">
+                    <div class="sp-search-title">${esc(t.title)}</div>
+                    <div class="sp-search-artist">${esc(t.artist)}${dur ? ' · ' + dur : ''}</div>
                 </div>
                 <span class="sp-source-badge ${t.badgeClass}">${t.source}</span>
-                <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 18px; flex-shrink: 0; cursor: pointer;"></i>
-            `;
+                <i class="bi bi-play-circle-fill" style="color:var(--accent);font-size:18px;flex-shrink:0;cursor:pointer"></i>`;
 
-            item.addEventListener('click', () => {
+            el.addEventListener('click', () => {
                 currentPlaylist = tracks;
-                playFromPlaylist(idx);
+                playFromPlaylist(i);
                 searchResults.style.display = 'none';
                 searchInput.value = '';
             });
-            searchResults.appendChild(item);
+            searchResults.appendChild(el);
         });
     }
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    // Close search results on outside click
     document.addEventListener('click', (e) => {
-        if (searchResults && searchInput && !searchResults.contains(e.target) && !searchInput.contains(e.target)) {
+        if (searchResults && searchInput && !searchResults.contains(e.target) && !searchInput.contains(e.target))
             searchResults.style.display = 'none';
-        }
     });
 
-    // ── Minimize toggle ─────────────────────────────────────────────────────
+    // ── Minimize ────────────────────────────────────────────────────────────
     if (minimizeBtn) {
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             playerCard.classList.toggle('minimized');
-            const icon = minimizeBtn.querySelector('i');
-            if (icon) {
-                icon.className = playerCard.classList.contains('minimized') ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
-            }
+            const ic = minimizeBtn.querySelector('i');
+            if (ic) ic.className = playerCard.classList.contains('minimized') ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
         });
     }
 
-    // ── Ambient rain ────────────────────────────────────────────────────────
-    let rainActive = false;
-    let audioCtx = null;
-    let rainGain = null;
-
-    function initRainSynth() {
-        if (audioCtx) return;
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new Ctx();
-        const bufferSize = 2 * audioCtx.sampleRate;
-        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
-        const src = audioCtx.createBufferSource();
-        src.buffer = noiseBuffer;
-        src.loop = true;
-
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(750, audioCtx.currentTime);
-
-        rainGain = audioCtx.createGain();
-        rainGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-
-        src.connect(filter);
-        filter.connect(rainGain);
-        rainGain.connect(audioCtx.destination);
-        src.start();
+    // ── Rain ambient ────────────────────────────────────────────────────────
+    let rainOn = false, actx = null, rGain = null;
+    function mkRain() {
+        if (actx) return;
+        const C = window.AudioContext || window.webkitAudioContext;
+        actx = new C();
+        const buf = actx.createBuffer(1, 2 * actx.sampleRate, actx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+        const flt = actx.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.setValueAtTime(750, actx.currentTime);
+        rGain = actx.createGain(); rGain.gain.setValueAtTime(0.12, actx.currentTime);
+        src.connect(flt); flt.connect(rGain); rGain.connect(actx.destination); src.start();
     }
-
     if (rainBtn) {
         rainBtn.addEventListener('click', () => {
-            rainActive = !rainActive;
-            rainBtn.classList.toggle('active', rainActive);
-            if (rainActive) {
-                initRainSynth();
-                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                if (rainGain) rainGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            } else {
-                if (rainGain && audioCtx) rainGain.gain.setValueAtTime(0, audioCtx.currentTime);
-            }
+            rainOn = !rainOn;
+            rainBtn.classList.toggle('active', rainOn);
+            if (rainOn) { mkRain(); if (actx?.state === 'suspended') actx.resume(); if (rGain) rGain.gain.setValueAtTime(0.15, actx.currentTime); }
+            else { if (rGain && actx) rGain.gain.setValueAtTime(0, actx.currentTime); }
         });
     }
 }
