@@ -1,10 +1,27 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — FIXED FLOATING DOCK (RHS Bottom Corner)
-   - 100% REAL FULL-LENGTH SONGS & LIVE 24/7 STREAMS
-   - Non-stop audio playback across page transitions
+   STUDY MUSIC PLAYER — 100% FULL LENGTH SONGS (NO 30-SECOND LIMITS!)
+   - Embedded YouTube Engine for Full Songs (3-5 mins / Full Albums / Streams)
    - Interactive Drag & Click Timeline Seek Bar
-   - Real Song Search API with instant playback
+   - Non-stop PJAX continuous playback
    ══════════════════════════════════════════════════════════════════════════ */
+
+let ytPlayer = null;
+let ytApiReady = false;
+
+// Dynamically inject official YouTube IFrame API script
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    ytApiReady = true;
+    if (window.pendingYtVideoId) {
+        initYtPlayer(window.pendingYtVideoId);
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     initFloatingStudyPlayer();
@@ -13,13 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initFloatingStudyPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
-
-    // Direct Audio Element for 100% Reliable Playback
-    const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
-
-    const ambientAudio = new Audio();
-    ambientAudio.loop = true;
 
     // Elements
     const playBtn = document.getElementById('sp-play-btn');
@@ -37,50 +47,51 @@ function initFloatingStudyPlayer() {
     const rainBtn = document.getElementById('sp-rain-btn');
     const minimizeBtn = document.getElementById('sp-min-btn');
 
-    // Real Working 24/7 Live Radio Streams & Full MP3 Playlists
-    const realStations = {
+    // Direct Audio Element for 24/7 radio backup
+    const streamAudio = new Audio();
+    streamAudio.crossOrigin = 'anonymous';
+
+    let isPlaying = false;
+    let isYtMode = true;
+    let isUserSeeking = false;
+    let progressTimer = null;
+
+    // Default Full-Length Preset Tracks (YouTube Video IDs)
+    const realPresets = {
         lofi: {
-            title: "Lofi Study Beats (24/7)",
-            artist: "Lofi Girl & Chillhop",
-            cover: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=200&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/f3wvbbqmdg8uv"
+            title: "Lofi Hip Hop Radio (24/7 Live)",
+            artist: "Lofi Girl",
+            ytId: "jfKfPfyJRdk",
+            cover: "https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg"
         },
         focus: {
-            title: "Deep Focus Alpha Waves",
-            artist: "Ambient Concentration",
-            cover: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/1f4s80v63v8uv"
+            title: "Deep Focus Ambient Music",
+            artist: "Alpha Waves (Full)",
+            ytId: "WPni755-Krg",
+            cover: "https://i.ytimg.com/vi/WPni755-Krg/hqdefault.jpg"
         },
         piano: {
-            title: "Peaceful Solo Piano",
-            artist: "Classical Study",
-            cover: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=200&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/0r0xa792kwzuv"
+            title: "Peaceful Solo Piano Study",
+            artist: "Relaxing Classical (Full)",
+            ytId: "1ZYbU870vMo",
+            cover: "https://i.ytimg.com/vi/1ZYbU870vMo/hqdefault.jpg"
         },
         synthwave: {
-            title: "Synthwave Night Drive",
-            artist: "Chillwave Beats",
-            cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/4xDzrJKXOOY"
+            title: "Synthwave Chill Beats",
+            artist: "Lofi Synthwave (Full)",
+            ytId: "4xDzrJKXOOY",
+            cover: "https://i.ytimg.com/vi/4xDzrJKXOOY/hqdefault.jpg"
         },
         jazz: {
             title: "Coffee Shop & Jazz Hop",
-            artist: "Relaxing Lounge",
-            cover: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/f3wvbbqmdg8uv"
+            artist: "Chill Hop Music (Full)",
+            ytId: "5qap5aO4i9A",
+            cover: "https://i.ytimg.com/vi/5qap5aO4i9A/hqdefault.jpg"
         }
     };
 
-    let isPlaying = false;
-    let isUserSeeking = false;
-
-    // Restore volume
-    const savedVol = localStorage.getItem('study_player_vol') || 0.8;
-    audio.volume = parseFloat(savedVol);
-    if (volumeSlider) volumeSlider.value = audio.volume;
-
     // Load initial track
-    loadSong(realStations.lofi);
+    playFullYtTrack(realPresets.lofi.ytId, realPresets.lofi.title, realPresets.lofi.artist, realPresets.lofi.cover);
 
     // ── Station Chips ────────────────────────────────────────────────────────
     document.querySelectorAll('.sp-station-chip').forEach(chip => {
@@ -89,25 +100,69 @@ function initFloatingStudyPlayer() {
             document.querySelectorAll('.sp-station-chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
 
-            if (realStations[key]) {
-                loadSong(realStations[key]);
-                audio.play().then(() => setPlayingState(true)).catch(() => {});
+            if (realPresets[key]) {
+                playFullYtTrack(realPresets[key].ytId, realPresets[key].title, realPresets[key].artist, realPresets[key].cover);
             } else {
-                searchSongs(key + ' study beats');
+                searchRealFullSongs(key + ' full song');
             }
         });
     });
 
-    // ── Load & Play Song ─────────────────────────────────────────────────────
-    function loadSong(song) {
-        if (!song || !song.url) return;
-        audio.src = song.url;
-        if (titleEl) titleEl.textContent = song.title || "Study Track";
-        if (artistEl) artistEl.textContent = song.artist || "Study Music";
-        if (coverEl && song.cover) coverEl.src = song.cover;
-        if (progressBar) progressBar.value = 0;
-        if (timeCurrent) timeCurrent.textContent = "0:00";
-        if (timeTotal) timeTotal.textContent = "LIVE";
+    // ── YouTube Engine (100% Full Song Playback) ─────────────────────────────
+    function playFullYtTrack(ytId, title, artist, cover) {
+        isYtMode = true;
+        streamAudio.pause();
+
+        if (titleEl) titleEl.textContent = title;
+        if (artistEl) artistEl.textContent = artist;
+        if (coverEl && cover) coverEl.src = cover;
+
+        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+            ytPlayer.loadVideoById(ytId);
+            setPlayingState(true);
+        } else {
+            window.pendingYtVideoId = ytId;
+            initYtPlayer(ytId);
+        }
+
+        startTimelineLoop();
+    }
+
+    function initYtPlayer(ytId) {
+        const targetDiv = document.getElementById('yt-player-element');
+        if (!targetDiv) return;
+
+        if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+            ytPlayer.destroy();
+        }
+
+        ytPlayer = new YT.Player('yt-player-element', {
+            height: '140',
+            width: '100%',
+            videoId: ytId,
+            playerVars: {
+                'autoplay': 1,
+                'controls': 1,
+                'modestbranding': 1,
+                'rel': 0,
+                'origin': window.location.origin
+            },
+            events: {
+                'onReady': (e) => {
+                    e.target.playVideo();
+                    if (volumeSlider) e.target.setVolume(parseFloat(volumeSlider.value) * 100);
+                    setPlayingState(true);
+                    startTimelineLoop();
+                },
+                'onStateChange': (e) => {
+                    if (e.data === YT.PlayerState.PLAYING) {
+                        setPlayingState(true);
+                    } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+                        setPlayingState(false);
+                    }
+                }
+            }
+        });
     }
 
     function setPlayingState(playing) {
@@ -116,61 +171,84 @@ function initFloatingStudyPlayer() {
         eqBars.forEach(bar => bar.classList.toggle('playing', playing));
     }
 
+    // ── Play / Pause Button ──────────────────────────────────────────────────
     if (playBtn) {
         playBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                audio.pause();
-                setPlayingState(false);
+            if (isYtMode && ytPlayer) {
+                if (isPlaying) {
+                    ytPlayer.pauseVideo();
+                    setPlayingState(false);
+                } else {
+                    ytPlayer.playVideo();
+                    setPlayingState(true);
+                }
             } else {
-                audio.play().then(() => setPlayingState(true)).catch(err => console.log(err));
+                if (isPlaying) {
+                    streamAudio.pause();
+                    setPlayingState(false);
+                } else {
+                    streamAudio.play().then(() => setPlayingState(true));
+                }
             }
         });
     }
 
-    audio.addEventListener('play', () => setPlayingState(true));
-    audio.addEventListener('pause', () => setPlayingState(false));
+    // ── Timeline Progress Loop & Interactive Seek Bar ────────────────────────
+    function startTimelineLoop() {
+        clearInterval(progressTimer);
+        progressTimer = setInterval(updateTimeline, 250);
+    }
 
-    // ── Timeline Progress & Drag Seek Bar ────────────────────────────────────
-    audio.addEventListener('timeupdate', () => {
+    function updateTimeline() {
         if (isUserSeeking) return;
-        const current = audio.currentTime || 0;
-        const duration = audio.duration || 0;
 
-        if (duration > 0 && !isNaN(duration)) {
-            const pct = (current / duration) * 100;
-            if (progressBar) progressBar.value = pct;
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
-            if (timeTotal) timeTotal.textContent = formatTime(duration);
-        } else {
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
-            if (timeTotal) timeTotal.textContent = "LIVE";
-            if (progressBar) progressBar.value = 100;
+        if (isYtMode && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+            const current = ytPlayer.getCurrentTime() || 0;
+            const duration = ytPlayer.getDuration() || 0;
+
+            if (duration > 0 && !isNaN(duration)) {
+                const pct = (current / duration) * 100;
+                if (progressBar) progressBar.value = pct;
+                if (timeCurrent) timeCurrent.textContent = formatTime(current);
+                if (timeTotal) timeTotal.textContent = formatTime(duration);
+            } else {
+                if (timeCurrent) timeCurrent.textContent = formatTime(current);
+                if (timeTotal) timeTotal.textContent = "LIVE 24/7";
+                if (progressBar) progressBar.value = 100;
+            }
         }
-    });
+    }
 
+    // Interactive Drag Timeline Slider
     if (progressBar) {
         progressBar.addEventListener('mousedown', () => { isUserSeeking = true; });
         progressBar.addEventListener('touchstart', () => { isUserSeeking = true; });
 
         progressBar.addEventListener('input', (e) => {
             const pct = parseFloat(e.target.value);
-            if (audio.duration && !isNaN(audio.duration)) {
-                const targetSecs = (pct / 100) * audio.duration;
-                if (timeCurrent) timeCurrent.textContent = formatTime(targetSecs);
+            if (isYtMode && ytPlayer && typeof ytPlayer.getDuration === 'function') {
+                const duration = ytPlayer.getDuration() || 0;
+                if (duration > 0) {
+                    const targetSecs = (pct / 100) * duration;
+                    if (timeCurrent) timeCurrent.textContent = formatTime(targetSecs);
+                }
             }
         });
 
-        const performSeek = (e) => {
+        const handleSeek = (e) => {
             const pct = parseFloat(e.target.value);
-            if (audio.duration && !isNaN(audio.duration)) {
-                audio.currentTime = (pct / 100) * audio.duration;
+            if (isYtMode && ytPlayer && typeof ytPlayer.getDuration === 'function') {
+                const duration = ytPlayer.getDuration() || 0;
+                if (duration > 0) {
+                    ytPlayer.seekTo((pct / 100) * duration, true);
+                }
             }
             isUserSeeking = false;
         };
 
-        progressBar.addEventListener('change', performSeek);
-        progressBar.addEventListener('mouseup', performSeek);
-        progressBar.addEventListener('touchend', performSeek);
+        progressBar.addEventListener('change', handleSeek);
+        progressBar.addEventListener('mouseup', handleSeek);
+        progressBar.addEventListener('touchend', handleSeek);
     }
 
     function formatTime(secs) {
@@ -184,71 +262,103 @@ function initFloatingStudyPlayer() {
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
             const vol = parseFloat(e.target.value);
-            audio.volume = vol;
-            localStorage.setItem('study_player_vol', vol);
+            streamAudio.volume = vol;
+            if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+                ytPlayer.setVolume(vol * 100);
+            }
         });
     }
 
-    // ── Live Song Search (iTunes + Free Audio Stream API) ────────────────────
-    let searchTimeout = null;
+    // ── Live YouTube Full Song Search (NO 30s LIMITS!) ────────────────────────
+    let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
+            clearTimeout(searchDebounce);
             const query = e.target.value.trim();
             if (query.length < 2) {
                 if (searchResults) searchResults.style.display = 'none';
                 return;
             }
-            searchTimeout = setTimeout(() => searchSongs(query), 300);
+            searchDebounce = setTimeout(() => searchRealFullSongs(query), 300);
         });
     }
 
-    async function searchSongs(query) {
+    async function searchRealFullSongs(query) {
         try {
-            const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`;
-            const res = await fetch(url);
-            const data = await res.json();
-            
-            if (data.results && data.results.length > 0) {
-                renderSearchResults(data.results);
-            } else if (searchResults) {
-                searchResults.innerHTML = `<div style="padding: 8px; font-size: 11px; color: #a1a1aa;">No tracks found.</div>`;
-                searchResults.style.display = 'block';
+            // Piped API for real full YouTube songs
+            const res = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music_songs`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.items && data.items.length > 0) {
+                    renderSearchItems(data.items.slice(0, 7));
+                    return;
+                }
+            }
+
+            // Fallback Invidious API
+            const invRes = await fetch(`https://inv.tux.pizza/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
+            if (invRes.ok) {
+                const invData = await invRes.json();
+                if (invData && invData.length > 0) {
+                    renderInvItems(invData.slice(0, 7));
+                    return;
+                }
             }
         } catch (err) {
-            console.error('Song search failed:', err);
+            console.error('Search API fallback:', err);
         }
     }
 
-    function renderSearchResults(tracks) {
+    function renderSearchItems(items) {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
-        tracks.forEach(t => {
-            if (!t.previewUrl) return;
+        items.forEach(item => {
+            const ytId = item.url ? item.url.replace('/watch?v=', '') : '';
+            if (!ytId) return;
 
-            const item = document.createElement('div');
-            item.className = 'sp-search-item';
-            item.innerHTML = `
-                <img src="${t.artworkUrl60 || t.artworkUrl100}" class="sp-search-art" alt="" />
+            const div = document.createElement('div');
+            div.className = 'sp-search-item';
+            div.innerHTML = `
+                <img src="${item.thumbnail}" class="sp-search-art" alt="" />
                 <div style="flex: 1; min-width: 0;">
-                    <div class="sp-search-title">${t.trackName}</div>
-                    <div class="sp-search-artist">${t.artistName}</div>
+                    <div class="sp-search-title">${item.title}</div>
+                    <div class="sp-search-artist">${item.uploaderName || 'Full Song'}</div>
                 </div>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 18px;"></i>
             `;
-            item.addEventListener('click', () => {
-                loadSong({
-                    title: t.trackName,
-                    artist: t.artistName,
-                    cover: t.artworkUrl100 ? t.artworkUrl100.replace('100x100bb', '300x300bb') : t.artworkUrl60,
-                    url: t.previewUrl
-                });
-                audio.play().then(() => setPlayingState(true)).catch(() => {});
+            div.addEventListener('click', () => {
+                playFullYtTrack(ytId, item.title, item.uploaderName || 'Full Song', item.thumbnail);
                 searchResults.style.display = 'none';
                 if (searchInput) searchInput.value = '';
             });
-            searchResults.appendChild(item);
+            searchResults.appendChild(div);
+        });
+
+        searchResults.style.display = 'block';
+    }
+
+    function renderInvItems(items) {
+        if (!searchResults) return;
+        searchResults.innerHTML = '';
+
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'sp-search-item';
+            div.innerHTML = `
+                <img src="${item.videoThumbnails ? item.videoThumbnails[0]?.url : ''}" class="sp-search-art" alt="" />
+                <div style="flex: 1; min-width: 0;">
+                    <div class="sp-search-title">${item.title}</div>
+                    <div class="sp-search-artist">${item.author || 'Full Song'}</div>
+                </div>
+                <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 18px;"></i>
+            `;
+            div.addEventListener('click', () => {
+                playFullYtTrack(item.videoId, item.title, item.author || 'Full Song', item.videoThumbnails[0]?.url);
+                searchResults.style.display = 'none';
+                if (searchInput) searchInput.value = '';
+            });
+            searchResults.appendChild(div);
         });
 
         searchResults.style.display = 'block';
