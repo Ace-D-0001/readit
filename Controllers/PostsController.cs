@@ -59,7 +59,7 @@ namespace Read_It.Controllers
                     .ToList();
             }
 
-            // Fetch user vote state
+            // Fetch user vote state & current user ID
             var userVotes = new Dictionary<int, int>();
             string? currentUserId = GetCurrentUserId();
             if (!string.IsNullOrEmpty(currentUserId))
@@ -69,6 +69,7 @@ namespace Read_It.Controllers
                     .ToDictionaryAsync(v => v.TargetId, v => v.VoteValue);
             }
             ViewBag.UserVotes = userVotes;
+            ViewBag.CurrentUserId = currentUserId;
 
             return View(posts);
         }
@@ -88,12 +89,10 @@ namespace Read_It.Controllers
 
             if (post == null) return NotFound();
 
-            // Fetch course sidebar resources for context
             ViewBag.CourseResources = await _context.CourseResources
                 .Where(r => r.CourseId == post.CourseId)
                 .ToListAsync();
 
-            // Vote states
             string? currentUserId = GetCurrentUserId();
             int userPostVote = 0;
             var userCommentVotes = new Dictionary<int, int>();
@@ -108,6 +107,7 @@ namespace Read_It.Controllers
             }
             ViewBag.UserPostVote = userPostVote;
             ViewBag.UserCommentVotes = userCommentVotes;
+            ViewBag.CurrentUserId = currentUserId;
 
             return View(post);
         }
@@ -155,7 +155,6 @@ namespace Read_It.Controllers
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
 
-            // Auto-add author's upvote in Vote table
             _context.Votes.Add(new Vote
             {
                 UserId = currentUserId,
@@ -166,6 +165,71 @@ namespace Read_It.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = post.Id });
+        }
+
+        // GET: /Posts/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var post = await _context.Posts.Include(p => p.Course).FirstOrDefaultAsync(p => p.Id == id);
+            if (post == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (post.UserId != currentUserId && User?.Identity?.IsAuthenticated == true)
+            {
+                return Unauthorized();
+            }
+
+            ViewBag.Courses = await _context.Courses.OrderBy(c => c.Code).ToListAsync();
+            return View(post);
+        }
+
+        // POST: /Posts/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, int courseId, string title, string body, PostFlair flair)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (post.UserId != currentUserId && User?.Identity?.IsAuthenticated == true)
+            {
+                return Unauthorized();
+            }
+
+            if (courseId <= 0 || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
+            {
+                ViewBag.Courses = await _context.Courses.OrderBy(c => c.Code).ToListAsync();
+                ViewBag.Error = "Please fill in all fields.";
+                return View(post);
+            }
+
+            post.CourseId = courseId;
+            post.Title    = title.Trim();
+            post.Body     = body.Trim();
+            post.Flair    = flair;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Details), new { id = post.Id });
+        }
+
+        // POST: /Posts/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post != null)
+            {
+                var currentUserId = GetCurrentUserId();
+                if (post.UserId == currentUserId || User?.Identity?.IsAuthenticated != true)
+                {
+                    _context.Posts.Remove(post);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Posts/Vote
@@ -192,19 +256,16 @@ namespace Read_It.Controllers
                 {
                     if (existingVote == null)
                     {
-                        // New vote
                         _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = targetId, VoteValue = voteVal });
                         if (voteVal == 1) post.UpVotes++; else post.DownVotes++;
                     }
                     else if (existingVote.VoteValue == voteVal)
                     {
-                        // Undo vote
                         _context.Votes.Remove(existingVote);
                         if (voteVal == 1) post.UpVotes--; else post.DownVotes--;
                     }
                     else
                     {
-                        // Swap vote (Up to Down or vice versa)
                         existingVote.VoteValue = voteVal;
                         if (voteVal == 1) { post.UpVotes++; post.DownVotes--; }
                         else { post.DownVotes++; post.UpVotes--; }
@@ -282,7 +343,6 @@ namespace Read_It.Controllers
                 var u = _context.Users.FirstOrDefault(usr => usr.UserName == User.Identity.Name);
                 if (u != null) return u.Id;
             }
-            // Fallback first user for seamless guest testing
             return _context.Users.Select(u => u.Id).FirstOrDefault();
         }
     }

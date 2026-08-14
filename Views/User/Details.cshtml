@@ -7,6 +7,7 @@
     var comments = ViewBag.Comments as IEnumerable<Read_It.Models.Comment> ?? Enumerable.Empty<Read_It.Models.Comment>();
     var followedCourses = ViewBag.FollowedCourses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
     int totalKarma = ViewBag.TotalKarma ?? 0;
+    bool isOwnProfile = ViewBag.IsOwnProfile ?? false;
     string initialLetter = (!string.IsNullOrEmpty(Model?.UserName)) ? Model.UserName.Substring(0, 1).ToUpper() : "U";
 }
 
@@ -14,20 +15,47 @@
 
     <!-- User Header Card -->
     <div class="card p-4">
-        <div style="display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;">
+        <div style="display: flex; align-items: flex-start; gap: var(--sp-4); flex-wrap: wrap;">
             <!-- Avatar -->
-            <div class="avatar avatar-lg shadow" style="background: var(--accent); width: 64px; height: 64px; font-size: var(--text-xl);">
+            <div class="avatar avatar-lg shadow" style="background: var(--accent); width: 64px; height: 64px; font-size: var(--text-xl); flex-shrink: 0;">
                 @initialLetter
             </div>
 
             <!-- Info -->
             <div style="flex: 1; min-width: 0;">
-                <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: 2px;">
-                    u/@Model?.UserName
-                </h1>
-                <p style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: var(--sp-2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-2);">
+                    <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: 2px;">
+                        u/@Model?.UserName
+                    </h1>
+                    @if (isOwnProfile)
+                    {
+                        <button type="button" class="btn-outline" style="padding: 4px 14px; font-size: var(--text-xs);"
+                                onclick="toggleBioForm()">
+                            <i class="bi bi-pencil-fill"></i> Edit Bio
+                        </button>
+                    }
+                </div>
+
+                <p id="bio-text" style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: var(--sp-2);">
                     @(string.IsNullOrEmpty(Model?.Bio) ? "IUBAT Community Member" : Model.Bio)
                 </p>
+
+                <!-- Inline Bio Edit Form -->
+                @if (isOwnProfile)
+                {
+                    <div id="bio-edit-form" style="display: none; margin-bottom: var(--sp-3);" class="add-video-form">
+                        <form action="@Url.Action("UpdateBio", "User")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="username" value="@Model?.UserName" />
+                            <textarea name="bio" placeholder="Write a short bio about yourself..." class="form-control mb-2" style="min-height: 70px;">@Model?.Bio</textarea>
+                            <div style="display: flex; gap: var(--sp-2);">
+                                <button type="submit" class="btn-primary" style="padding: 4px 14px; font-size: 12px;">Save Bio</button>
+                                <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleBioForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                }
+
                 <div style="display: flex; gap: var(--sp-4); font-size: var(--text-xs); color: var(--text-muted); flex-wrap: wrap;">
                     <span><i class="bi bi-trophy-fill" style="color: var(--warning);"></i> <strong>@totalKarma</strong> Karma</span>
                     <span><i class="bi bi-file-post"></i> <strong>@posts.Count()</strong> Posts</span>
@@ -66,6 +94,24 @@
                             @post.Title
                         </a>
                         <p class="post-preview">@post.Body</p>
+
+                        <div class="post-actions">
+                            <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                                <i class="bi bi-chat-left-text"></i> @(post.Comments?.Count ?? 0) Comments
+                            </a>
+                            @if (isOwnProfile)
+                            {
+                                <a href="@Url.Action("Edit", "Posts", new { id = post.Id })" class="action-btn" style="color: var(--accent);">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                <form action="@Url.Action("Delete", "Posts", new { id = post.Id })" method="post" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="action-btn" style="color: var(--error);">
+                                        <i class="bi bi-trash-fill"></i> Delete
+                                    </button>
+                                </form>
+                            }
+                        </div>
                     </div>
                 </article>
             }
@@ -144,5 +190,15 @@ function switchTab(name, btn) {
     const target = document.getElementById('tab-' + name);
     if (target) target.style.display = 'flex';
     btn.classList.add('active');
+}
+
+function toggleBioForm() {
+    const form = document.getElementById('bio-edit-form');
+    const text = document.getElementById('bio-text');
+    if (form) {
+        const isHidden = form.style.display === 'none';
+        form.style.display = isHidden ? 'block' : 'none';
+        if (text) text.style.display = isHidden ? 'none' : 'block';
+    }
 }
 </script>

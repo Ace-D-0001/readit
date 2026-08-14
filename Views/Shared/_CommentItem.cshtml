@@ -1,0 +1,101 @@
+@model Read_It.Models.Comment
+
+@{
+    var userCommentVotes = ViewBag.UserCommentVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
+    int myVote = userCommentVotes.ContainsKey(Model.Id) ? userCommentVotes[Model.Id] : 0;
+    string authorName = Model.User?.UserName ?? "student";
+}
+
+<div class="comment-card card p-3" id="comment-@Model.Id">
+    <div style="display: flex; gap: var(--sp-3);">
+        <!-- Avatar -->
+        <div class="avatar avatar-sm" style="background: var(--accent); flex-shrink: 0;">
+            @authorName.Substring(0, 1).ToUpper()
+        </div>
+
+        <div style="flex: 1; min-width: 0;">
+            <!-- Comment Meta Header -->
+            <div class="comment-meta">
+                <a href="@Url.Action("Details", "User", new { username = authorName })" class="comment-author">
+                    u/@authorName
+                </a>
+                <span>·</span>
+                <span>@Model.CreatedAt.ToString("MMM dd 'at' hh:mm tt")</span>
+            </div>
+
+            <!-- Comment Body -->
+            <p class="comment-body">@Model.Body</p>
+
+            <!-- Actions: Vote & Reply -->
+            <div class="comment-actions" style="display: flex; align-items: center; gap: var(--sp-3);">
+                <!-- Vote Form -->
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@Model.Id" />
+                        <input type="hidden" name="targetType" value="comment" />
+                        <input type="hidden" name="direction" value="1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" style="font-size: 13px;">
+                            <i class="bi bi-arrow-up-circle-fill"></i>
+                        </button>
+                    </form>
+
+                    <span style="font-size: var(--text-xs); font-weight: 700; color: @(myVote == 1 ? "var(--upvote)" : "var(--text-secondary)");">
+                        @Model.UpVotes
+                    </span>
+
+                    <form action="@Url.Action("Vote", "Posts")" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="targetId" value="@Model.Id" />
+                        <input type="hidden" name="targetType" value="comment" />
+                        <input type="hidden" name="direction" value="-1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" style="font-size: 13px;">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Reply Toggle Button -->
+                <button type="button" class="action-btn" onclick="toggleReplyForm(@Model.Id)">
+                    <i class="bi bi-reply-fill"></i> Reply
+                </button>
+            </div>
+
+            <!-- Inline Reply Form -->
+            <div id="reply-form-@Model.Id" class="comment-reply-box" style="display: none; margin-top: var(--sp-2);">
+                <form action="@Url.Action("CreateComment", "Posts")" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="postId" value="@Model.PostId" />
+                    <input type="hidden" name="parentCommentId" value="@Model.Id" />
+                    <textarea name="body" placeholder="Replying to u/@authorName..." required style="min-height: 50px;"></textarea>
+                    <div style="display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2);">
+                        <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleReplyForm(@Model.Id)">Cancel</button>
+                        <button type="submit" class="btn-primary" style="padding: 4px 14px; font-size: 12px;">Post Reply</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recursive Child Comments -->
+            @if (Model.ChildComments != null && Model.ChildComments.Any())
+            {
+                <div class="comment-thread" style="margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2);">
+                    @foreach (var child in Model.ChildComments.OrderBy(c => c.CreatedAt))
+                    {
+                        @await Html.PartialAsync("_CommentItem", child)
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+if (typeof toggleReplyForm !== 'function') {
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById('reply-form-' + commentId);
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+}
+</script>

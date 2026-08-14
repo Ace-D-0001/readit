@@ -1,0 +1,108 @@
+@model Read_It.Models.Post
+
+@{
+    ViewData["Title"] = "Edit Post — ReadIt";
+    var courses = ViewBag.Courses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
+}
+
+<div style="max-width: 740px; margin: 0 auto;">
+    <div style="margin-bottom: var(--sp-5);">
+        <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: var(--sp-1);">
+            <i class="bi bi-pencil-fill" style="color: var(--accent);"></i> Edit Post
+        </h1>
+        <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0;">
+            Update your post title, body content, or flair.
+        </p>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div style="background: rgba(234, 0, 39, 0.15); border: 1px solid var(--error); color: #ff6b81; border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4); font-size: var(--text-sm);">
+            <i class="bi bi-exclamation-triangle-fill"></i> @ViewBag.Error
+        </div>
+    }
+
+    <div class="card p-4">
+        <form action="@Url.Action("Edit", "Posts", new { id = Model.Id })" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- Select Course / SubSubject -->
+            <div class="mb-4">
+                <label class="form-label fw-bold mb-1" style="color: var(--text-heading); font-size: var(--text-sm);">
+                    Select SubSubject / Course <span style="color: var(--accent);">*</span>
+                </label>
+                <select name="courseId" class="form-control" required style="font-size: var(--text-md);">
+                    @foreach (var c in courses)
+                    {
+                        <!option value="@c.Id" @(c.Id == Model.CourseId ? "selected" : "")>
+                            c/@c.Code — @c.Title @(c.IsGeneral ? "(General)" : "")
+                        </!option>
+                    }
+                </select>
+            </div>
+
+            <!-- Select Flair -->
+            <div class="mb-4">
+                <label class="form-label fw-bold mb-1" style="color: var(--text-heading); font-size: var(--text-sm);">
+                    Flair <span style="color: var(--accent);">*</span>
+                </label>
+                <div style="display: flex; gap: var(--sp-2); flex-wrap: wrap;">
+                    @foreach (Read_It.Models.PostFlair f in Enum.GetValues(typeof(Read_It.Models.PostFlair)))
+                    {
+                        <label style="cursor: pointer;">
+                            <input type="radio" name="flair" value="@f" @(f == Model.Flair ? "checked" : "") style="display: none;" onchange="updateFlairPills()" />
+                            <span class="flair-pill" data-flair="@f"
+                                  style="display: inline-block; padding: 6px 14px; border-radius: var(--r-full); font-size: var(--text-xs); font-weight: 700; border: 1.5px solid var(--border-default); background: var(--bg-panel-alt); color: var(--text-secondary); transition: all var(--transition);">
+                                @f.ToString()
+                            </span>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <!-- Post Title -->
+            <div class="mb-4">
+                <label class="form-label fw-bold mb-1" style="color: var(--text-heading); font-size: var(--text-sm);">
+                    Title <span style="color: var(--accent);">*</span>
+                </label>
+                <input type="text" name="title" value="@Model.Title" required class="form-control"
+                       style="font-size: var(--text-md); font-weight: 600;" maxLength="300" />
+            </div>
+
+            <!-- Post Body -->
+            <div class="mb-4">
+                <label class="form-label fw-bold mb-1" style="color: var(--text-heading); font-size: var(--text-sm);">
+                    Content / Body <span style="color: var(--accent);">*</span>
+                </label>
+                <textarea name="body" required class="form-control"
+                          style="min-height: 180px; font-size: var(--text-md); line-height: 1.6;">@Model.Body</textarea>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-default); padding-top: var(--sp-4);">
+                <a href="@Url.Action("Details", "Posts", new { id = Model.Id })" class="btn-ghost">Cancel</a>
+                <button type="submit" class="btn-primary" style="padding: 9px 24px;">
+                    <i class="bi bi-check-circle-fill"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateFlairPills() {
+    document.querySelectorAll('.flair-pill').forEach(pill => {
+        const radio = pill.parentElement.querySelector('input[type="radio"]');
+        if (radio.checked) {
+            pill.style.background = 'var(--accent-muted)';
+            pill.style.borderColor = 'var(--accent)';
+            pill.style.color = 'var(--accent)';
+        } else {
+            pill.style.background = 'var(--bg-panel-alt)';
+            pill.style.borderColor = 'var(--border-default)';
+            pill.style.color = 'var(--text-secondary)';
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', updateFlairPills);
+</script>

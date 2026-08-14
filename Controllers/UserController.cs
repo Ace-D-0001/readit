@@ -40,6 +40,27 @@ namespace Read_It.Controllers
 
             if (user == null) return NotFound();
 
+            // Check if current user is viewing their own profile
+            bool isOwnProfile = false;
+            string? currentUserId = null;
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                if (currentUser != null)
+                {
+                    currentUserId = currentUser.Id;
+                    if (currentUser.Id == user.Id) isOwnProfile = true;
+                }
+            }
+            else
+            {
+                // Guest demo mode: treat first user as logged in
+                var firstUser = await _context.Users.FirstOrDefaultAsync();
+                if (firstUser != null && firstUser.Id == user.Id) isOwnProfile = true;
+            }
+
+            ViewBag.IsOwnProfile = isOwnProfile;
+
             // Load user's posts
             var posts = await _context.Posts
                 .Include(p => p.Course)
@@ -73,6 +94,20 @@ namespace Read_It.Controllers
             ViewBag.TotalKarma = totalPostVotes + totalCommentVotes;
 
             return View(user);
+        }
+
+        // POST: /User/UpdateBio
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateBio(string username, string bio)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+            if (user == null) return NotFound();
+
+            user.Bio = bio?.Trim() ?? "";
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { username });
         }
     }
 }
