@@ -105,7 +105,10 @@ namespace Read_It.Controllers
             else if (sort.ToLower() == "new")
                 course.Posts = course.Posts.OrderByDescending(p => p.CreatedAt).ToList();
             else
-                course.Posts = course.Posts.OrderByDescending(p => p.IsPinned).ThenByDescending(p => p.CreatedAt).ToList();
+                course.Posts = course.Posts
+                    .OrderByDescending(p => p.IsPinned)
+                    .ThenByDescending(p => (double)(p.UpVotes - p.DownVotes + 1) / Math.Pow((DateTime.UtcNow - p.CreatedAt).TotalHours + 2.0, 1.2))
+                    .ToList();
 
             return View(course);
         }
@@ -240,7 +243,7 @@ namespace Read_It.Controllers
                 var u = _context.Users.FirstOrDefault(usr => usr.UserName == User.Identity.Name);
                 if (u != null) return u.Id;
             }
-            return _context.Users.Select(u => u.Id).FirstOrDefault();
+            return null;
         }
     }
 }

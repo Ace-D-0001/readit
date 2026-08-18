@@ -101,8 +101,13 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateBio(string username, string bio)
         {
+            if (User?.Identity?.IsAuthenticated != true)
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
-            if (user == null) return NotFound();
+            if (user == null || currentUser == null || currentUser.Id != user.Id)
+                return Forbid();
 
             user.Bio = bio?.Trim() ?? "";
             await _context.SaveChangesAsync();

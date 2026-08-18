@@ -58,10 +58,6 @@ namespace Read_It.Controllers
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
                 if (user != null) currentUserId = user.Id;
             }
-            else
-            {
-                currentUserId = await _context.Users.Select(u => u.Id).FirstOrDefaultAsync();
-            }
 
             if (!string.IsNullOrEmpty(currentUserId))
             {

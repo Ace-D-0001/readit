@@ -234,75 +234,7 @@
     }
 </div>
 
-<!-- Real Music Player Widget (RHS Bottom Area) -->
-<div id="study-player" class="study-player-card" style="margin-top: var(--sp-3);">
-    <div class="sp-header">
-        <div class="sp-title-badge">
-            <i class="bi bi-music-note-beaming"></i> Real Music Player
-        </div>
-        <div class="sp-eq">
-            <div class="sp-eq-bar"></div>
-            <div class="sp-eq-bar"></div>
-            <div class="sp-eq-bar"></div>
-            <div class="sp-eq-bar"></div>
-        </div>
-    </div>
 
-    <!-- Live Search Box for ANY Real Song -->
-    <div class="sp-search-wrapper">
-        <i class="bi bi-search sp-search-icon"></i>
-        <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search any song (e.g. Lofi Girl, Coldplay)..." autocomplete="off" />
-        <div id="sp-search-results" class="sp-search-results"></div>
-    </div>
-
-    <!-- Quick Preset Genre Chips -->
-    <div class="sp-stations-row">
-        <button type="button" class="sp-station-chip active" data-query="lofi">🎧 Lofi</button>
-        <button type="button" class="sp-station-chip" data-query="focus">🧠 Focus</button>
-        <button type="button" class="sp-station-chip" data-query="piano">🎹 Piano</button>
-        <button type="button" class="sp-station-chip" data-query="synthwave">🌆 Synth</button>
-        <button type="button" class="sp-station-chip" data-query="jazz">☕ Jazz</button>
-    </div>
-
-    <!-- Real Embedded YouTube Video / Audio Container -->
-    <div id="sp-yt-frame" style="margin-bottom: 8px;">
-        <div id="yt-player-element"></div>
-    </div>
-
-    <!-- Track Info -->
-    <div class="sp-track-row" style="margin-bottom: 6px;">
-        <div class="sp-track-info">
-            <div id="sp-title" class="sp-track-title">Lofi Hip Hop Radio</div>
-            <div id="sp-artist" class="sp-track-artist">Lofi Girl (Live 24/7)</div>
-        </div>
-    </div>
-
-    <!-- Interactive Time Progress Slider (Drag / Seek to any position!) -->
-    <div class="sp-progress-wrapper" style="margin-bottom: 8px;">
-        <span id="sp-time-current">0:00</span>
-        <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline to jump to any part of song" />
-        <span id="sp-time-total">LIVE</span>
-    </div>
-
-    <!-- Controls & Volume -->
-    <div class="sp-controls-row">
-        <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-pause-fill"></i></button>
-        <div style="display: flex; align-items: center; gap: 6px; flex: 1; margin-left: 10px;">
-            <i class="bi bi-volume-up-fill" style="font-size: 11px; color: #71717a;"></i>
-            <input type="range" id="sp-volume" class="sp-slider" value="0.8" min="0" max="1" step="0.05" />
-        </div>
-    </div>
-
-    <!-- Ambient Layer Toggle -->
-    <div class="sp-ambient-row">
-        <button type="button" id="sp-rain-btn" class="sp-ambient-btn">
-            <i class="bi bi-cloud-rain-fill"></i> Rain Sound
-        </button>
-        <button type="button" id="sp-cafe-btn" class="sp-ambient-btn">
-            <i class="bi bi-disc-fill"></i> Synth Stream
-        </button>
-    </div>
-</div>
 
 <script>
 function filterRightCol(q) {

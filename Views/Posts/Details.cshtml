@@ -112,7 +112,7 @@
     <div style="display: flex; flex-direction: column; gap: var(--sp-3);">
         @foreach (var comment in topLevelComments)
         {
-            @await Html.PartialAsync("_CommentItem", comment)
+            @await Html.PartialAsync("~/Views/Shared/_CommentItem.cshtml", comment)
         }
     </div>
 }

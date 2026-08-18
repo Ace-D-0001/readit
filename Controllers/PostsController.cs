@@ -302,7 +302,7 @@ namespace Read_It.Controllers
                         userVote = voteVal;
                     }
                     await _context.SaveChangesAsync();
-                    newScore = comment.UpVotes;
+                    newScore = comment.UpVotes - comment.DownVotes;
                 }
             }
 
@@ -379,8 +379,7 @@ namespace Read_It.Controllers
                 ParentCommentId = parentCommentId,
                 UserId = currentUserId,
                 Body = body.Trim(),
-                CreatedAt = DateTime.UtcNow,
-                UpVotes = 1
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Comments.Add(comment);
@@ -396,7 +395,7 @@ namespace Read_It.Controllers
                 var u = _context.Users.FirstOrDefault(usr => usr.UserName == User.Identity.Name);
                 if (u != null) return u.Id;
             }
-            return _context.Users.Select(u => u.Id).FirstOrDefault();
+            return null;
         }
     }
 
