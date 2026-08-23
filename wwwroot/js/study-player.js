@@ -26,6 +26,8 @@ function initStudyMusicPlayer() {
     const playIcon = document.getElementById('sp-play-icon');
     const prevBtn = document.getElementById('sp-prev-btn');
     const nextBtn = document.getElementById('sp-next-btn');
+    const volBtn = document.getElementById('sp-vol-btn');
+    const volIcon = document.getElementById('sp-vol-icon');
     const titleEl = document.getElementById('sp-title');
     const artistEl = document.getElementById('sp-artist');
     const coverEl = document.getElementById('sp-cover');
@@ -43,6 +45,7 @@ function initStudyMusicPlayer() {
     let isUserSeeking = false;
     let currentPlaylist = [];
     let currentIndex = 0;
+    let lastNonMuteVol = 0.8;
 
     // Player Object
     const player = {
@@ -65,9 +68,25 @@ function initStudyMusicPlayer() {
         setVolume(vol) {
             audio.volume = vol;
             if (volumeSlider) volumeSlider.value = vol;
+            if (volIcon) {
+                if (vol === 0) volIcon.className = "bi bi-volume-mute-fill";
+                else if (vol < 0.5) volIcon.className = "bi bi-volume-down-fill";
+                else volIcon.className = "bi bi-volume-up-fill";
+            }
+            if (vol > 0) lastNonMuteVol = vol;
             localStorage.setItem('sp_vol', vol);
         }
     };
+
+    if (volBtn) {
+        volBtn.addEventListener('click', () => {
+            if (audio.volume > 0) {
+                player.setVolume(0);
+            } else {
+                player.setVolume(lastNonMuteVol || 0.8);
+            }
+        });
+    }
 
     // Restore Volume
     const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);

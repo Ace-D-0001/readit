@@ -1128,6 +1128,48 @@ input, textarea, select { font-family: var(--font); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+}
+
+.sp-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sp-volume-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sp-volume-container:hover .sp-vol-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.sp-vol-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  background: rgba(15, 17, 26, 0.96);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 8px 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  width: 100px;
+}
+
+.sp-vol-slider {
+  width: 100%;
 }
 
 .sp-btn-circle {
