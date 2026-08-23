@@ -1,8 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — JAMENDO (FULL SONGS) & ITUNES PREVIEWS
-   - Single HTML5 Audio Element for seamless playback
-   - Search Jamendo & iTunes for dock playback
-   - "Listen on SoundCloud ↗" external link option in search results
+   STUDY MUSIC PLAYER — ITUNES 30s PREVIEWS ONLY
+   - Single HTML5 Audio Element for playback
+   - Fast iTunes search for 30s previews
    - SessionStorage state persistence across page reloads
    - BroadcastChannel UI state synchronization
    ══════════════════════════════════════════════════════════════════════════ */
@@ -74,7 +73,7 @@ function initStudyMusicPlayer() {
     const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
     player.setVolume(savedVol);
 
-    // Restore Session State or Load Initial Full Tracks
+    // Restore Session State or Load Initial Tracks
     restoreSessionStateOrLoadDefault();
 
     function saveSessionState() {
@@ -123,10 +122,10 @@ function initStudyMusicPlayer() {
         }
 
         // Default initial load
-        await loadInitialFullPlaylist();
+        await loadInitialPlaylist();
     }
 
-    async function loadInitialFullPlaylist() {
+    async function loadInitialPlaylist() {
         try {
             const res = await fetch('/api/music/lofi-full');
             if (res.ok) {
@@ -139,7 +138,7 @@ function initStudyMusicPlayer() {
                 }
             }
         } catch (err) {
-            console.warn("Failed loading full playlist:", err);
+            console.warn("Failed loading initial iTunes tracks:", err);
         }
     }
 
@@ -219,7 +218,7 @@ function initStudyMusicPlayer() {
         audio.src = track.url || track.streamUrl;
         if (progressBar) progressBar.value = 0;
         if (timeCurrent) timeCurrent.textContent = "0:00";
-        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "--:--";
+        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "0:30";
 
         if (shouldAutoplay) {
             player.play();
@@ -227,8 +226,8 @@ function initStudyMusicPlayer() {
     }
 
     function updateUI(title, artist, cover) {
-        if (titleEl) titleEl.textContent = title || "Full Study Song";
-        if (artistEl) artistEl.textContent = artist || "Full Track";
+        if (titleEl) titleEl.textContent = title || "iTunes Song";
+        if (artistEl) artistEl.textContent = artist || "iTunes Artist";
         if (coverEl && cover) coverEl.src = cover;
     }
 
@@ -236,7 +235,7 @@ function initStudyMusicPlayer() {
     audio.addEventListener('timeupdate', () => {
         if (isUserSeeking) return;
         const current = audio.currentTime || 0;
-        const duration = audio.duration || 0;
+        const duration = audio.duration || 30;
 
         if (duration > 0 && !isNaN(duration)) {
             const pct = (current / duration) * 100;
@@ -279,7 +278,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // Search Jamendo & iTunes + Courtesy External SoundCloud Link
+    // Search iTunes Previews
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -290,75 +289,56 @@ function initStudyMusicPlayer() {
                 return;
             }
 
-            searchDebounce = setTimeout(() => executeMultiSearch(query), 250);
+            searchDebounce = setTimeout(() => executeITunesSearch(query), 250);
         });
     }
 
-    async function executeMultiSearch(query) {
+    async function executeITunesSearch(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching music…</div>`;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching iTunes…</div>`;
         searchResults.style.display = 'block';
 
         try {
-            // Search Jamendo & iTunes
-            const [jamendoRes, itunesRes] = await Promise.allSettled([
-                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`),
-                fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`)
-            ]);
-
-            const tracks = [];
-
-            // 1. Jamendo (100% Full Length Tracks)
-            if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
-                const jamendoData = await jamendoRes.value.json();
-                if (Array.isArray(jamendoData)) {
-                    jamendoData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
-                        }
-                    });
-                }
+            const res = await fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`);
+            if (res.ok) {
+                const tracks = await res.json();
+                renderSearchResults(tracks);
+                return;
             }
-
-            // 2. iTunes (Song Previews)
-            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
-                const itunesData = await itunesRes.value.json();
-                if (Array.isArray(itunesData)) {
-                    itunesData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
-                        }
-                    });
-                }
-            }
-
-            renderSearchResults(tracks, query);
+            renderSearchResults([]);
         } catch (err) {
             console.error("Search error:", err);
-            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching music. Please try again.</div>`;
+            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching iTunes. Please try again.</div>`;
         }
     }
 
-    function renderSearchResults(items, query) {
+    function renderSearchResults(items) {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
-        // Render Playable Track Results
+        if (items.length === 0) {
+            const noRes = document.createElement('div');
+            noRes.style.padding = '12px';
+            noRes.style.fontSize = '11px';
+            noRes.style.color = '#a1a1aa';
+            noRes.style.textAlign = 'center';
+            noRes.textContent = "No iTunes previews found for that search.";
+            searchResults.appendChild(noRes);
+            searchResults.style.display = 'block';
+            return;
+        }
+
         items.forEach((t, idx) => {
             const div = document.createElement('div');
             div.className = 'sp-search-item';
-
-            const durText = t.duration ? formatTime(t.duration) : 'Full Song';
 
             div.innerHTML = `
                 <img src="${t.cover}" class="sp-search-art" alt="" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" />
                 <div style="flex: 1; min-width: 0;">
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
-                    <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · ${durText}</div>
+                    <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · 0:30</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Jamendo'}</span>
+                <span class="sp-source-badge sp-badge-itunes">30s Preview</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
@@ -371,30 +351,6 @@ function initStudyMusicPlayer() {
             });
             searchResults.appendChild(div);
         });
-
-        // Offer Courtesy External Link to Open SoundCloud in New Tab
-        const scLink = document.createElement('a');
-        scLink.href = `https://soundcloud.com/search?q=${encodeURIComponent(query)}`;
-        scLink.target = '_blank';
-        scLink.rel = 'noopener noreferrer';
-        scLink.className = 'sp-search-item';
-        scLink.style.background = 'rgba(255, 85, 0, 0.08)';
-        scLink.style.borderTop = '1px solid rgba(255, 85, 0, 0.2)';
-        scLink.style.textDecoration = 'none';
-        scLink.style.display = 'flex';
-        scLink.style.alignItems = 'center';
-        scLink.style.gap = '10px';
-        scLink.style.marginTop = '4px';
-
-        scLink.innerHTML = `
-            <i class="bi bi-box-arrow-up-right" style="color: #ff5500; font-size: 16px;"></i>
-            <div style="flex: 1; min-width: 0;">
-                <div class="sp-search-title" style="color: #ff5500;">Listen on SoundCloud ↗</div>
-                <div class="sp-search-artist">Open SoundCloud search for "${escapeHtml(query)}" in a new tab</div>
-            </div>
-            <span class="sp-source-badge sp-badge-soundcloud">External Link</span>
-        `;
-        searchResults.appendChild(scLink);
 
         searchResults.style.display = 'block';
     }
