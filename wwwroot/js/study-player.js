@@ -15,7 +15,7 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio Element for Jamendo / Direct MP3s
+    // Native HTML5 Audio Element for Jamendo / Direct MP3s / iTunes
     const audio = new Audio();
     audio.preload = 'auto';
 
@@ -394,7 +394,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // ── Direct Keyword Text Search (SoundCloud + Jamendo) ────────────────────
+    // ── Direct Multi-Source Search (SoundCloud + Jamendo + iTunes) ───────────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -411,7 +411,7 @@ function initStudyMusicPlayer() {
                 return;
             }
 
-            searchDebounce = setTimeout(() => executeMultiSearch(query), 300);
+            searchDebounce = setTimeout(() => executeMultiSearch(query), 250);
         });
     }
 
@@ -438,32 +438,20 @@ function initStudyMusicPlayer() {
 
     async function executeMultiSearch(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching full songs…</div>`;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching music…</div>`;
         searchResults.style.display = 'block';
 
         try {
-            // Fetch SoundCloud Full Songs + Jamendo Full Songs
-            const [scRes, jamendoRes] = await Promise.allSettled([
+            // Parallel search across Jamendo, SoundCloud, and iTunes
+            const [jamendoRes, scRes, itunesRes] = await Promise.allSettled([
+                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`),
                 fetch(`/api/music/soundcloud?q=${encodeURIComponent(query)}`),
-                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`)
+                fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`)
             ]);
 
             const tracks = [];
 
-            // 1. SoundCloud Full Songs
-            if (scRes.status === 'fulfilled' && scRes.value.ok) {
-                const scData = await scRes.value.json();
-                if (Array.isArray(scData)) {
-                    scData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
-                        }
-                    });
-                }
-            }
-
-            // 2. Jamendo Full Songs
+            // 1. Jamendo Full Songs (100% Full Length)
             if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
                 const jamendoData = await jamendoRes.value.json();
                 if (Array.isArray(jamendoData)) {
@@ -476,10 +464,36 @@ function initStudyMusicPlayer() {
                 }
             }
 
+            // 2. SoundCloud Tracks
+            if (scRes.status === 'fulfilled' && scRes.value.ok) {
+                const scData = await scRes.value.json();
+                if (Array.isArray(scData)) {
+                    scData.forEach(p => {
+                        const pTitle = (p.title || '').toLowerCase();
+                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
+                            tracks.push(p);
+                        }
+                    });
+                }
+            }
+
+            // 3. iTunes Commercial Song Lookup Fallback
+            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
+                const itunesData = await itunesRes.value.json();
+                if (Array.isArray(itunesData)) {
+                    itunesData.forEach(p => {
+                        const pTitle = (p.title || '').toLowerCase();
+                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
+                            tracks.push(p);
+                        }
+                    });
+                }
+            }
+
             renderSearchResults(tracks);
         } catch (err) {
             console.error("Search error:", err);
-            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching full music. Please try again.</div>`;
+            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching music. Please try again.</div>`;
         }
     }
 
@@ -493,7 +507,7 @@ function initStudyMusicPlayer() {
             noRes.style.fontSize = '11px';
             noRes.style.color = '#a1a1aa';
             noRes.style.textAlign = 'center';
-            noRes.textContent = "No songs found for that search. Try typing another song or artist!";
+            noRes.textContent = "No songs found for that search. Try another query like 'lofi', 'chill', 'piano', or an artist!";
             searchResults.appendChild(noRes);
             searchResults.style.display = 'block';
             return;
@@ -511,7 +525,7 @@ function initStudyMusicPlayer() {
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
                     <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · ${durText}</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-soundcloud'}">${t.source || 'Full Song'}</span>
+                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Full Song'}</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
