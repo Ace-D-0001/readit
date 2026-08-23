@@ -213,9 +213,6 @@
             <input type="range" id="sp-volume" class="sp-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
         </div>
     </div>
-
-    <!-- Hidden SoundCloud Widget Container -->
-    <iframe id="sc-widget-frame" allow="autoplay" src="https://w.soundcloud.com/player/?url=&auto_play=false&show_artwork=false" style="display:none; width:0; height:0; border:0;"></iframe>
 </div>
 
 <!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
@@ -266,7 +263,6 @@
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://w.soundcloud.com/player/api.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/js/study-player.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)

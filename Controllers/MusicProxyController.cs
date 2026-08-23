@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Read_It.Controllers;
 
 /// <summary>
-/// Multi-source music proxy controller supporting SoundCloud, Jamendo (100% Full Tracks), and iTunes.
+/// Music search and streaming controller supporting Jamendo (100% Full Tracks) and iTunes.
 /// </summary>
 [Route("api/music")]
 public class MusicProxyController : Controller
@@ -58,8 +58,7 @@ public class MusicProxyController : Controller
                                 streamUrl = audioUrl,
                                 duration = duration,
                                 source = "Jamendo",
-                                badgeClass = "sp-badge-jamendo",
-                                isSoundCloud = false
+                                badgeClass = "sp-badge-jamendo"
                             });
                         }
                     }
@@ -79,8 +78,7 @@ public class MusicProxyController : Controller
                 streamUrl = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3",
                 duration = 184,
                 source = "Jamendo",
-                badgeClass = "sp-badge-jamendo",
-                isSoundCloud = false
+                badgeClass = "sp-badge-jamendo"
             },
             new {
                 title = "Midnight Rain Coffee & Study",
@@ -89,8 +87,7 @@ public class MusicProxyController : Controller
                 streamUrl = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Shatter_Me/Kai_Engel_-_04_-_Sentinel.mp3",
                 duration = 210,
                 source = "Jamendo",
-                badgeClass = "sp-badge-jamendo",
-                isSoundCloud = false
+                badgeClass = "sp-badge-jamendo"
             }
         });
     }
@@ -109,7 +106,6 @@ public class MusicProxyController : Controller
 
         try
         {
-            // Try namesearch first, then fallback to search
             var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=15&namesearch={Uri.EscapeDataString(q)}&include=musicinfo&audioformat=mp32";
             var res = await _http.GetAsync(url);
             
@@ -139,15 +135,13 @@ public class MusicProxyController : Controller
                                 streamUrl = audioUrl,
                                 duration = duration,
                                 source = "Jamendo",
-                                badgeClass = "sp-badge-jamendo",
-                                isSoundCloud = false
+                                badgeClass = "sp-badge-jamendo"
                             });
                         }
                     }
                 }
             }
 
-            // Fallback search param if namesearch returned 0
             if (results.Count == 0)
             {
                 var fallbackUrl = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=15&search={Uri.EscapeDataString(q)}&include=musicinfo&audioformat=mp32";
@@ -176,8 +170,7 @@ public class MusicProxyController : Controller
                                     streamUrl = audioUrl,
                                     duration = duration,
                                     source = "Jamendo",
-                                    badgeClass = "sp-badge-jamendo",
-                                    isSoundCloud = false
+                                    badgeClass = "sp-badge-jamendo"
                                 });
                             }
                         }
@@ -191,68 +184,6 @@ public class MusicProxyController : Controller
         {
             return Json(new object[0]);
         }
-    }
-
-    /// <summary>
-    /// Search SoundCloud database via public endpoints.
-    /// GET /api/music/soundcloud?q=lofi
-    /// </summary>
-    [HttpGet("soundcloud")]
-    public async Task<IActionResult> SearchSoundCloud([FromQuery] string q)
-    {
-        if (string.IsNullOrWhiteSpace(q))
-            return BadRequest(new { error = "Query is required" });
-
-        try
-        {
-            var searchUrl = $"https://api-v2.soundcloud.com/search/tracks?q={Uri.EscapeDataString(q)}&client_id=iZ86MuBDStructureKeyFallbackNoAuth&limit=10";
-            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
-            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-            
-            var res = await _http.SendAsync(request);
-            if (res.IsSuccessStatusCode)
-            {
-                var json = await res.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-
-                var results = new List<object>();
-                if (doc.RootElement.TryGetProperty("collection", out var items))
-                {
-                    foreach (var item in items.EnumerateArray())
-                    {
-                        var title = item.TryGetProperty("title", out var t) ? t.GetString() : null;
-                        var permalinkUrl = item.TryGetProperty("permalink_url", out var p) ? p.GetString() : null;
-                        var artworkUrl = item.TryGetProperty("artwork_url", out var a) ? a.GetString() : null;
-                        var durationMs = item.TryGetProperty("full_duration", out var fd) ? fd.GetInt32() : (item.TryGetProperty("duration", out var d) ? d.GetInt32() : 0);
-
-                        var user = item.TryGetProperty("user", out var u) ? u : default;
-                        var username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out var un) ? un.GetString() : "SoundCloud Artist";
-
-                        if (artworkUrl != null)
-                            artworkUrl = artworkUrl.Replace("-large", "-t300x300");
-
-                        if (title != null && permalinkUrl != null)
-                        {
-                            results.Add(new
-                            {
-                                title = title,
-                                artist = username,
-                                cover = artworkUrl ?? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300",
-                                streamUrl = permalinkUrl,
-                                duration = durationMs / 1000,
-                                source = "SoundCloud",
-                                badgeClass = "sp-badge-soundcloud",
-                                isSoundCloud = true
-                            });
-                        }
-                    }
-                }
-                if (results.Count > 0) return Json(results);
-            }
-        }
-        catch { }
-
-        return Json(new object[0]);
     }
 
     /// <summary>
@@ -297,9 +228,8 @@ public class MusicProxyController : Controller
                             cover = artworkUrl ?? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300",
                             streamUrl = previewUrl,
                             duration = 30,
-                            source = "iTunes",
-                            badgeClass = "sp-badge-itunes",
-                            isSoundCloud = false
+                            source = "iTunes Preview",
+                            badgeClass = "sp-badge-itunes"
                         });
                     }
                 }
@@ -310,52 +240,6 @@ public class MusicProxyController : Controller
         catch
         {
             return Json(new object[0]);
-        }
-    }
-
-    /// <summary>
-    /// Resolve a SoundCloud track URL via official oEmbed endpoint.
-    /// GET /api/music/soundcloud-oembed?url=https://soundcloud.com/artist/track
-    /// </summary>
-    [HttpGet("soundcloud-oembed")]
-    public async Task<IActionResult> ResolveSoundCloudUrl([FromQuery] string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return BadRequest(new { error = "SoundCloud URL is required" });
-
-        try
-        {
-            var oembedUrl = $"https://soundcloud.com/oembed?format=json&url={Uri.EscapeDataString(url)}";
-            var res = await _http.GetAsync(oembedUrl);
-            if (!res.IsSuccessStatusCode)
-                return NotFound(new { error = "SoundCloud track not found" });
-
-            var json = await res.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            var title = root.TryGetProperty("title", out var t) ? t.GetString() : "SoundCloud Track";
-            var author = root.TryGetProperty("author_name", out var a) ? a.GetString() : "SoundCloud Artist";
-            var thumbnail = root.TryGetProperty("thumbnail_url", out var th) ? th.GetString() : null;
-
-            if (thumbnail != null)
-                thumbnail = thumbnail.Replace("-large", "-t300x300");
-
-            return Json(new
-            {
-                title = title,
-                artist = author,
-                cover = thumbnail ?? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300",
-                streamUrl = url,
-                duration = 0,
-                source = "SoundCloud",
-                badgeClass = "sp-badge-soundcloud",
-                isSoundCloud = true
-            });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
         }
     }
 }

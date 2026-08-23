@@ -1,9 +1,9 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — SOUNDCLOUD WIDGET & NATIVE AUDIO DUAL ENGINE
-   - Seamless control of Native HTML5 Audio and SoundCloud Embedded Widget
-   - Unified playback abstraction (play, pause, seekTo, setVolume)
-   - Zero-overlap playback source switching
-   - SessionStorage persistence across full page reloads
+   STUDY MUSIC PLAYER — JAMENDO (FULL SONGS) & ITUNES PREVIEWS
+   - Single HTML5 Audio Element for seamless playback
+   - Search Jamendo & iTunes for dock playback
+   - "Listen on SoundCloud ↗" external link option in search results
+   - SessionStorage state persistence across page reloads
    - BroadcastChannel UI state synchronization
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -15,61 +15,9 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio Element for Jamendo / Direct MP3s / iTunes
+    // Single Native HTML5 Audio Element
     const audio = new Audio();
     audio.preload = 'auto';
-
-    // SoundCloud Widget API Instance & Readiness Queue
-    const scFrame = document.getElementById('sc-widget-frame');
-    let scWidget = null;
-    let isScReady = false;
-    let pendingScTrack = null;
-
-    if (scFrame && typeof SC !== 'undefined' && SC.Widget) {
-        try {
-            scWidget = SC.Widget(scFrame);
-            scWidget.bind(SC.Widget.Events.READY, () => {
-                isScReady = true;
-                const vol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
-                try { scWidget.setVolume(vol * 100); } catch(e){}
-                if (pendingScTrack) {
-                    const trackToPlay = pendingScTrack;
-                    pendingScTrack = null;
-                    loadAndPlaySoundCloudTrack(trackToPlay);
-                }
-            });
-
-            scWidget.bind(SC.Widget.Events.PLAY, () => {
-                if (activeSource === 'soundcloud') setPlayingState(true);
-            });
-
-            scWidget.bind(SC.Widget.Events.PAUSE, () => {
-                if (activeSource === 'soundcloud') setPlayingState(false);
-            });
-
-            scWidget.bind(SC.Widget.Events.FINISH, () => {
-                if (activeSource === 'soundcloud' && currentPlaylist.length > 0) {
-                    currentIndex = (currentIndex + 1) % currentPlaylist.length;
-                    playPlaylistTrack(currentIndex, true);
-                }
-            });
-
-            scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, (data) => {
-                if (activeSource === 'soundcloud' && !isUserSeeking) {
-                    const currentSecs = data.currentPosition / 1000;
-                    const totalSecs = (data.currentPosition / (data.relativePosition || 1)) / 1000;
-                    if (totalSecs > 0) {
-                        const pct = (currentSecs / totalSecs) * 100;
-                        if (progressBar) progressBar.value = pct;
-                        if (timeCurrent) timeCurrent.textContent = formatTime(currentSecs);
-                        if (timeTotal) timeTotal.textContent = formatTime(totalSecs);
-                    }
-                }
-            });
-        } catch (err) {
-            console.warn("SoundCloud Widget API init exception:", err);
-        }
-    }
 
     // BroadcastChannel for cross-tab UI state synchronization
     const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('study_player_channel') : null;
@@ -96,46 +44,28 @@ function initStudyMusicPlayer() {
     let isUserSeeking = false;
     let currentPlaylist = [];
     let currentIndex = 0;
-    let activeSource = 'native'; // 'native' or 'soundcloud'
 
-    // Unified Player Abstraction
+    // Player Object
     const player = {
         play() {
-            if (activeSource === 'soundcloud') {
-                if (audio) audio.pause();
-                if (scWidget && isScReady) scWidget.play();
-                setPlayingState(true);
-            } else {
-                if (scWidget && isScReady) try { scWidget.pause(); } catch(e){}
-                audio.play().then(() => setPlayingState(true)).catch((err) => {
-                    console.warn("Autoplay deferred:", err);
-                    setPlayingState(false);
-                    if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
-                });
-            }
+            audio.play().then(() => setPlayingState(true)).catch((err) => {
+                console.warn("Autoplay deferred:", err);
+                setPlayingState(false);
+                if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
+            });
         },
         pause() {
-            if (activeSource === 'soundcloud') {
-                if (scWidget && isScReady) scWidget.pause();
-            }
             audio.pause();
             setPlayingState(false);
         },
         seekToPercent(pct) {
-            if (activeSource === 'soundcloud' && scWidget && isScReady) {
-                scWidget.getDuration((durMs) => {
-                    if (durMs > 0) scWidget.seekTo((pct / 100) * durMs);
-                });
-            } else if (audio.duration && !isNaN(audio.duration)) {
+            if (audio.duration && !isNaN(audio.duration)) {
                 audio.currentTime = (pct / 100) * audio.duration;
             }
         },
-        setVolume(vol) { // vol parameter is 0 to 1
+        setVolume(vol) {
             audio.volume = vol;
             if (volumeSlider) volumeSlider.value = vol;
-            if (scWidget && isScReady) {
-                try { scWidget.setVolume(vol * 100); } catch(e){}
-            }
             localStorage.setItem('sp_vol', vol);
         }
     };
@@ -144,7 +74,7 @@ function initStudyMusicPlayer() {
     const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
     player.setVolume(savedVol);
 
-    // ── Restore Session State or Load Initial Full Tracks ────────────────────
+    // Restore Session State or Load Initial Full Tracks
     restoreSessionStateOrLoadDefault();
 
     function saveSessionState() {
@@ -156,7 +86,6 @@ function initStudyMusicPlayer() {
                 index: currentIndex,
                 currentTime: audio.currentTime || 0,
                 isPlaying: isPlaying,
-                activeSource: activeSource,
                 volume: audio.volume,
                 minimized: playerCard.classList.contains('minimized')
             };
@@ -183,19 +112,9 @@ function initStudyMusicPlayer() {
                     const tr = state.track;
                     updateUI(tr.title, tr.artist, tr.cover);
 
-                    if (tr.isSoundCloud || tr.source === 'SoundCloud') {
-                        activeSource = 'soundcloud';
-                        if (isScReady) {
-                            scWidget.load(tr.streamUrl, { auto_play: state.isPlaying, show_artwork: false });
-                        } else {
-                            pendingScTrack = tr;
-                        }
-                    } else {
-                        activeSource = 'native';
-                        audio.src = tr.url || tr.streamUrl;
-                        if (state.currentTime > 0) audio.currentTime = state.currentTime;
-                        if (state.isPlaying) player.play();
-                    }
+                    audio.src = tr.url || tr.streamUrl;
+                    if (state.currentTime > 0) audio.currentTime = state.currentTime;
+                    if (state.isPlaying) player.play();
                     return;
                 }
             }
@@ -228,7 +147,7 @@ function initStudyMusicPlayer() {
         saveSessionState();
     });
 
-    // ── BroadcastChannel Tab Synchronization ────────────────────────────────
+    // BroadcastChannel Tab Synchronization
     if (bc) {
         bc.onmessage = (event) => {
             const data = event.data;
@@ -245,7 +164,7 @@ function initStudyMusicPlayer() {
         };
     }
 
-    // ── Play / Pause / Navigation Handlers ──────────────────────────────────
+    // Play / Pause / Navigation Handlers
     function setPlayingState(playing) {
         isPlaying = playing;
         if (playIcon) playIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
@@ -279,11 +198,11 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // Native Audio Events
-    audio.addEventListener('play', () => { if (activeSource === 'native') setPlayingState(true); });
-    audio.addEventListener('pause', () => { if (activeSource === 'native') setPlayingState(false); });
+    // Audio Events
+    audio.addEventListener('play', () => setPlayingState(true));
+    audio.addEventListener('pause', () => setPlayingState(false));
     audio.addEventListener('ended', () => {
-        if (activeSource === 'native' && currentPlaylist.length > 0) {
+        if (currentPlaylist.length > 0) {
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
             playPlaylistTrack(currentIndex, true);
         } else {
@@ -297,47 +216,13 @@ function initStudyMusicPlayer() {
 
         updateUI(track.title, track.artist, track.cover);
 
-        if (track.isSoundCloud || track.source === 'SoundCloud') {
-            // Stop native audio completely so sound NEVER overlaps
-            audio.pause();
-            audio.src = '';
-            activeSource = 'soundcloud';
+        audio.src = track.url || track.streamUrl;
+        if (progressBar) progressBar.value = 0;
+        if (timeCurrent) timeCurrent.textContent = "0:00";
+        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "--:--";
 
-            loadAndPlaySoundCloudTrack(track, shouldAutoplay);
-        } else {
-            // Pause SoundCloud Widget completely so sound NEVER overlaps
-            if (scWidget && isScReady) {
-                try { scWidget.pause(); } catch(e){}
-            }
-            activeSource = 'native';
-
-            audio.src = track.url || track.streamUrl;
-            if (progressBar) progressBar.value = 0;
-            if (timeCurrent) timeCurrent.textContent = "0:00";
-            if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "--:--";
-
-            if (shouldAutoplay) {
-                player.play();
-            }
-        }
-    }
-
-    function loadAndPlaySoundCloudTrack(track, shouldAutoplay = true) {
-        if (!isScReady || !scWidget) {
-            pendingScTrack = track;
-            return;
-        }
-
-        try {
-            scWidget.load(track.streamUrl, {
-                auto_play: shouldAutoplay,
-                show_artwork: false,
-                callback: () => {
-                    if (shouldAutoplay) setPlayingState(true);
-                }
-            });
-        } catch (e) {
-            console.warn("Error loading SoundCloud track into widget:", e);
+        if (shouldAutoplay) {
+            player.play();
         }
     }
 
@@ -347,9 +232,9 @@ function initStudyMusicPlayer() {
         if (coverEl && cover) coverEl.src = cover;
     }
 
-    // ── Timeline Progress Slider ─────────────────────────────────────────────
+    // Timeline Progress Slider
     audio.addEventListener('timeupdate', () => {
-        if (isUserSeeking || activeSource !== 'native') return;
+        if (isUserSeeking) return;
         const current = audio.currentTime || 0;
         const duration = audio.duration || 0;
 
@@ -385,7 +270,7 @@ function initStudyMusicPlayer() {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // ── Volume Control ───────────────────────────────────────────────────────
+    // Volume Control
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
             const vol = parseFloat(e.target.value);
@@ -394,7 +279,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // ── Direct Multi-Source Search (SoundCloud + Jamendo + iTunes) ───────────
+    // Search Jamendo & iTunes + Courtesy External SoundCloud Link
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -405,35 +290,8 @@ function initStudyMusicPlayer() {
                 return;
             }
 
-            // Auto-detect if input is a direct SoundCloud URL
-            if (query.includes('soundcloud.com/')) {
-                resolveAndPlaySoundCloudUrl(query);
-                return;
-            }
-
             searchDebounce = setTimeout(() => executeMultiSearch(query), 250);
         });
-    }
-
-    async function resolveAndPlaySoundCloudUrl(scUrl) {
-        if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-music-note-beamed spin"></i> Resolving SoundCloud link…</div>`;
-        searchResults.style.display = 'block';
-
-        try {
-            const res = await fetch(`/api/music/soundcloud-oembed?url=${encodeURIComponent(scUrl)}`);
-            if (res.ok) {
-                const track = await res.json();
-                currentPlaylist.unshift(track);
-                currentIndex = 0;
-                playPlaylistTrack(0, true);
-                searchResults.style.display = 'none';
-                if (searchInput) searchInput.value = '';
-                return;
-            }
-        } catch (e) {}
-
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #ef4444; text-align: center;">Could not load SoundCloud URL. Check link and try again.</div>`;
     }
 
     async function executeMultiSearch(query) {
@@ -442,16 +300,15 @@ function initStudyMusicPlayer() {
         searchResults.style.display = 'block';
 
         try {
-            // Parallel search across Jamendo, SoundCloud, and iTunes
-            const [jamendoRes, scRes, itunesRes] = await Promise.allSettled([
+            // Search Jamendo & iTunes
+            const [jamendoRes, itunesRes] = await Promise.allSettled([
                 fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`),
-                fetch(`/api/music/soundcloud?q=${encodeURIComponent(query)}`),
                 fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`)
             ]);
 
             const tracks = [];
 
-            // 1. Jamendo Full Songs (100% Full Length)
+            // 1. Jamendo (100% Full Length Tracks)
             if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
                 const jamendoData = await jamendoRes.value.json();
                 if (Array.isArray(jamendoData)) {
@@ -464,20 +321,7 @@ function initStudyMusicPlayer() {
                 }
             }
 
-            // 2. SoundCloud Tracks
-            if (scRes.status === 'fulfilled' && scRes.value.ok) {
-                const scData = await scRes.value.json();
-                if (Array.isArray(scData)) {
-                    scData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
-                        }
-                    });
-                }
-            }
-
-            // 3. iTunes Commercial Song Lookup Fallback
+            // 2. iTunes (Song Previews)
             if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
                 const itunesData = await itunesRes.value.json();
                 if (Array.isArray(itunesData)) {
@@ -490,29 +334,18 @@ function initStudyMusicPlayer() {
                 }
             }
 
-            renderSearchResults(tracks);
+            renderSearchResults(tracks, query);
         } catch (err) {
             console.error("Search error:", err);
             searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching music. Please try again.</div>`;
         }
     }
 
-    function renderSearchResults(items) {
+    function renderSearchResults(items, query) {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
-        if (items.length === 0) {
-            const noRes = document.createElement('div');
-            noRes.style.padding = '12px';
-            noRes.style.fontSize = '11px';
-            noRes.style.color = '#a1a1aa';
-            noRes.style.textAlign = 'center';
-            noRes.textContent = "No songs found for that search. Try another query like 'lofi', 'chill', 'piano', or an artist!";
-            searchResults.appendChild(noRes);
-            searchResults.style.display = 'block';
-            return;
-        }
-
+        // Render Playable Track Results
         items.forEach((t, idx) => {
             const div = document.createElement('div');
             div.className = 'sp-search-item';
@@ -525,7 +358,7 @@ function initStudyMusicPlayer() {
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
                     <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · ${durText}</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Full Song'}</span>
+                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Jamendo'}</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
@@ -538,6 +371,30 @@ function initStudyMusicPlayer() {
             });
             searchResults.appendChild(div);
         });
+
+        // Offer Courtesy External Link to Open SoundCloud in New Tab
+        const scLink = document.createElement('a');
+        scLink.href = `https://soundcloud.com/search?q=${encodeURIComponent(query)}`;
+        scLink.target = '_blank';
+        scLink.rel = 'noopener noreferrer';
+        scLink.className = 'sp-search-item';
+        scLink.style.background = 'rgba(255, 85, 0, 0.08)';
+        scLink.style.borderTop = '1px solid rgba(255, 85, 0, 0.2)';
+        scLink.style.textDecoration = 'none';
+        scLink.style.display = 'flex';
+        scLink.style.alignItems = 'center';
+        scLink.style.gap = '10px';
+        scLink.style.marginTop = '4px';
+
+        scLink.innerHTML = `
+            <i class="bi bi-box-arrow-up-right" style="color: #ff5500; font-size: 16px;"></i>
+            <div style="flex: 1; min-width: 0;">
+                <div class="sp-search-title" style="color: #ff5500;">Listen on SoundCloud ↗</div>
+                <div class="sp-search-artist">Open SoundCloud search for "${escapeHtml(query)}" in a new tab</div>
+            </div>
+            <span class="sp-source-badge sp-badge-soundcloud">External Link</span>
+        `;
+        searchResults.appendChild(scLink);
 
         searchResults.style.display = 'block';
     }
