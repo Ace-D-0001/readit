@@ -162,7 +162,7 @@
 <div id="study-player" class="study-player-card">
     <div class="sp-header">
         <div class="sp-title-badge">
-            <i class="bi bi-music-note-beaming"></i> Study Music
+            <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
             <div class="sp-eq">
@@ -179,11 +179,11 @@
     <div class="sp-hide-minimized">
         <!-- Station Chips -->
         <div class="sp-stations-row">
-            <button type="button" class="sp-station-chip active" data-query="lofi">🎧 Lofi</button>
-            <button type="button" class="sp-station-chip" data-query="focus">🧠 Focus</button>
-            <button type="button" class="sp-station-chip" data-query="piano">🎹 Piano</button>
-            <button type="button" class="sp-station-chip" data-query="synthwave">🌆 Synth</button>
-            <button type="button" class="sp-station-chip" data-query="jazz">☕ Jazz</button>
+            <button type="button" class="sp-station-chip active" data-station="lofi">🎧 Lofi</button>
+            <button type="button" class="sp-station-chip" data-station="focus">🧠 Focus</button>
+            <button type="button" class="sp-station-chip" data-station="piano">🎹 Piano</button>
+            <button type="button" class="sp-station-chip" data-station="synthwave">🌆 Synth</button>
+            <button type="button" class="sp-station-chip" data-station="jazz">☕ Jazz</button>
         </div>
 
         <!-- Live Song Search Input -->
@@ -192,15 +192,10 @@
             <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search any song or artist…" autocomplete="off" />
             <div id="sp-search-results" class="sp-search-results"></div>
         </div>
-
-        <!-- Real Embedded YouTube Container for Full Songs -->
-        <div id="sp-yt-frame" style="margin-top: 8px; margin-bottom: 8px; border-radius: 8px; overflow: hidden;">
-            <div id="yt-player-element"></div>
-        </div>
     </div>
 
     <!-- Track Info & Cover -->
-    <div class="sp-track-row" style="margin-bottom: 6px;">
+    <div class="sp-track-row">
         <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
         <div class="sp-track-info">
             <div id="sp-title" class="sp-track-title">Lofi Study Beats (24/7)</div>
@@ -208,27 +203,22 @@
         </div>
     </div>
 
-    <!-- Interactive Drag/Click Timeline Progress Slider -->
-    <div class="sp-progress-wrapper sp-hide-minimized" style="margin-bottom: 8px;">
+    <!-- Timeline Progress Slider -->
+    <div class="sp-progress-wrapper sp-hide-minimized">
         <span id="sp-time-current">0:00</span>
-        <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline to jump to any part of song" />
+        <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
         <span id="sp-time-total">LIVE</span>
     </div>
 
     <!-- Controls & Volume -->
     <div class="sp-controls-row">
+        <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
         <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
-        <div style="display: flex; align-items: center; gap: 6px; flex: 1; margin-left: 10px;">
+        <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
+        <div style="display: flex; align-items: center; gap: 6px; flex: 1; margin-left: 8px;">
             <i class="bi bi-volume-up-fill" style="font-size: 11px; color: #71717a;"></i>
             <input type="range" id="sp-volume" class="sp-slider" value="0.8" min="0" max="1" step="0.05" />
         </div>
-    </div>
-
-    <!-- Ambient Rain Toggle -->
-    <div class="sp-ambient-row sp-hide-minimized">
-        <button type="button" id="sp-rain-btn" class="sp-ambient-btn">
-            <i class="bi bi-cloud-rain-fill"></i> Rain Sound
-        </button>
     </div>
 </div>
 
