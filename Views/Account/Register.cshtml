@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Student Sign Up — ReadIt";
+}
+
+<div style="max-width: 460px; margin: 40px auto;" class="fade-up">
+    <div class="card p-4 shadow-lg">
+        <div class="text-center mb-4">
+            <h2 style="font-weight: 800; color: var(--text-heading);">Join IUBAT ReadIt</h2>
+            <p style="color: var(--text-secondary); font-size: var(--text-sm);">Create your student account to participate in course discussions.</p>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
+                @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+            </div>
+        }
+
+        <form action="/Account/Register" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label style-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. rahim_cse" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label style-label">IUBAT Student Email</label>
+                <input type="email" name="email" class="form-control" placeholder="e.g. student@iubat.edu" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label style-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="At least 6 characters" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label style-label">Short Bio (Optional)</label>
+                <input type="text" name="bio" class="form-control" placeholder="e.g. 2nd Year CSE Student" />
+            </div>
+
+            <button type="submit" class="btn-primary w-100 py-2 mt-2">Create Student Account</button>
+        </form>
+
+        <div class="text-center mt-4 pt-3" style="border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-secondary);">
+            Already have an account? <a href="/Account/Login" style="color: var(--accent); font-weight: 700;">Sign In</a>
+        </div>
+    </div>
+</div>

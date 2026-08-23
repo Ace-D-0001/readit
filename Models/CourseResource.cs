@@ -11,8 +11,13 @@ namespace Read_It.Models
 
         public CourseResourceType Type { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public string Url { get; set; } = string.Empty;
+        public string? FilePath { get; set; }
         
+        public ResourceStatus Status { get; set; } = ResourceStatus.Approved;
+        public string? RejectionReason { get; set; }
+
         public string? UploadedByUserId { get; set; }
         public virtual ApplicationUser? UploadedByUser { get; set; }
 

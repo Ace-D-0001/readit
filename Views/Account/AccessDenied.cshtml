@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Access Denied — ReadIt";
+}
+
+<div style="max-width: 520px; margin: 60px auto; text-align: center;" class="fade-up">
+    <div class="card p-5 shadow-lg" style="border-top: 4px solid var(--error);">
+        <i class="bi bi-shield-x" style="font-size: 3.5rem; color: var(--error); display: block; margin-bottom: 16px;"></i>
+        <h2 style="font-weight: 800; color: var(--text-heading); margin-bottom: 8px;">403 — Access Denied</h2>
+        <p style="color: var(--text-secondary); font-size: var(--text-md); margin-bottom: 24px;">
+            You do not have permission to access administrator pages or perform moderation actions. This area is reserved strictly for site administrators.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <a href="/" class="btn-primary" style="padding: 10px 20px;">
+                <i class="bi bi-house-door-fill"></i> Return Home
+            </a>
+            <a href="/Account/AdminLogin" class="btn-outline" style="padding: 10px 20px; border-color: var(--warning); color: var(--warning);">
+                <i class="bi bi-shield-lock"></i> Admin Sign In
+            </a>
+        </div>
+    </div>
+</div>

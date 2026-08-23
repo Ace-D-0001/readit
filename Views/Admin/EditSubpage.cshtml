@@ -1,0 +1,74 @@
+@model Read_It.Models.Course
+
+@{
+    ViewData["Title"] = "Edit Subpage c/" + Model.Code + " — Admin";
+    var depts = ViewBag.Departments as IEnumerable<Read_It.Models.Department> ?? Enumerable.Empty<Read_It.Models.Department>();
+    var selectedDeptIds = Model.CourseDepartments.Select(cd => cd.DepartmentId).ToList();
+}
+
+<div style="max-width: 720px; margin: 20px auto;" class="fade-up">
+    <div class="card p-4 shadow-lg">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <span class="badge bg-success mb-1" style="font-size: 12px;">c/@Model.Code</span>
+                <h3 style="font-weight: 800; color: var(--text-heading); margin: 0;">Edit Subpage Details</h3>
+            </div>
+            <a href="/Admin/Subpages" class="btn-ghost" style="font-size: 12px;">&larr; Back to Subpages</a>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
+                @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+            </div>
+        }
+
+        <form action="/Admin/EditSubpage/@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label style-label">Subpage Code</label>
+                <input type="text" value="@Model.Code" class="form-control" disabled style="font-weight: 700;" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label style-label">Subject Title / Name</label>
+                <input type="text" name="title" value="@Model.Title" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label style-label">Description / Course Overview</label>
+                <textarea name="description" class="form-control" rows="3">@Model.Description</textarea>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="isGeneral" value="true" class="form-check-input" id="isGeneralCheck" @(Model.IsGeneral ? "checked" : "") />
+                <label class="form-check-label text-light" for="isGeneralCheck" style="font-size: 13px;">
+                    General Course (Visible across all departments)
+                </label>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label style-label">Associated Departments</label>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    @foreach (var d in depts)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="departmentIds" value="@d.Id" id="dept-@d.Id" @(selectedDeptIds.Contains(d.Id) ? "checked" : "") />
+                            <label class="form-check-label text-secondary" for="dept-@d.Id" style="font-size: 12px;">
+                                @d.Name (@d.Abbreviation)
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary py-2 px-4" style="flex: 1;">Save Changes</button>
+                <a href="/Courses/Details?code=@Model.Code" target="_blank" class="btn-outline py-2 px-3">
+                    View Live Page &nearr;
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

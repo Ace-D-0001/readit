@@ -61,6 +61,30 @@
                 <button type="button" class="action-btn" onclick="toggleReplyForm(@Model.Id)">
                     <i class="bi bi-reply-fill"></i> Reply
                 </button>
+
+                <!-- Report Toggle Button -->
+                <button type="button" class="action-btn text-muted" onclick="toggleReportForm(@Model.Id)" style="font-size: 11px;">
+                    <i class="bi bi-flag"></i> Report
+                </button>
+            </div>
+
+            <!-- Inline Report Comment Form -->
+            <div id="report-comment-form-@Model.Id" class="comment-reply-box" style="display: none; margin-top: var(--sp-2); border-left: 3px solid var(--warning);">
+                <form action="/Posts/ReportComment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="commentId" value="@Model.Id" />
+                    <div style="font-size: 11px; font-weight: 700; color: var(--warning); margin-bottom: 4px;">Report this comment</div>
+                    <select name="reason" class="form-select form-select-sm mb-2" style="font-size: 11px; background: var(--bg-panel); color: white;">
+                        <option value="Inappropriate Content">Inappropriate Content</option>
+                        <option value="Harassment or Abuse">Harassment or Abuse</option>
+                        <option value="Spam / Misleading">Spam / Misleading</option>
+                        <option value="Off-topic / Low quality">Off-topic / Low quality</option>
+                    </select>
+                    <div style="display: flex; justify-content: flex-end; gap: var(--sp-2);">
+                        <button type="button" class="btn-ghost" style="font-size: 11px;" onclick="toggleReportForm(@Model.Id)">Cancel</button>
+                        <button type="submit" class="btn-warning btn-sm" style="padding: 2px 10px; font-size: 11px; font-weight: 700;">Submit Report</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Inline Reply Form -->
@@ -95,6 +119,12 @@
 if (typeof toggleReplyForm !== 'function') {
     function toggleReplyForm(commentId) {
         const form = document.getElementById('reply-form-' + commentId);
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+}
+if (typeof toggleReportForm !== 'function') {
+    function toggleReportForm(commentId) {
+        const form = document.getElementById('report-comment-form-' + commentId);
         if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
     }
 }

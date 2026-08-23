@@ -5,7 +5,7 @@
 
     var videosByTopic    = ViewBag.VideosByTopic as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     var outlineResources = ViewBag.OutlineResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
-    var qbResources      = ViewBag.QuestionBankResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
+    var notesResources   = ViewBag.NotesResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
     int  followerCount   = ViewBag.FollowerCount ?? 0;
     bool isFollowing     = ViewBag.IsFollowing ?? false;
     string activeSort    = ViewBag.ActiveSort as string ?? "hot";
@@ -70,40 +70,59 @@
     </div>
 </div>
 
-<!-- Question Bank -->
-<div class="right-card right-section" data-section-label="question bank past papers exam">
+<!-- Approved Student Notes -->
+<div class="right-card right-section" data-section-label="notes approved pdf study materials">
     <div class="right-card-title" style="justify-content: space-between;">
-        <span><i class="bi bi-collection-fill" style="color: var(--warning);"></i> Question Bank</span>
-        <button class="topic-add-btn" onclick="toggleForm('add-qb-form')">+ add</button>
+        <span><i class="bi bi-journal-text" style="color: var(--warning);"></i> Course Notes</span>
+        <button class="topic-add-btn" onclick="toggleForm('upload-note-form')">+ upload note</button>
     </div>
-    @if (qbResources.Any())
+
+    @if (notesResources.Any())
     {
-        @foreach (var r in qbResources)
+        @foreach (var r in notesResources)
         {
-            <a href="@r.Url" target="_blank" rel="noopener noreferrer"
-               class="resource-link right-col-item"
-               data-label="@r.Title.ToLower() question bank past">
-                <i class="bi bi-box-arrow-up-right"></i>
-                <span>@r.Title</span>
-            </a>
+            <div class="right-col-item mb-2" data-label="@r.Title.ToLower() notes pdf">
+                <a href="@(!string.IsNullOrEmpty(r.FilePath) ? r.FilePath : r.Url)" target="_blank" rel="noopener noreferrer"
+                   class="resource-link" style="font-weight: 700; color: var(--text-heading);">
+                    <i class="bi bi-file-earmark-pdf-fill" style="color: var(--warning);"></i>
+                    <span>@r.Title</span>
+                </a>
+                @if (!string.IsNullOrEmpty(r.Description))
+                {
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-left: 20px; line-height: 1.3;">@r.Description</div>
+                }
+            </div>
         }
     }
     else
     {
-        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No question bank links yet.</p>
+        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No approved notes yet. Upload your notes for admin review!</p>
     }
 
-    <!-- Inline Add Question Bank Form -->
-    <div id="add-qb-form" class="add-video-form" style="display: none;">
-        <form action="@Url.Action("AddResource", "Courses")" method="post">
+    <!-- Inline Upload Note Form -->
+    <div id="upload-note-form" class="add-video-form" style="display: none;">
+        <form action="/Courses/UploadNote" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <input type="hidden" name="code" value="@Model.Code" />
-            <input type="hidden" name="type" value="@Read_It.Models.CourseResourceType.QuestionBank" />
-            <input type="text" name="title" placeholder="Folder Title (e.g. Drive Question Bank)" required class="form-control" style="margin-bottom: var(--sp-2);" />
-            <input type="url"  name="url"   placeholder="Web URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="text" name="title" placeholder="Note Title (e.g. Midterm Chapter 1-4 Summary)" required class="form-control mb-2" style="font-size: 12px;" />
+            <textarea name="description" placeholder="Short description of notes..." class="form-control mb-2" rows="2" style="font-size: 11px;"></textarea>
+
+            <div class="mb-2">
+                <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Upload PDF or Document File:</label>
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg" class="form-control form-control-sm" style="font-size: 11px;" />
+            </div>
+
+            <div class="mb-2 text-center" style="font-size: 10px; color: var(--text-muted);">- OR -</div>
+
+            <input type="url" name="url" placeholder="External Google Drive / Web Link" class="form-control mb-2" style="font-size: 11px;" />
+
+            <div style="font-size: 10px; color: var(--warning); margin-bottom: 8px;">
+                ⚠️ Note: Uploaded notes require admin approval before becoming public.
+            </div>
+
             <div style="display: flex; gap: var(--sp-2);">
-                <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add Link</button>
-                <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-qb-form')">Cancel</button>
+                <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Submit Note</button>
+                <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('upload-note-form')">Cancel</button>
             </div>
         </form>
     </div>

@@ -68,6 +68,10 @@
             <i class="bi bi-link-45deg"></i> Copy Link
         </button>
 
+        <button class="action-btn text-muted" onclick="togglePostReportForm()">
+            <i class="bi bi-flag"></i> Report Post
+        </button>
+
         @if (isAuthor)
         {
             <a href="@Url.Action("Edit", "Posts", new { id = Model.Id })" class="action-btn" style="color: var(--accent);">
@@ -81,7 +85,37 @@
             </form>
         }
     </div>
+
+    <!-- Inline Report Post Form -->
+    <div id="report-post-form" class="card p-3 mt-3" style="display: none; border-left: 4px solid var(--warning);">
+        <form action="/Posts/ReportPost" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="postId" value="@Model.Id" />
+            <h6 style="font-weight: 700; color: var(--warning); margin-bottom: 8px;">Report Post to Admin</h6>
+            <div class="mb-2">
+                <label class="form-label style-label">Select Reason:</label>
+                <select name="reason" class="form-select bg-dark text-white border-secondary" style="font-size: 13px;">
+                    <option value="Inappropriate Content">Inappropriate Content</option>
+                    <option value="Harassment or Hate Speech">Harassment or Hate Speech</option>
+                    <option value="Spam / Misleading Information">Spam / Misleading Information</option>
+                    <option value="Academic Misconduct / Cheating">Academic Misconduct / Cheating</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn-ghost" onclick="togglePostReportForm()">Cancel</button>
+                <button type="submit" class="btn-warning py-1 px-3" style="font-size: 12px; font-weight: 700;">Submit Report</button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+function togglePostReportForm() {
+    const form = document.getElementById('report-post-form');
+    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
 
 <!-- Main Comment Form Box -->
 <div class="new-comment-box">

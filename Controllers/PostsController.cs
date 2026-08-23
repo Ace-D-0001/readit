@@ -388,6 +388,68 @@ namespace Read_It.Controllers
             return RedirectToAction(nameof(Details), new { id = postId });
         }
 
+        // POST: /Posts/ReportPost
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReportPost(int postId, string reason)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+
+            var report = new Report
+            {
+                TargetType = ReportTargetType.Post,
+                PostId = postId,
+                ReportedByUserId = currentUserId,
+                Reason = string.IsNullOrWhiteSpace(reason) ? "Inappropriate Content" : reason.Trim(),
+                Status = ReportStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Reports.Add(report);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Thank you! Your report has been submitted to the admin for review.";
+            return RedirectToAction(nameof(Details), new { id = postId });
+        }
+
+        // POST: /Posts/ReportComment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReportComment(int commentId, string reason)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var comment = await _context.Comments.FindAsync(commentId);
+            if (comment == null) return NotFound();
+
+            var report = new Report
+            {
+                TargetType = ReportTargetType.Comment,
+                CommentId = commentId,
+                ReportedByUserId = currentUserId,
+                Reason = string.IsNullOrWhiteSpace(reason) ? "Inappropriate Content" : reason.Trim(),
+                Status = ReportStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Reports.Add(report);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Thank you! Your comment report has been submitted to the admin.";
+            return RedirectToAction(nameof(Details), new { id = comment.PostId });
+        }
+
         private string? GetCurrentUserId()
         {
             if (User?.Identity?.IsAuthenticated == true)

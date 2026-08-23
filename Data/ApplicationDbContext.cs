@@ -20,10 +20,30 @@ namespace Read_It.Data
         public DbSet<Models.Comment> Comments { get; set; } = null!;
         public DbSet<Models.Vote> Votes { get; set; } = null!;
         public DbSet<Models.CourseMembership> CourseMemberships { get; set; } = null!;
+        public DbSet<Models.Report> Reports { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ----- Report -----
+            builder.Entity<Models.Report>()
+                .HasOne(r => r.Post)
+                .WithMany()
+                .HasForeignKey(r => r.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Models.Report>()
+                .HasOne(r => r.Comment)
+                .WithMany()
+                .HasForeignKey(r => r.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Models.Report>()
+                .HasOne(r => r.ReportedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReportedByUserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ----- CourseMembership: composite PK -----
             builder.Entity<Models.CourseMembership>()

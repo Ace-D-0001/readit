@@ -8,6 +8,7 @@ namespace Read_It.Models
     {
         public string? Bio { get; set; }
         public string? Avatar { get; set; }
+        public bool IsBanned { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties

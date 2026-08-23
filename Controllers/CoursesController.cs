@@ -95,9 +95,9 @@ namespace Read_It.Controllers
             ViewBag.IsFollowing = isFollowing;
             ViewBag.UserPostVotes = userPostVotes;
 
-            // Outline & Question Bank resources for right column
-            ViewBag.OutlineResources      = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
-            ViewBag.QuestionBankResources = course.Resources.Where(r => r.Type == CourseResourceType.QuestionBank).ToList();
+            // Outline & Notes resources for right column (ONLY Approved notes are publicly visible!)
+            ViewBag.OutlineResources = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
+            ViewBag.NotesResources   = course.Resources.Where(r => r.Type == CourseResourceType.Notes && r.Status == ResourceStatus.Approved).ToList();
 
             // Post sorting
             if (sort.ToLower() == "top")
@@ -122,7 +122,7 @@ namespace Read_It.Controllers
             if (course == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
 
             var existing = await _context.CourseFollows
                 .FirstOrDefaultAsync(cf => cf.UserId == currentUserId && cf.CourseId == course.Id);
@@ -136,6 +136,63 @@ namespace Read_It.Controllers
             return RedirectToAction(nameof(Details), new { code });
         }
 
+        // POST /Courses/UploadNote
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadNote(string code, string title, string? description, Microsoft.AspNetCore.Http.IFormFile? file, string? url)
+        {
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
+            if (course == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                TempData["ErrorMessage"] = "Note title is required.";
+                return RedirectToAction(nameof(Details), new { code });
+            }
+
+            string? filePath = null;
+            if (file != null && file.Length > 0)
+            {
+                var uploadsDir = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "uploads", "notes");
+                if (!System.IO.Directory.Exists(uploadsDir))
+                {
+                    System.IO.Directory.CreateDirectory(uploadsDir);
+                }
+
+                var uniqueFileName = System.Guid.NewGuid().ToString() + System.IO.Path.GetExtension(file.FileName);
+                var fullPath = System.IO.Path.Combine(uploadsDir, uniqueFileName);
+
+                using (var stream = new System.IO.FileStream(fullPath, System.IO.FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                filePath = "/uploads/notes/" + uniqueFileName;
+            }
+
+            var noteResource = new CourseResource
+            {
+                CourseId = course.Id,
+                Type = CourseResourceType.Notes,
+                Title = title.Trim(),
+                Description = description?.Trim(),
+                Url = !string.IsNullOrWhiteSpace(url) ? url.Trim() : (filePath ?? string.Empty),
+                FilePath = filePath,
+                UploadedByUserId = currentUserId,
+                Status = ResourceStatus.Pending, // MUST be Pending until approved by admin
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.CourseResources.Add(noteResource);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Your note has been submitted successfully! It is currently PENDING admin approval before becoming publicly visible.";
+            return RedirectToAction(nameof(Details), new { code });
+        }
+
         // POST /Courses/AddResource
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -145,7 +202,7 @@ namespace Read_It.Controllers
             if (course == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
 
             if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(url))
             {
@@ -156,6 +213,7 @@ namespace Read_It.Controllers
                     Title = title.Trim(),
                     Url = url.Trim(),
                     UploadedByUserId = currentUserId,
+                    Status = ResourceStatus.Approved,
                     CreatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();

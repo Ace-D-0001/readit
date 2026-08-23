@@ -17,11 +17,40 @@ namespace Read_It
             using var scope = app.ApplicationServices.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
             context.Database.EnsureCreated();
 
+            // ── 0. Roles ────────────────────────────────────────────────────────────────
+            string[] roles = new[] { "Admin", "Student" };
+            foreach (var r in roles)
+            {
+                if (!roleManager.RoleExistsAsync(r).Result)
+                {
+                    roleManager.CreateAsync(new IdentityRole(r)).Wait();
+                }
+            }
+
             // ── 1. Users ────────────────────────────────────────────────────────────────
-            if (!context.Users.Any())
+            // Test Admin
+            var adminUser = userManager.FindByEmailAsync("admin@iubat.edu").Result;
+            if (adminUser == null)
+            {
+                adminUser = new ApplicationUser { UserName = "admin", Email = "admin@iubat.edu", Bio = "System Administrator", EmailConfirmed = true };
+                userManager.CreateAsync(adminUser, "Admin123!").Wait();
+                userManager.AddToRoleAsync(adminUser, "Admin").Wait();
+            }
+
+            // Test Student
+            var studentUser = userManager.FindByEmailAsync("student@iubat.edu").Result;
+            if (studentUser == null)
+            {
+                studentUser = new ApplicationUser { UserName = "student", Email = "student@iubat.edu", Bio = "Test Student Account", EmailConfirmed = true };
+                userManager.CreateAsync(studentUser, "Student123!").Wait();
+                userManager.AddToRoleAsync(studentUser, "Student").Wait();
+            }
+
+            if (!context.Users.Any(u => u.UserName == "prof_rahim"))
             {
                 var users = new List<ApplicationUser>
                 {
@@ -32,7 +61,10 @@ namespace Read_It
                     new ApplicationUser { UserName = "nusrat_bba",  Email = "nusrat@iubat.edu",     Bio = "BBA Senior | Business & Communication", EmailConfirmed = true }
                 };
                 foreach (var u in users)
+                {
                     userManager.CreateAsync(u, "Password123!").Wait();
+                    userManager.AddToRoleAsync(u, "Student").Wait();
+                }
             }
 
             var profRahim  = context.Users.FirstOrDefault(u => u.UserName == "prof_rahim");
@@ -127,41 +159,41 @@ namespace Read_It
             var courseENG101 = context.Courses.FirstOrDefault(c => c.Code == "ENG101");
             var courseMAT101 = context.Courses.FirstOrDefault(c => c.Code == "MAT101");
 
-            // ── 4. Course Resources (STRICTLY WEB LINKS - NO PDF/IMAGE FILES) ──────────────
+            // ── 4. Course Resources ─────────────────────────────────────────────────────
             if (!context.CourseResources.Any())
             {
                 var resources = new List<CourseResource>();
 
                 if (courseCSC391 != null)
                 {
-                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Outline, Title = "CSC 391 Official Syllabus & Grading Criteria (Google Docs)", Url = "https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit", UploadedByUserId = profRahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-20) });
-                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Outline, Title = "IUBAT Course Module Web Page", Url = "https://iubat.edu/programs/bcse/courses/csc391", UploadedByUserId = profRahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-19) });
-                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.QuestionBank, Title = "CSC 391 Past Exam Papers Archive (Google Drive)", Url = "https://drive.google.com/drive/folders/1QBank_CSC391_IUBAT", UploadedByUserId = fahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-10) });
-                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Notes, Title = "Data Structures Interactive Visualization Guide", Url = "https://visualgo.net/en", UploadedByUserId = tasmia?.Id, CreatedAt = DateTime.UtcNow.AddDays(-7) });
+                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Outline, Title = "CSC 391 Official Syllabus & Grading Criteria (Google Docs)", Url = "https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit", UploadedByUserId = profRahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-20) });
+                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Outline, Title = "IUBAT Course Module Web Page", Url = "https://iubat.edu/programs/bcse/courses/csc391", UploadedByUserId = profRahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-19) });
+                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Notes, Title = "CSC 391 Solved Exam Papers & Notes (Google Drive)", Url = "https://drive.google.com/drive/folders/1QBank_CSC391_IUBAT", UploadedByUserId = fahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-10) });
+                    resources.Add(new CourseResource { CourseId = courseCSC391.Id, Type = CourseResourceType.Notes, Title = "Data Structures Interactive Visualization Guide", Url = "https://visualgo.net/en", UploadedByUserId = tasmia?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-7) });
                 }
 
                 if (courseCSC433 != null)
                 {
-                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.Outline, Title = "CSC 433 Course Syllabus & Weekly Topics (Notion)", Url = "https://iubat-cse.notion.site/CSC433-DBMS-Syllabus-2026", UploadedByUserId = profRahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-18) });
-                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.QuestionBank, Title = "DBMS Midterm & Final Questions Collection (Drive)", Url = "https://drive.google.com/drive/folders/1DBMS_QBank_Collection", UploadedByUserId = tanvir?.Id, CreatedAt = DateTime.UtcNow.AddDays(-6) });
-                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.Notes, Title = "SQL Syntax Reference & Exercises", Url = "https://www.w3schools.com/sql/", UploadedByUserId = tanvir?.Id, CreatedAt = DateTime.UtcNow.AddDays(-12) });
+                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.Outline, Title = "CSC 433 Course Syllabus & Weekly Topics (Notion)", Url = "https://iubat-cse.notion.site/CSC433-DBMS-Syllabus-2026", UploadedByUserId = profRahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-18) });
+                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.Notes, Title = "DBMS Midterm & Final Study Notes Collection", Url = "https://drive.google.com/drive/folders/1DBMS_QBank_Collection", UploadedByUserId = tanvir?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-6) });
+                    resources.Add(new CourseResource { CourseId = courseCSC433.Id, Type = CourseResourceType.Notes, Title = "SQL Syntax Reference & Exercises", Url = "https://www.w3schools.com/sql/", UploadedByUserId = tanvir?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-12) });
                 }
 
                 if (courseCSC247 != null)
                 {
-                    resources.Add(new CourseResource { CourseId = courseCSC247.Id, Type = CourseResourceType.Outline, Title = "CSC 247 Course Plan & Lab Experiments Link", Url = "https://github.com/iubat-cse/csc247-architecture-outline", UploadedByUserId = profRahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-25) });
-                    resources.Add(new CourseResource { CourseId = courseCSC247.Id, Type = CourseResourceType.QuestionBank, Title = "Logic Gates & CPU Architecture Exam Prep", Url = "https://drive.google.com/drive/folders/1CSC247_Arch_Exams", UploadedByUserId = fahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-15) });
+                    resources.Add(new CourseResource { CourseId = courseCSC247.Id, Type = CourseResourceType.Outline, Title = "CSC 247 Course Plan & Lab Experiments Link", Url = "https://github.com/iubat-cse/csc247-architecture-outline", UploadedByUserId = profRahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-25) });
+                    resources.Add(new CourseResource { CourseId = courseCSC247.Id, Type = CourseResourceType.Notes, Title = "Logic Gates & CPU Architecture Study Notes", Url = "https://drive.google.com/drive/folders/1CSC247_Arch_Exams", UploadedByUserId = fahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-15) });
                 }
 
                 if (courseMAT247 != null)
                 {
-                    resources.Add(new CourseResource { CourseId = courseMAT247.Id, Type = CourseResourceType.Outline, Title = "MAT 247 Numerical Methods Course Topics Webpage", Url = "https://iubat.edu/programs/math/courses/mat247", UploadedByUserId = profRahim?.Id, CreatedAt = DateTime.UtcNow.AddDays(-14) });
-                    resources.Add(new CourseResource { CourseId = courseMAT247.Id, Type = CourseResourceType.QuestionBank, Title = "Numerical Analysis Solved Question Bank", Url = "https://drive.google.com/drive/folders/1MAT247_Numerical_QBank", UploadedByUserId = tasmia?.Id, CreatedAt = DateTime.UtcNow.AddDays(-8) });
+                    resources.Add(new CourseResource { CourseId = courseMAT247.Id, Type = CourseResourceType.Outline, Title = "MAT 247 Numerical Methods Course Topics Webpage", Url = "https://iubat.edu/programs/math/courses/mat247", UploadedByUserId = profRahim?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-14) });
+                    resources.Add(new CourseResource { CourseId = courseMAT247.Id, Type = CourseResourceType.Notes, Title = "Numerical Analysis Solved Study Notes", Url = "https://drive.google.com/drive/folders/1MAT247_Numerical_QBank", UploadedByUserId = tasmia?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-8) });
                 }
 
                 if (courseENG101 != null)
                 {
-                    resources.Add(new CourseResource { CourseId = courseENG101.Id, Type = CourseResourceType.Outline, Title = "ENG 101 Course Structure & Essay Guidelines", Url = "https://docs.google.com/document/d/1ENG101_IUBAT_Syllabus", UploadedByUserId = nusrat?.Id, CreatedAt = DateTime.UtcNow.AddDays(-30) });
+                    resources.Add(new CourseResource { CourseId = courseENG101.Id, Type = CourseResourceType.Outline, Title = "ENG 101 Course Structure & Essay Guidelines", Url = "https://docs.google.com/document/d/1ENG101_IUBAT_Syllabus", UploadedByUserId = nusrat?.Id, Status = ResourceStatus.Approved, CreatedAt = DateTime.UtcNow.AddDays(-30) });
                 }
 
                 context.CourseResources.AddRange(resources);

@@ -1,0 +1,144 @@
+@{
+    ViewData["Title"] = "Admin Control Center — ReadIt";
+}
+
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
+
+    <!-- Admin Header Banner -->
+    <div class="hero-card" style="border-top: 4px solid var(--warning); text-align: left; background: var(--bg-panel);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <span class="badge bg-warning text-dark font-weight-bold mb-2">🛡️ Administrator Mode</span>
+                <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: 4px;">
+                    ReadIt Admin Dashboard
+                </h1>
+                <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0;">
+                    Manage reports, approve uploaded student notes, moderate content, and maintain subject subpages.
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="/Admin/Reports" class="btn-primary" style="padding: 8px 16px; font-size: 13px;">
+                    <i class="bi bi-flag-fill"></i> View Reports (@ViewBag.PendingReports)
+                </a>
+                <a href="/Admin/Notes" class="btn-outline" style="padding: 8px 16px; font-size: 13px;">
+                    <i class="bi bi-file-earmark-check-fill"></i> Pending Notes (@ViewBag.PendingNotes)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stat Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-3);">
+        <div class="card p-3" style="border-left: 4px solid #3b82f6;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Students</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.TotalStudents</div>
+            <a href="/Admin/Users" style="font-size: 11px; color: #3b82f6; text-decoration: none; font-weight: 600;">Manage Users &rarr;</a>
+        </div>
+
+        <div class="card p-3" style="border-left: 4px solid #f59e0b;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Notes</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.PendingNotes</div>
+            <a href="/Admin/Notes?status=Pending" style="font-size: 11px; color: #f59e0b; text-decoration: none; font-weight: 600;">Review Notes &rarr;</a>
+        </div>
+
+        <div class="card p-3" style="border-left: 4px solid #ef4444;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Reports</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.PendingReports</div>
+            <a href="/Admin/Reports?status=Pending" style="font-size: 11px; color: #ef4444; text-decoration: none; font-weight: 600;">Action Reports &rarr;</a>
+        </div>
+
+        <div class="card p-3" style="border-left: 4px solid #10b981;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Posts</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.TotalPosts</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Active in feed</span>
+        </div>
+
+        <div class="card p-3" style="border-left: 4px solid #8b5cf6;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Comments</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.TotalComments</div>
+            <span style="font-size: 11px; color: var(--text-muted);">In discussions</span>
+        </div>
+
+        <div class="card p-3" style="border-left: 4px solid #64748b;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Banned Users</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-heading);">@ViewBag.BannedUsers</div>
+            <a href="/Admin/Users" style="font-size: 11px; color: var(--text-secondary); text-decoration: none; font-weight: 600;">View Ban List &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Admin Navigation Toolbar -->
+    <div class="dept-tabs mb-0">
+        <a href="/Admin" class="dept-tab active"><i class="bi bi-speedometer2"></i> Overview</a>
+        <a href="/Admin/Reports" class="dept-tab"><i class="bi bi-flag-fill"></i> Content Reports</a>
+        <a href="/Admin/Notes" class="dept-tab"><i class="bi bi-journal-check"></i> Notes Approvals</a>
+        <a href="/Admin/Subpages" class="dept-tab"><i class="bi bi-folder-plus"></i> Subpages Management</a>
+        <a href="/Admin/Users" class="dept-tab"><i class="bi bi-people-fill"></i> User Accounts</a>
+    </div>
+
+    <!-- Recent Pending Activity Grids -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+        <!-- Pending Reports Preview -->
+        <div class="card p-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h6 style="font-weight: 800; color: var(--text-heading); margin: 0;">🚨 Recent Pending Reports</h6>
+                <a href="/Admin/Reports" style="font-size: 12px; color: var(--accent);">View All</a>
+            </div>
+
+            @{
+                var recentReports = ViewBag.RecentReports as IEnumerable<Read_It.Models.Report>;
+            }
+            @if (recentReports != null && recentReports.Any())
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    @foreach (var rep in recentReports)
+                    {
+                        <div style="background: var(--bg-panel-alt); padding: 10px; border-radius: var(--r-sm); font-size: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span class="badge bg-danger">@rep.TargetType Report</span>
+                                <span style="color: var(--text-muted);">@rep.CreatedAt.ToString("MMM dd, HH:mm")</span>
+                            </div>
+                            <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 2px;">Reason: "@rep.Reason"</div>
+                            <div style="color: var(--text-muted); font-size: 11px;">Reported by u/@(rep.ReportedByUser?.UserName ?? "student")</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center p-3 text-muted" style="font-size: 12px;">No pending reports at this time. 🎉</div>
+            }
+        </div>
+
+        <!-- Pending Notes Approval Preview -->
+        <div class="card p-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h6 style="font-weight: 800; color: var(--text-heading); margin: 0;">📝 Pending Notes Approvals</h6>
+                <a href="/Admin/Notes" style="font-size: 12px; color: var(--accent);">View All</a>
+            </div>
+
+            @{
+                var recentNotes = ViewBag.RecentPendingNotes as IEnumerable<Read_It.Models.CourseResource>;
+            }
+            @if (recentNotes != null && recentNotes.Any())
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    @foreach (var note in recentNotes)
+                    {
+                        <div style="background: var(--bg-panel-alt); padding: 10px; border-radius: var(--r-sm); font-size: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span class="badge bg-warning text-dark">c/@(note.Course?.Code ?? "General")</span>
+                                <span style="color: var(--text-muted);">@note.CreatedAt.ToString("MMM dd")</span>
+                            </div>
+                            <div style="color: var(--text-primary); font-weight: 700;">@note.Title</div>
+                            <div style="color: var(--text-muted); font-size: 11px;">Uploaded by u/@(note.UploadedByUser?.UserName ?? "student")</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center p-3 text-muted" style="font-size: 12px;">No student uploaded notes pending approval. 📚</div>
+            }
+        </div>
+    </div>
+</div>

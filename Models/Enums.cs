@@ -4,7 +4,6 @@ namespace Read_It.Models
     {
         Outline,
         Playlist,
-        QuestionBank,
         Notes,
         Other
     }
@@ -29,5 +28,25 @@ namespace Read_It.Models
     {
         Member,
         Moderator
+    }
+
+    public enum ReportTargetType
+    {
+        Post,
+        Comment
+    }
+
+    public enum ReportStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
+    public enum ResourceStatus
+    {
+        Pending,
+        Approved,
+        Rejected
     }
 }
