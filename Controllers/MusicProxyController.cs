@@ -4,8 +4,8 @@ using System.Text.Json;
 namespace Read_It.Controllers;
 
 /// <summary>
-/// Server-side music search controller for iTunes + Jamendo APIs.
-/// Provides instant, legal, 100% reliable song search and previews.
+/// Clean, reliable backend API controller for iTunes previews and Jamendo full tracks.
+/// Completely free of YouTube/Invidious proxying and fragile third-party scrapers.
 /// </summary>
 [Route("api/music")]
 public class MusicProxyController : Controller
@@ -15,10 +15,15 @@ public class MusicProxyController : Controller
         Timeout = TimeSpan.FromSeconds(10)
     };
 
-    private const string JamendoClientId = "5b6e5f02";
+    private readonly IConfiguration _config;
+
+    public MusicProxyController(IConfiguration config)
+    {
+        _config = config;
+    }
 
     /// <summary>
-    /// Search official iTunes database for instant high-quality audio previews + high-res artwork.
+    /// Search official iTunes database for instant 30-second audio previews + high-res artwork.
     /// GET /api/music/itunes?q=coldplay
     /// </summary>
     [HttpGet("itunes")]
@@ -75,7 +80,7 @@ public class MusicProxyController : Controller
     }
 
     /// <summary>
-    /// Search Jamendo API for full-length, legally licensed MP3 tracks across all genres.
+    /// Search Jamendo API for full-length Creative Commons licensed MP3 tracks.
     /// GET /api/music/jamendo?q=lofi
     /// </summary>
     [HttpGet("jamendo")]
@@ -84,9 +89,16 @@ public class MusicProxyController : Controller
         if (string.IsNullOrWhiteSpace(q))
             return BadRequest(new { error = "Query is required" });
 
+        var clientId = _config["Jamendo:ClientId"];
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            // Fail gracefully if Jamendo ClientId is missing
+            return Json(new object[0]);
+        }
+
         try
         {
-            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={JamendoClientId}&format=json&limit=15&namesearch={Uri.EscapeDataString(q)}&include=musicinfo&audioformat=mp32";
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=15&search={Uri.EscapeDataString(q)}&include=musicinfo&audioformat=mp32";
             var res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode)
                 return Json(new object[0]);

@@ -1,10 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — 100% WORKING ROCK-SOLID AUDIO ENGINE
-   - Removes crossOrigin CORS restrictions (plays iTunes & external MP3s reliably)
-   - Real 24/7 Verified Live Radio Streams (Lofi, Focus, Piano, Synth, Jazz)
-   - Multi-Source Search (iTunes Instant Previews + Jamendo Full Length MP3s)
-   - SessionStorage state persistence across full page reloads
-   - Seamless PJAX non-stop playback when navigating site pages
+   STUDY MUSIC PLAYER — STABLE PRODUCTION AUDIO ENGINE
+   - Free Legitimate APIs: iTunes Previews (30s) + Jamendo (Full Length MP3s)
+   - Verified 24/7 Live Radio Streams
+   - Option B SessionStorage Handoff with Autoplay Resume overlay fallback
+   - BroadcastChannel UI Synchronization across multiple browser tabs
+   - Removes crossOrigin CORS restrictions
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,9 +15,12 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio — DO NOT set crossOrigin = 'anonymous' as it breaks CORS for iTunes / external MP3s
+    // Native HTML5 Audio Object (DO NOT set crossOrigin = 'anonymous')
     const audio = new Audio();
     audio.preload = 'auto';
+
+    // BroadcastChannel for cross-tab UI state synchronization
+    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('study_player_channel') : null;
 
     // DOM Elements
     const playBtn = document.getElementById('sp-play-btn');
@@ -87,7 +90,7 @@ function initStudyMusicPlayer() {
     audio.volume = parseFloat(savedVol);
     if (volumeSlider) volumeSlider.value = audio.volume;
 
-    // ── SessionStorage State Persistence across Full Reloads ─────────────────
+    // ── SessionStorage Handoff (Restores state on full page reload) ─────────
     restoreSessionState();
 
     function saveSessionState() {
@@ -99,7 +102,9 @@ function initStudyMusicPlayer() {
                 index: currentIndex,
                 currentTime: audio.currentTime || 0,
                 isPlaying: isPlaying,
-                isLive: isLiveStream
+                isLive: isLiveStream,
+                volume: audio.volume,
+                minimized: playerCard.classList.contains('minimized')
             };
             sessionStorage.setItem('sp_state', JSON.stringify(state));
         }
@@ -110,6 +115,13 @@ function initStudyMusicPlayer() {
             const savedState = sessionStorage.getItem('sp_state');
             if (savedState) {
                 const state = JSON.parse(savedState);
+                if (state.minimized) {
+                    playerCard.classList.add('minimized');
+                    if (minimizeBtn) {
+                        const icon = minimizeBtn.querySelector('i');
+                        if (icon) icon.className = "bi bi-chevron-up";
+                    }
+                }
                 if (state.track && (state.track.url || state.track.streamUrl)) {
                     currentPlaylist = state.playlist || [state.track];
                     currentIndex = state.index || 0;
@@ -141,6 +153,24 @@ function initStudyMusicPlayer() {
         saveSessionState();
     });
 
+    // ── BroadcastChannel Tab Synchronization (UI state sync across tabs) ───
+    if (bc) {
+        bc.onmessage = (event) => {
+            const data = event.data;
+            if (!data) return;
+            if (data.type === 'VOLUME_CHANGE') {
+                audio.volume = data.volume;
+                if (volumeSlider) volumeSlider.value = data.volume;
+            } else if (data.type === 'TOGGLE_MINIMIZE') {
+                playerCard.classList.toggle('minimized', data.minimized);
+                if (minimizeBtn) {
+                    const icon = minimizeBtn.querySelector('i');
+                    if (icon) icon.className = data.minimized ? "bi bi-chevron-up" : "bi bi-chevron-down";
+                }
+            }
+        };
+    }
+
     // ── Station Chips ────────────────────────────────────────────────────────
     document.querySelectorAll('.sp-station-chip').forEach(chip => {
         chip.addEventListener('click', () => {
@@ -169,8 +199,9 @@ function initStudyMusicPlayer() {
     // ── Play / Pause / Navigation ────────────────────────────────────────────
     function playTrack() {
         audio.play().then(() => setPlayingState(true)).catch((err) => {
-            console.warn("Autoplay deferred:", err);
+            console.warn("Browser blocked autoplay on reload. User click needed to resume:", err);
             setPlayingState(false);
+            if (titleEl) titleEl.textContent = "▶ Tap Play to Resume";
         });
     }
 
@@ -224,7 +255,7 @@ function initStudyMusicPlayer() {
     });
 
     audio.addEventListener('error', (e) => {
-        console.warn("Audio load error, trying next track...", e);
+        console.warn("Audio stream error, skipping to next...", e);
         if (!isLiveStream && currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
             currentIndex++;
             playPlaylistTrack(currentIndex);
@@ -304,10 +335,11 @@ function initStudyMusicPlayer() {
             const vol = parseFloat(e.target.value);
             audio.volume = vol;
             localStorage.setItem('sp_vol', vol);
+            if (bc) bc.postMessage({ type: 'VOLUME_CHANGE', volume: vol });
         });
     }
 
-    // ── Multi-Source Search Engine (iTunes Previews + Jamendo Full Length) ──
+    // ── Multi-Source Search (iTunes Previews + Jamendo Full Length) ──────────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -327,7 +359,7 @@ function initStudyMusicPlayer() {
         searchResults.style.display = 'block';
 
         try {
-            // Parallel search across iTunes API + Jamendo API
+            // Parallel search across iTunes API + Jamendo API (No YouTube or Audius)
             const [itunesRes, jamendoRes] = await Promise.allSettled([
                 fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`),
                 fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`)
@@ -335,18 +367,18 @@ function initStudyMusicPlayer() {
 
             const tracks = [];
 
-            // 1. iTunes Results (Instant high quality previews for commercial artists)
+            // 1. iTunes Results (Instant 30s previews for commercial artists)
             if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
                 const iTunesData = await itunesRes.value.json();
                 if (Array.isArray(iTunesData)) tracks.push(...iTunesData);
             }
 
-            // 2. Jamendo Results (Full length free licensed MP3 tracks)
+            // 2. Jamendo Results (Full length Creative Commons licensed MP3 tracks)
             if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
                 const jamendoData = await jamendoRes.value.json();
                 if (Array.isArray(jamendoData)) {
                     jamendoData.forEach(p => {
-                        // Guard against undefined titles to prevent null reference errors
+                        // Null guard check on track title to prevent runtime exception
                         const pTitle = (p.title || '').toLowerCase();
                         if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
                             tracks.push(p);
@@ -417,10 +449,13 @@ function initStudyMusicPlayer() {
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             playerCard.classList.toggle('minimized');
+            const isMin = playerCard.classList.contains('minimized');
             const icon = minimizeBtn.querySelector('i');
             if (icon) {
-                icon.className = playerCard.classList.contains('minimized') ? "bi bi-chevron-up" : "bi bi-chevron-down";
+                icon.className = isMin ? "bi bi-chevron-up" : "bi bi-chevron-down";
             }
+            if (bc) bc.postMessage({ type: 'TOGGLE_MINIMIZE', minimized: isMin });
+            saveSessionState();
         });
     }
 }
