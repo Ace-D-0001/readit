@@ -158,8 +158,9 @@
     </aside>
 </div>
 
-<!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Always Visible & Playing!) ── -->
+<!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Always Pinned & Sleek!) ── -->
 <div id="study-player" class="study-player-card">
+    <!-- Player Header -->
     <div class="sp-header">
         <div class="sp-title-badge">
             <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
@@ -175,43 +176,40 @@
         </div>
     </div>
 
-    <!-- Collapsible Details -->
-    <div class="sp-hide-minimized">
-        <!-- Live Song Search Input -->
-        <div class="sp-search-wrapper">
-            <i class="bi bi-search sp-search-icon"></i>
-            <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search full songs, lofi, or artists…" autocomplete="off" />
-            <div id="sp-search-results" class="sp-search-results"></div>
-        </div>
-    </div>
-
-    <!-- Track Info & Cover -->
+    <!-- Active Track Display (Cover Art + Title + Artist) -->
     <div class="sp-track-row">
         <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
         <div class="sp-track-info">
-            <div id="sp-title" class="sp-track-title">Lofi Study Beats (24/7)</div>
-            <div id="sp-artist" class="sp-track-artist">Lofi Girl & Chillhop</div>
+            <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
+            <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
         </div>
     </div>
 
-    <!-- Timeline Progress Slider -->
+    <!-- Timeline Progress Bar -->
     <div class="sp-progress-wrapper sp-hide-minimized">
         <span id="sp-time-current">0:00</span>
         <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
-        <span id="sp-time-total">LIVE</span>
+        <span id="sp-time-total">0:30</span>
     </div>
 
-    <!-- Controls & Volume -->
+    <!-- Controls & Volume Bar -->
     <div class="sp-controls-row">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
             <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
             <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
             <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
         </div>
-        <div class="sp-volume-wrapper">
+        <div class="sp-volume-wrapper sp-hide-minimized">
             <i class="bi bi-volume-up-fill sp-vol-icon"></i>
             <input type="range" id="sp-volume" class="sp-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
         </div>
+    </div>
+
+    <!-- Live Track Search -->
+    <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
+        <i class="bi bi-search sp-search-icon"></i>
+        <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
+        <div id="sp-search-results" class="sp-search-results"></div>
     </div>
 </div>
 
