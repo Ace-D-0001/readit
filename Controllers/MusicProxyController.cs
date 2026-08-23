@@ -154,6 +154,52 @@ public class MusicProxyController : Controller
     }
 
     /// <summary>
+    /// Resolve a SoundCloud track URL via official oEmbed endpoint.
+    /// GET /api/music/soundcloud-oembed?url=https://soundcloud.com/artist/track
+    /// </summary>
+    [HttpGet("soundcloud-oembed")]
+    public async Task<IActionResult> ResolveSoundCloudUrl([FromQuery] string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return BadRequest(new { error = "SoundCloud URL is required" });
+
+        try
+        {
+            var oembedUrl = $"https://soundcloud.com/oembed?format=json&url={Uri.EscapeDataString(url)}";
+            var res = await _http.GetAsync(oembedUrl);
+            if (!res.IsSuccessStatusCode)
+                return NotFound(new { error = "SoundCloud track not found or invalid URL" });
+
+            var json = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            var title = root.TryGetProperty("title", out var t) ? t.GetString() : "SoundCloud Track";
+            var author = root.TryGetProperty("author_name", out var a) ? a.GetString() : "SoundCloud Artist";
+            var thumbnail = root.TryGetProperty("thumbnail_url", out var th) ? th.GetString() : null;
+
+            if (thumbnail != null)
+                thumbnail = thumbnail.Replace("-large", "-t300x300");
+
+            return Json(new
+            {
+                title = title,
+                artist = author,
+                cover = thumbnail ?? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300",
+                streamUrl = url,
+                duration = 0,
+                source = "SoundCloud",
+                badgeClass = "sp-badge-soundcloud",
+                isSoundCloud = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Search SoundCloud database via public resolve/oEmbed search endpoint for full tracks.
     /// GET /api/music/soundcloud?q=lofi
     /// </summary>
@@ -165,7 +211,6 @@ public class MusicProxyController : Controller
 
         try
         {
-            // SoundCloud public search helper endpoint
             var searchUrl = $"https://api-v2.soundcloud.com/search/tracks?q={Uri.EscapeDataString(q)}&client_id=iZ86MuBDStructureKeyFallbackNoAuth&limit=10";
             var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
             request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");

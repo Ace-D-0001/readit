@@ -1,10 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   100% FULL-LENGTH STUDY MUSIC PLAYER (SoundCloud + Jamendo Engine)
-   - Zero 30-second preview limitations
-   - Full length SoundCloud tracks + Jamendo full MP3s
-   - Dual Engine: Native HTML5 Audio + SoundCloud Widget API (SC.Widget)
+   STUDY MUSIC PLAYER — SOUNDCLOUD WIDGET & NATIVE AUDIO DUAL ENGINE
+   - Seamless control of Native HTML5 Audio and SoundCloud Embedded Widget
+   - Unified playback abstraction (play, pause, seekTo, setVolume)
+   - Zero-overlap playback source switching
    - SessionStorage persistence across full page reloads
-   - BroadcastChannel UI synchronization across tabs
+   - BroadcastChannel UI state synchronization
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,18 +15,59 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio Engine for MP3 direct streams
+    // Native HTML5 Audio Element for Jamendo / Direct MP3s
     const audio = new Audio();
     audio.preload = 'auto';
 
-    // SoundCloud Iframe & Widget Engine
-    const scIframe = document.getElementById('sp-sc-iframe');
+    // SoundCloud Widget API Instance & Readiness Queue
+    const scFrame = document.getElementById('sc-widget-frame');
     let scWidget = null;
-    if (scIframe && typeof SC !== 'undefined' && SC.Widget) {
+    let isScReady = false;
+    let pendingScTrack = null;
+
+    if (scFrame && typeof SC !== 'undefined' && SC.Widget) {
         try {
-            scWidget = SC.Widget(scIframe);
-        } catch (e) {
-            console.warn("SoundCloud Widget initialization error:", e);
+            scWidget = SC.Widget(scFrame);
+            scWidget.bind(SC.Widget.Events.READY, () => {
+                isScReady = true;
+                const vol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
+                try { scWidget.setVolume(vol * 100); } catch(e){}
+                if (pendingScTrack) {
+                    const trackToPlay = pendingScTrack;
+                    pendingScTrack = null;
+                    loadAndPlaySoundCloudTrack(trackToPlay);
+                }
+            });
+
+            scWidget.bind(SC.Widget.Events.PLAY, () => {
+                if (activeSource === 'soundcloud') setPlayingState(true);
+            });
+
+            scWidget.bind(SC.Widget.Events.PAUSE, () => {
+                if (activeSource === 'soundcloud') setPlayingState(false);
+            });
+
+            scWidget.bind(SC.Widget.Events.FINISH, () => {
+                if (activeSource === 'soundcloud' && currentPlaylist.length > 0) {
+                    currentIndex = (currentIndex + 1) % currentPlaylist.length;
+                    playPlaylistTrack(currentIndex, true);
+                }
+            });
+
+            scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, (data) => {
+                if (activeSource === 'soundcloud' && !isUserSeeking) {
+                    const currentSecs = data.currentPosition / 1000;
+                    const totalSecs = (data.currentPosition / (data.relativePosition || 1)) / 1000;
+                    if (totalSecs > 0) {
+                        const pct = (currentSecs / totalSecs) * 100;
+                        if (progressBar) progressBar.value = pct;
+                        if (timeCurrent) timeCurrent.textContent = formatTime(currentSecs);
+                        if (timeTotal) timeTotal.textContent = formatTime(totalSecs);
+                    }
+                }
+            });
+        } catch (err) {
+            console.warn("SoundCloud Widget API init exception:", err);
         }
     }
 
@@ -55,43 +96,53 @@ function initStudyMusicPlayer() {
     let isUserSeeking = false;
     let currentPlaylist = [];
     let currentIndex = 0;
-    let activeEngine = 'html5'; // 'html5' or 'soundcloud'
+    let activeSource = 'native'; // 'native' or 'soundcloud'
+
+    // Unified Player Abstraction
+    const player = {
+        play() {
+            if (activeSource === 'soundcloud') {
+                if (audio) audio.pause();
+                if (scWidget && isScReady) scWidget.play();
+                setPlayingState(true);
+            } else {
+                if (scWidget && isScReady) try { scWidget.pause(); } catch(e){}
+                audio.play().then(() => setPlayingState(true)).catch((err) => {
+                    console.warn("Autoplay deferred:", err);
+                    setPlayingState(false);
+                    if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
+                });
+            }
+        },
+        pause() {
+            if (activeSource === 'soundcloud') {
+                if (scWidget && isScReady) scWidget.pause();
+            }
+            audio.pause();
+            setPlayingState(false);
+        },
+        seekToPercent(pct) {
+            if (activeSource === 'soundcloud' && scWidget && isScReady) {
+                scWidget.getDuration((durMs) => {
+                    if (durMs > 0) scWidget.seekTo((pct / 100) * durMs);
+                });
+            } else if (audio.duration && !isNaN(audio.duration)) {
+                audio.currentTime = (pct / 100) * audio.duration;
+            }
+        },
+        setVolume(vol) { // vol parameter is 0 to 1
+            audio.volume = vol;
+            if (volumeSlider) volumeSlider.value = vol;
+            if (scWidget && isScReady) {
+                try { scWidget.setVolume(vol * 100); } catch(e){}
+            }
+            localStorage.setItem('sp_vol', vol);
+        }
+    };
 
     // Restore Volume
-    const savedVol = localStorage.getItem('sp_vol') || 0.8;
-    audio.volume = parseFloat(savedVol);
-    if (volumeSlider) volumeSlider.value = audio.volume;
-
-    // Bind SoundCloud Widget Events
-    if (scWidget) {
-        scWidget.bind(SC.Widget.Events.READY, () => {
-            scWidget.setVolume(audio.volume * 100);
-        });
-        scWidget.bind(SC.Widget.Events.PLAY, () => {
-            if (activeEngine === 'soundcloud') setPlayingState(true);
-        });
-        scWidget.bind(SC.Widget.Events.PAUSE, () => {
-            if (activeEngine === 'soundcloud') setPlayingState(false);
-        });
-        scWidget.bind(SC.Widget.Events.FINISH, () => {
-            if (activeEngine === 'soundcloud' && currentPlaylist.length > 0) {
-                currentIndex = (currentIndex + 1) % currentPlaylist.length;
-                playPlaylistTrack(currentIndex, true);
-            }
-        });
-        scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, (data) => {
-            if (activeEngine === 'soundcloud' && !isUserSeeking) {
-                const currentSecs = data.currentPosition / 1000;
-                const totalSecs = data.relativePosition > 0 ? (data.currentPosition / data.relativePosition) / 1000 : (currentPlaylist[currentIndex]?.duration || 0);
-                if (totalSecs > 0) {
-                    const pct = (currentSecs / totalSecs) * 100;
-                    if (progressBar) progressBar.value = pct;
-                    if (timeCurrent) timeCurrent.textContent = formatTime(currentSecs);
-                    if (timeTotal) timeTotal.textContent = formatTime(totalSecs);
-                }
-            }
-        });
-    }
+    const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
+    player.setVolume(savedVol);
 
     // ── Restore Session State or Load Initial Full Tracks ────────────────────
     restoreSessionStateOrLoadDefault();
@@ -105,6 +156,7 @@ function initStudyMusicPlayer() {
                 index: currentIndex,
                 currentTime: audio.currentTime || 0,
                 isPlaying: isPlaying,
+                activeSource: activeSource,
                 volume: audio.volume,
                 minimized: playerCard.classList.contains('minimized')
             };
@@ -131,16 +183,18 @@ function initStudyMusicPlayer() {
                     const tr = state.track;
                     updateUI(tr.title, tr.artist, tr.cover);
 
-                    if (tr.isSoundCloud) {
-                        activeEngine = 'soundcloud';
-                        if (scWidget && scIframe) {
-                            scIframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(tr.streamUrl)}&auto_play=${state.isPlaying}&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
+                    if (tr.isSoundCloud || tr.source === 'SoundCloud') {
+                        activeSource = 'soundcloud';
+                        if (isScReady) {
+                            scWidget.load(tr.streamUrl, { auto_play: state.isPlaying, show_artwork: false });
+                        } else {
+                            pendingScTrack = tr;
                         }
                     } else {
-                        activeEngine = 'html5';
+                        activeSource = 'native';
                         audio.src = tr.url || tr.streamUrl;
                         if (state.currentTime > 0) audio.currentTime = state.currentTime;
-                        if (state.isPlaying) playTrack();
+                        if (state.isPlaying) player.play();
                     }
                     return;
                 }
@@ -149,7 +203,7 @@ function initStudyMusicPlayer() {
             console.warn("Could not restore session state:", e);
         }
 
-        // Default initial load: 100% full-length tracks
+        // Default initial load
         await loadInitialFullPlaylist();
     }
 
@@ -180,7 +234,7 @@ function initStudyMusicPlayer() {
             const data = event.data;
             if (!data) return;
             if (data.type === 'VOLUME_CHANGE') {
-                setVolume(data.volume);
+                player.setVolume(data.volume);
             } else if (data.type === 'TOGGLE_MINIMIZE') {
                 playerCard.classList.toggle('minimized', data.minimized);
                 if (minimizeBtn) {
@@ -191,28 +245,7 @@ function initStudyMusicPlayer() {
         };
     }
 
-    // ── Engine Dual Controls (HTML5 / SoundCloud) ───────────────────────────
-    function playTrack() {
-        if (activeEngine === 'soundcloud') {
-            if (scWidget) scWidget.play();
-            setPlayingState(true);
-        } else {
-            audio.play().then(() => setPlayingState(true)).catch((err) => {
-                console.warn("Autoplay deferred:", err);
-                setPlayingState(false);
-                if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
-            });
-        }
-    }
-
-    function pauseTrack() {
-        if (activeEngine === 'soundcloud') {
-            if (scWidget) scWidget.pause();
-        }
-        audio.pause();
-        setPlayingState(false);
-    }
-
+    // ── Play / Pause / Navigation Handlers ──────────────────────────────────
     function setPlayingState(playing) {
         isPlaying = playing;
         if (playIcon) playIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
@@ -221,19 +254,10 @@ function initStudyMusicPlayer() {
         saveSessionState();
     }
 
-    function setVolume(vol) {
-        audio.volume = vol;
-        if (volumeSlider) volumeSlider.value = vol;
-        if (scWidget) {
-            try { scWidget.setVolume(vol * 100); } catch(e) {}
-        }
-        localStorage.setItem('sp_vol', vol);
-    }
-
     if (playBtn) {
         playBtn.addEventListener('click', () => {
-            if (isPlaying) pauseTrack();
-            else playTrack();
+            if (isPlaying) player.pause();
+            else player.play();
         });
     }
 
@@ -255,10 +279,11 @@ function initStudyMusicPlayer() {
         });
     }
 
-    audio.addEventListener('play', () => { if (activeEngine === 'html5') setPlayingState(true); });
-    audio.addEventListener('pause', () => { if (activeEngine === 'html5') setPlayingState(false); });
+    // Native Audio Events
+    audio.addEventListener('play', () => { if (activeSource === 'native') setPlayingState(true); });
+    audio.addEventListener('pause', () => { if (activeSource === 'native') setPlayingState(false); });
     audio.addEventListener('ended', () => {
-        if (activeEngine === 'html5' && currentPlaylist.length > 0) {
+        if (activeSource === 'native' && currentPlaylist.length > 0) {
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
             playPlaylistTrack(currentIndex, true);
         } else {
@@ -272,25 +297,47 @@ function initStudyMusicPlayer() {
 
         updateUI(track.title, track.artist, track.cover);
 
-        if (track.isSoundCloud) {
-            // Switch to SoundCloud Widget Engine
+        if (track.isSoundCloud || track.source === 'SoundCloud') {
+            // Stop native audio completely so sound NEVER overlaps
             audio.pause();
-            activeEngine = 'soundcloud';
-            if (scIframe) {
-                scIframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(track.streamUrl)}&auto_play=${shouldAutoplay}&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
-            }
-            if (shouldAutoplay) setPlayingState(true);
+            audio.src = '';
+            activeSource = 'soundcloud';
+
+            loadAndPlaySoundCloudTrack(track, shouldAutoplay);
         } else {
-            // HTML5 MP3 Stream Engine
-            activeEngine = 'html5';
+            // Pause SoundCloud Widget completely so sound NEVER overlaps
+            if (scWidget && isScReady) {
+                try { scWidget.pause(); } catch(e){}
+            }
+            activeSource = 'native';
+
             audio.src = track.url || track.streamUrl;
             if (progressBar) progressBar.value = 0;
             if (timeCurrent) timeCurrent.textContent = "0:00";
             if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "--:--";
 
             if (shouldAutoplay) {
-                playTrack();
+                player.play();
             }
+        }
+    }
+
+    function loadAndPlaySoundCloudTrack(track, shouldAutoplay = true) {
+        if (!isScReady || !scWidget) {
+            pendingScTrack = track;
+            return;
+        }
+
+        try {
+            scWidget.load(track.streamUrl, {
+                auto_play: shouldAutoplay,
+                show_artwork: false,
+                callback: () => {
+                    if (shouldAutoplay) setPlayingState(true);
+                }
+            });
+        } catch (e) {
+            console.warn("Error loading SoundCloud track into widget:", e);
         }
     }
 
@@ -302,7 +349,7 @@ function initStudyMusicPlayer() {
 
     // ── Timeline Progress Slider ─────────────────────────────────────────────
     audio.addEventListener('timeupdate', () => {
-        if (isUserSeeking || activeEngine !== 'html5') return;
+        if (isUserSeeking || activeSource !== 'native') return;
         const current = audio.currentTime || 0;
         const duration = audio.duration || 0;
 
@@ -322,15 +369,7 @@ function initStudyMusicPlayer() {
 
         const handleSeek = (e) => {
             const pct = parseFloat(e.target.value);
-            if (activeEngine === 'soundcloud' && scWidget) {
-                scWidget.getDuration((durMs) => {
-                    if (durMs > 0) {
-                        scWidget.seekTo((pct / 100) * durMs);
-                    }
-                });
-            } else if (audio.duration && !isNaN(audio.duration)) {
-                audio.currentTime = (pct / 100) * audio.duration;
-            }
+            player.seekToPercent(pct);
             isUserSeeking = false;
         };
 
@@ -350,12 +389,12 @@ function initStudyMusicPlayer() {
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
             const vol = parseFloat(e.target.value);
-            setVolume(vol);
+            player.setVolume(vol);
             if (bc) bc.postMessage({ type: 'VOLUME_CHANGE', volume: vol });
         });
     }
 
-    // ── Multi-Source Search (SoundCloud + Jamendo 100% FULL SONGS ONLY) ──────
+    // ── Multi-Source Search (SoundCloud + Jamendo + Paste SoundCloud URL) ────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -365,8 +404,36 @@ function initStudyMusicPlayer() {
                 if (searchResults) searchResults.style.display = 'none';
                 return;
             }
+
+            // Check if input is a direct SoundCloud URL
+            if (query.includes('soundcloud.com/')) {
+                resolveAndPlaySoundCloudUrl(query);
+                return;
+            }
+
             searchDebounce = setTimeout(() => executeMultiSearch(query), 300);
         });
+    }
+
+    async function resolveAndPlaySoundCloudUrl(scUrl) {
+        if (!searchResults) return;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-music-note-beamed spin"></i> Resolving SoundCloud link…</div>`;
+        searchResults.style.display = 'block';
+
+        try {
+            const res = await fetch(`/api/music/soundcloud-oembed?url=${encodeURIComponent(scUrl)}`);
+            if (res.ok) {
+                const track = await res.json();
+                currentPlaylist.unshift(track);
+                currentIndex = 0;
+                playPlaylistTrack(0, true);
+                searchResults.style.display = 'none';
+                if (searchInput) searchInput.value = '';
+                return;
+            }
+        } catch (e) {}
+
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #ef4444; text-align: center;">Could not load SoundCloud URL. Check the link and try again.</div>`;
     }
 
     async function executeMultiSearch(query) {
@@ -420,8 +487,35 @@ function initStudyMusicPlayer() {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
+        // Add Quick Action: Paste SoundCloud URL item
+        const pasteOption = document.createElement('div');
+        pasteOption.className = 'sp-search-item';
+        pasteOption.style.background = 'rgba(255, 85, 0, 0.12)';
+        pasteOption.style.border = '1px dashed rgba(255, 85, 0, 0.3)';
+        pasteOption.innerHTML = `
+            <i class="bi bi-link-45deg" style="color: #ff5500; font-size: 20px;"></i>
+            <div style="flex: 1; min-width: 0;">
+                <div class="sp-search-title" style="color: #ff5500;">Paste any SoundCloud track link…</div>
+                <div class="sp-search-artist">e.g. soundcloud.com/artist/song-title</div>
+            </div>
+            <span class="sp-source-badge sp-badge-soundcloud">Paste URL</span>
+        `;
+        pasteOption.addEventListener('click', () => {
+            const url = prompt("Paste a SoundCloud track URL:");
+            if (url && url.includes('soundcloud.com/')) {
+                resolveAndPlaySoundCloudUrl(url.trim());
+            }
+        });
+        searchResults.appendChild(pasteOption);
+
         if (items.length === 0) {
-            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">No full songs found. Try another search!</div>`;
+            const noRes = document.createElement('div');
+            noRes.style.padding = '10px';
+            noRes.style.fontSize = '11px';
+            noRes.style.color = '#a1a1aa';
+            noRes.style.textAlign = 'center';
+            noRes.textContent = "No search results. Paste a SoundCloud link above!";
+            searchResults.appendChild(noRes);
             searchResults.style.display = 'block';
             return;
         }
