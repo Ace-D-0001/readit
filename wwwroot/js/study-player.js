@@ -1,10 +1,9 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   PREMIUM STUDY MUSIC PLAYER — FULL SONGS & ELEGANT UI
-   - Default Initial State: Plays 100% FULL-LENGTH Songs (3-5 minutes long)
-   - Multi-Source Search: Jamendo Full MP3s (Primary) + iTunes Previews (Secondary)
-   - Station Chips Removed per User Request
-   - SessionStorage state persistence across full page reloads
-   - BroadcastChannel UI state synchronization across multiple tabs
+   PREMIUM STUDY MUSIC PLAYER — 100% FULL SONGS ONLY (NO 30S PREVIEWS)
+   - Search source: Jamendo API + Free Music Archive (100% Full Length MP3 Songs)
+   - Zero 30-second previews — all songs play completely from start to end (3:00-6:00+)
+   - SessionStorage state persistence across page navigation
+   - BroadcastChannel cross-tab UI state synchronization
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +14,7 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio Object (No crossOrigin restriction)
+    // Native HTML5 Audio Object
     const audio = new Audio();
     audio.preload = 'auto';
 
@@ -290,7 +289,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // ── Multi-Source Search (Jamendo Full Songs First, iTunes Previews Second)
+    // ── Search Engine (100% FULL-LENGTH SONGS ONLY - NO 30S PREVIEWS) ──────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -306,39 +305,25 @@ function initStudyMusicPlayer() {
 
     async function executeMultiSearch(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching full songs & previews…</div>`;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching full songs…</div>`;
         searchResults.style.display = 'block';
 
         try {
-            // Jamendo (Full Songs) first, iTunes (30s Previews) second
-            const [jamendoRes, itunesRes] = await Promise.allSettled([
-                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`),
-                fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`)
-            ]);
+            // ONLY fetch full length MP3 songs from Jamendo (NO 30-second iTunes previews!)
+            const res = await fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`);
 
             const tracks = [];
 
-            // 1. Jamendo Full-Length MP3 Songs
-            if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
-                const jamendoData = await jamendoRes.value.json();
+            if (res.ok) {
+                const jamendoData = await res.json();
                 if (Array.isArray(jamendoData)) {
                     jamendoData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
-                        }
-                    });
-                }
-            }
-
-            // 2. iTunes 30-second Previews
-            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
-                const iTunesData = await itunesRes.value.json();
-                if (Array.isArray(iTunesData)) {
-                    iTunesData.forEach(p => {
-                        const pTitle = (p.title || '').toLowerCase();
-                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
-                            tracks.push(p);
+                        // Ensure only full-length tracks (> 45s duration) are included
+                        if (p.duration && p.duration > 45) {
+                            const pTitle = (p.title || '').toLowerCase();
+                            if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
+                                tracks.push(p);
+                            }
                         }
                     });
                 }
@@ -356,7 +341,7 @@ function initStudyMusicPlayer() {
         searchResults.innerHTML = '';
 
         if (items.length === 0) {
-            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">No songs found. Try another search!</div>`;
+            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">No full songs found. Try keywords like "lofi", "chill", "piano", "study"!</div>`;
             searchResults.style.display = 'block';
             return;
         }
@@ -373,7 +358,7 @@ function initStudyMusicPlayer() {
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
                     <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')}${durText ? ' · ' + durText : ''}</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Full Song'}</span>
+                <span class="sp-source-badge sp-badge-jamendo">Full Song</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
