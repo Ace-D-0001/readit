@@ -394,7 +394,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // ── Multi-Source Search (SoundCloud + Jamendo + Paste SoundCloud URL) ────
+    // ── Direct Keyword Text Search (SoundCloud + Jamendo) ────────────────────
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -405,7 +405,7 @@ function initStudyMusicPlayer() {
                 return;
             }
 
-            // Check if input is a direct SoundCloud URL
+            // Auto-detect if input is a direct SoundCloud URL
             if (query.includes('soundcloud.com/')) {
                 resolveAndPlaySoundCloudUrl(query);
                 return;
@@ -433,7 +433,7 @@ function initStudyMusicPlayer() {
             }
         } catch (e) {}
 
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #ef4444; text-align: center;">Could not load SoundCloud URL. Check the link and try again.</div>`;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #ef4444; text-align: center;">Could not load SoundCloud URL. Check link and try again.</div>`;
     }
 
     async function executeMultiSearch(query) {
@@ -487,34 +487,13 @@ function initStudyMusicPlayer() {
         if (!searchResults) return;
         searchResults.innerHTML = '';
 
-        // Add Quick Action: Paste SoundCloud URL item
-        const pasteOption = document.createElement('div');
-        pasteOption.className = 'sp-search-item';
-        pasteOption.style.background = 'rgba(255, 85, 0, 0.12)';
-        pasteOption.style.border = '1px dashed rgba(255, 85, 0, 0.3)';
-        pasteOption.innerHTML = `
-            <i class="bi bi-link-45deg" style="color: #ff5500; font-size: 20px;"></i>
-            <div style="flex: 1; min-width: 0;">
-                <div class="sp-search-title" style="color: #ff5500;">Paste any SoundCloud track link…</div>
-                <div class="sp-search-artist">e.g. soundcloud.com/artist/song-title</div>
-            </div>
-            <span class="sp-source-badge sp-badge-soundcloud">Paste URL</span>
-        `;
-        pasteOption.addEventListener('click', () => {
-            const url = prompt("Paste a SoundCloud track URL:");
-            if (url && url.includes('soundcloud.com/')) {
-                resolveAndPlaySoundCloudUrl(url.trim());
-            }
-        });
-        searchResults.appendChild(pasteOption);
-
         if (items.length === 0) {
             const noRes = document.createElement('div');
-            noRes.style.padding = '10px';
+            noRes.style.padding = '12px';
             noRes.style.fontSize = '11px';
             noRes.style.color = '#a1a1aa';
             noRes.style.textAlign = 'center';
-            noRes.textContent = "No search results. Paste a SoundCloud link above!";
+            noRes.textContent = "No songs found for that search. Try typing another song or artist!";
             searchResults.appendChild(noRes);
             searchResults.style.display = 'block';
             return;
@@ -532,7 +511,7 @@ function initStudyMusicPlayer() {
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
                     <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · ${durText}</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-soundcloud'}">${t.source || 'SoundCloud'}</span>
+                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-soundcloud'}">${t.source || 'Full Song'}</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
