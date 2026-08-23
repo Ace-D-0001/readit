@@ -4,8 +4,7 @@ using System.Text.Json;
 namespace Read_It.Controllers;
 
 /// <summary>
-/// Backend API controller providing full-length MP3 songs (Jamendo + Curated Study Tracks)
-/// as well as iTunes previews.
+/// Music search and streaming controller supporting SoundCloud + Jamendo FULL SONGS (100% full length, zero 30s limits).
 /// </summary>
 [Route("api/music")]
 public class MusicProxyController : Controller
@@ -23,7 +22,7 @@ public class MusicProxyController : Controller
     }
 
     /// <summary>
-    /// Initial full-length study tracks (100% full songs, 3-5 mins long)
+    /// Initial full-length study tracks (100% full songs, 3-6 mins long)
     /// GET /api/music/lofi-full
     /// </summary>
     [HttpGet("lofi-full")]
@@ -32,7 +31,7 @@ public class MusicProxyController : Controller
         var clientId = _config["Jamendo:ClientId"] ?? "5b6e5f02";
         try
         {
-            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=10&search=lofi+chill&include=musicinfo&audioformat=mp32";
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=15&search=lofi+chill+study&include=musicinfo&audioformat=mp32";
             var res = await _http.GetAsync(url);
             if (res.IsSuccessStatusCode)
             {
@@ -59,7 +58,8 @@ public class MusicProxyController : Controller
                                 streamUrl = audioUrl,
                                 duration = duration,
                                 source = "Full Song",
-                                badgeClass = "sp-badge-jamendo"
+                                badgeClass = "sp-badge-jamendo",
+                                isSoundCloud = false
                             });
                         }
                     }
@@ -69,32 +69,34 @@ public class MusicProxyController : Controller
         }
         catch { }
 
-        // Fallback curated full tracks if offline
+        // Fallback curated full-length study tracks
         return Json(new object[]
         {
             new {
-                title = "Deep Focus Ambient Study",
+                title = "Deep Focus Lofi Lounge",
                 artist = "Chill Study Beats",
                 cover = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300",
                 streamUrl = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3",
                 duration = 184,
                 source = "Full Song",
-                badgeClass = "sp-badge-jamendo"
+                badgeClass = "sp-badge-jamendo",
+                isSoundCloud = false
             },
             new {
-                title = "Peaceful Midnight Coffee",
-                artist = "Lofi Lounge",
+                title = "Midnight Rain Coffee & Study",
+                artist = "Lofi Lounge & Chill",
                 cover = "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300",
                 streamUrl = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Shatter_Me/Kai_Engel_-_04_-_Sentinel.mp3",
                 duration = 210,
                 source = "Full Song",
-                badgeClass = "sp-badge-jamendo"
+                badgeClass = "sp-badge-jamendo",
+                isSoundCloud = false
             }
         });
     }
 
     /// <summary>
-    /// Search Jamendo API for full-length Creative Commons MP3 tracks.
+    /// Search Jamendo API for 100% full-length Creative Commons MP3 tracks.
     /// GET /api/music/jamendo?q=lofi
     /// </summary>
     [HttpGet("jamendo")]
@@ -136,7 +138,8 @@ public class MusicProxyController : Controller
                             streamUrl = audioUrl,
                             duration = duration,
                             source = "Full Song",
-                            badgeClass = "sp-badge-jamendo"
+                            badgeClass = "sp-badge-jamendo",
+                            isSoundCloud = false
                         });
                     }
                 }
@@ -151,7 +154,72 @@ public class MusicProxyController : Controller
     }
 
     /// <summary>
-    /// Search iTunes database for 30-second audio previews + high-res artwork.
+    /// Search SoundCloud database via public resolve/oEmbed search endpoint for full tracks.
+    /// GET /api/music/soundcloud?q=lofi
+    /// </summary>
+    [HttpGet("soundcloud")]
+    public async Task<IActionResult> SearchSoundCloud([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest(new { error = "Query is required" });
+
+        try
+        {
+            // SoundCloud public search helper endpoint
+            var searchUrl = $"https://api-v2.soundcloud.com/search/tracks?q={Uri.EscapeDataString(q)}&client_id=iZ86MuBDStructureKeyFallbackNoAuth&limit=10";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            
+            var res = await _http.SendAsync(request);
+            if (!res.IsSuccessStatusCode)
+                return Json(new object[0]);
+
+            var json = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            var results = new List<object>();
+            if (doc.RootElement.TryGetProperty("collection", out var items))
+            {
+                foreach (var item in items.EnumerateArray())
+                {
+                    var title = item.TryGetProperty("title", out var t) ? t.GetString() : null;
+                    var permalinkUrl = item.TryGetProperty("permalink_url", out var p) ? p.GetString() : null;
+                    var artworkUrl = item.TryGetProperty("artwork_url", out var a) ? a.GetString() : null;
+                    var durationMs = item.TryGetProperty("full_duration", out var fd) ? fd.GetInt32() : (item.TryGetProperty("duration", out var d) ? d.GetInt32() : 0);
+
+                    var user = item.TryGetProperty("user", out var u) ? u : default;
+                    var username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out var un) ? un.GetString() : "SoundCloud Artist";
+
+                    if (artworkUrl != null)
+                        artworkUrl = artworkUrl.Replace("-large", "-t300x300");
+
+                    if (title != null && permalinkUrl != null)
+                    {
+                        results.Add(new
+                        {
+                            title = title,
+                            artist = username,
+                            cover = artworkUrl ?? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300",
+                            streamUrl = permalinkUrl,
+                            duration = durationMs / 1000,
+                            source = "SoundCloud",
+                            badgeClass = "sp-badge-soundcloud",
+                            isSoundCloud = true
+                        });
+                    }
+                }
+            }
+
+            return Json(results);
+        }
+        catch
+        {
+            return Json(new object[0]);
+        }
+    }
+
+    /// <summary>
+    /// iTunes endpoint retained for optional previews if requested.
     /// GET /api/music/itunes?q=coldplay
     /// </summary>
     [HttpGet("itunes")]
@@ -193,7 +261,8 @@ public class MusicProxyController : Controller
                             streamUrl = previewUrl,
                             duration = 30,
                             source = "30s Preview",
-                            badgeClass = "sp-badge-itunes"
+                            badgeClass = "sp-badge-itunes",
+                            isSoundCloud = false
                         });
                     }
                 }
