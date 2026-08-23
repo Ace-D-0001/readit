@@ -1,10 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — STABLE PRODUCTION AUDIO ENGINE
-   - Free Legitimate APIs: iTunes Previews (30s) + Jamendo (Full Length MP3s)
-   - Verified 24/7 Live Radio Streams
-   - Option B SessionStorage Handoff with Autoplay Resume overlay fallback
-   - BroadcastChannel UI Synchronization across multiple browser tabs
-   - Removes crossOrigin CORS restrictions
+   PREMIUM STUDY MUSIC PLAYER — FULL SONGS & ELEGANT UI
+   - Default Initial State: Plays 100% FULL-LENGTH Songs (3-5 minutes long)
+   - Multi-Source Search: Jamendo Full MP3s (Primary) + iTunes Previews (Secondary)
+   - Station Chips Removed per User Request
+   - SessionStorage state persistence across full page reloads
+   - BroadcastChannel UI state synchronization across multiple tabs
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +15,7 @@ function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Native HTML5 Audio Object (DO NOT set crossOrigin = 'anonymous')
+    // Native HTML5 Audio Object (No crossOrigin restriction)
     const audio = new Audio();
     audio.preload = 'auto';
 
@@ -44,54 +44,14 @@ function initStudyMusicPlayer() {
     let isUserSeeking = false;
     let currentPlaylist = [];
     let currentIndex = 0;
-    let isLiveStream = false;
-
-    // Verified High-Quality 24/7 Live Radio Streams
-    const stations = {
-        lofi: {
-            title: "Lofi Hip Hop Radio (24/7)",
-            artist: "Lofi Girl & Chillhop Beats",
-            cover: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/f3wvbbqmdg8uv",
-            isLive: true
-        },
-        focus: {
-            title: "Deep Focus Ambient Waves",
-            artist: "Alpha Waves Concentration",
-            cover: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/0r0xa792kwzuv",
-            isLive: true
-        },
-        piano: {
-            title: "Peaceful Solo Piano",
-            artist: "Classical Study Relaxation",
-            cover: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=300&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/e29v17173ceuv",
-            isLive: true
-        },
-        synthwave: {
-            title: "Synthwave Night Drive",
-            artist: "Retrowave & Chillwave Beats",
-            cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/3h7k5m792kwzuv",
-            isLive: true
-        },
-        jazz: {
-            title: "Coffee Shop & Jazz Hop",
-            artist: "Relaxing Lounge & Chill Beats",
-            cover: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80",
-            url: "https://stream.zeno.fm/a38vbbqmdg8uv",
-            isLive: true
-        }
-    };
 
     // Restore Volume
     const savedVol = localStorage.getItem('sp_vol') || 0.8;
     audio.volume = parseFloat(savedVol);
     if (volumeSlider) volumeSlider.value = audio.volume;
 
-    // ── SessionStorage Handoff (Restores state on full page reload) ─────────
-    restoreSessionState();
+    // ── Restore Session State or Load Initial Full Tracks ────────────────────
+    restoreSessionStateOrLoadDefault();
 
     function saveSessionState() {
         if (currentPlaylist.length > 0 && currentPlaylist[currentIndex]) {
@@ -102,7 +62,6 @@ function initStudyMusicPlayer() {
                 index: currentIndex,
                 currentTime: audio.currentTime || 0,
                 isPlaying: isPlaying,
-                isLive: isLiveStream,
                 volume: audio.volume,
                 minimized: playerCard.classList.contains('minimized')
             };
@@ -110,7 +69,7 @@ function initStudyMusicPlayer() {
         }
     }
 
-    function restoreSessionState() {
+    async function restoreSessionStateOrLoadDefault() {
         try {
             const savedState = sessionStorage.getItem('sp_state');
             if (savedState) {
@@ -125,13 +84,12 @@ function initStudyMusicPlayer() {
                 if (state.track && (state.track.url || state.track.streamUrl)) {
                     currentPlaylist = state.playlist || [state.track];
                     currentIndex = state.index || 0;
-                    isLiveStream = !!state.isLive;
 
                     const tr = state.track;
                     updateUI(tr.title, tr.artist, tr.cover);
                     audio.src = tr.url || tr.streamUrl;
 
-                    if (!isLiveStream && state.currentTime > 0) {
+                    if (state.currentTime > 0) {
                         audio.currentTime = state.currentTime;
                     }
 
@@ -142,18 +100,35 @@ function initStudyMusicPlayer() {
                 }
             }
         } catch (e) {
-            console.warn("Could not restore music session state:", e);
+            console.warn("Could not restore session state:", e);
         }
 
-        // Default to Lofi station if no saved state
-        loadStation('lofi');
+        // Fetch initial full-length study tracks (3-5 mins long)
+        await loadInitialFullPlaylist();
+    }
+
+    async function loadInitialFullPlaylist() {
+        try {
+            const res = await fetch('/api/music/lofi-full');
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    currentPlaylist = data;
+                    currentIndex = 0;
+                    playPlaylistTrack(0, false);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn("Failed loading full playlist:", err);
+        }
     }
 
     window.addEventListener('beforeunload', () => {
         saveSessionState();
     });
 
-    // ── BroadcastChannel Tab Synchronization (UI state sync across tabs) ───
+    // ── BroadcastChannel Tab Synchronization ────────────────────────────────
     if (bc) {
         bc.onmessage = (event) => {
             const data = event.data;
@@ -171,37 +146,12 @@ function initStudyMusicPlayer() {
         };
     }
 
-    // ── Station Chips ────────────────────────────────────────────────────────
-    document.querySelectorAll('.sp-station-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const key = chip.dataset.station;
-            document.querySelectorAll('.sp-station-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            loadStation(key);
-        });
-    });
-
-    function loadStation(key) {
-        const st = stations[key] || stations.lofi;
-        isLiveStream = true;
-        currentPlaylist = [st];
-        currentIndex = 0;
-
-        updateUI(st.title, st.artist, st.cover);
-        audio.src = st.url;
-        if (progressBar) progressBar.value = 100;
-        if (timeCurrent) timeCurrent.textContent = "0:00";
-        if (timeTotal) timeTotal.textContent = "LIVE";
-
-        playTrack();
-    }
-
-    // ── Play / Pause / Navigation ────────────────────────────────────────────
+    // ── Play / Pause / Playlist Navigation ──────────────────────────────────
     function playTrack() {
         audio.play().then(() => setPlayingState(true)).catch((err) => {
-            console.warn("Browser blocked autoplay on reload. User click needed to resume:", err);
+            console.warn("Autoplay deferred until user interaction:", err);
             setPlayingState(false);
-            if (titleEl) titleEl.textContent = "▶ Tap Play to Resume";
+            if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
         });
     }
 
@@ -229,7 +179,7 @@ function initStudyMusicPlayer() {
         prevBtn.addEventListener('click', () => {
             if (currentPlaylist.length > 0) {
                 currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
-                playPlaylistTrack(currentIndex);
+                playPlaylistTrack(currentIndex, true);
             }
         });
     }
@@ -238,7 +188,7 @@ function initStudyMusicPlayer() {
         nextBtn.addEventListener('click', () => {
             if (currentPlaylist.length > 0) {
                 currentIndex = (currentIndex + 1) % currentPlaylist.length;
-                playPlaylistTrack(currentIndex);
+                playPlaylistTrack(currentIndex, true);
             }
         });
     }
@@ -246,45 +196,46 @@ function initStudyMusicPlayer() {
     audio.addEventListener('play', () => setPlayingState(true));
     audio.addEventListener('pause', () => setPlayingState(false));
     audio.addEventListener('ended', () => {
-        if (!isLiveStream && currentPlaylist.length > 0) {
+        if (currentPlaylist.length > 0) {
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
-            playPlaylistTrack(currentIndex);
+            playPlaylistTrack(currentIndex, true);
         } else {
             setPlayingState(false);
         }
     });
 
     audio.addEventListener('error', (e) => {
-        console.warn("Audio stream error, skipping to next...", e);
-        if (!isLiveStream && currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
+        console.warn("Track load error, advancing...", e);
+        if (currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
             currentIndex++;
-            playPlaylistTrack(currentIndex);
+            playPlaylistTrack(currentIndex, true);
         }
     });
 
-    function playPlaylistTrack(idx) {
+    function playPlaylistTrack(idx, shouldAutoplay = true) {
         if (idx < 0 || idx >= currentPlaylist.length) return;
         const track = currentPlaylist[idx];
-        isLiveStream = !!track.isLive;
 
         updateUI(track.title, track.artist, track.cover);
         audio.src = track.url || track.streamUrl;
         if (progressBar) progressBar.value = 0;
         if (timeCurrent) timeCurrent.textContent = "0:00";
-        if (timeTotal) timeTotal.textContent = isLiveStream ? "LIVE" : (track.duration ? formatTime(track.duration) : "FULL");
+        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "--:--";
 
-        playTrack();
+        if (shouldAutoplay) {
+            playTrack();
+        }
     }
 
     function updateUI(title, artist, cover) {
-        if (titleEl) titleEl.textContent = title || "Study Track";
+        if (titleEl) titleEl.textContent = title || "Full Study Track";
         if (artistEl) artistEl.textContent = artist || "Full Song";
         if (coverEl && cover) coverEl.src = cover;
     }
 
     // ── Timeline Progress Slider ─────────────────────────────────────────────
     audio.addEventListener('timeupdate', () => {
-        if (isUserSeeking || isLiveStream) return;
+        if (isUserSeeking) return;
         const current = audio.currentTime || 0;
         const duration = audio.duration || 0;
 
@@ -304,14 +255,14 @@ function initStudyMusicPlayer() {
 
         progressBar.addEventListener('input', (e) => {
             const pct = parseFloat(e.target.value);
-            if (!isLiveStream && audio.duration && !isNaN(audio.duration)) {
+            if (audio.duration && !isNaN(audio.duration)) {
                 if (timeCurrent) timeCurrent.textContent = formatTime((pct / 100) * audio.duration);
             }
         });
 
         const handleSeek = (e) => {
             const pct = parseFloat(e.target.value);
-            if (!isLiveStream && audio.duration && !isNaN(audio.duration)) {
+            if (audio.duration && !isNaN(audio.duration)) {
                 audio.currentTime = (pct / 100) * audio.duration;
             }
             isUserSeeking = false;
@@ -339,7 +290,7 @@ function initStudyMusicPlayer() {
         });
     }
 
-    // ── Multi-Source Search (iTunes Previews + Jamendo Full Length) ──────────
+    // ── Multi-Source Search (Jamendo Full Songs First, iTunes Previews Second)
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -355,30 +306,36 @@ function initStudyMusicPlayer() {
 
     async function executeMultiSearch(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching music catalog…</div>`;
+        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching full songs & previews…</div>`;
         searchResults.style.display = 'block';
 
         try {
-            // Parallel search across iTunes API + Jamendo API (No YouTube or Audius)
-            const [itunesRes, jamendoRes] = await Promise.allSettled([
-                fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`),
-                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`)
+            // Jamendo (Full Songs) first, iTunes (30s Previews) second
+            const [jamendoRes, itunesRes] = await Promise.allSettled([
+                fetch(`/api/music/jamendo?q=${encodeURIComponent(query)}`),
+                fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`)
             ]);
 
             const tracks = [];
 
-            // 1. iTunes Results (Instant 30s previews for commercial artists)
-            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
-                const iTunesData = await itunesRes.value.json();
-                if (Array.isArray(iTunesData)) tracks.push(...iTunesData);
-            }
-
-            // 2. Jamendo Results (Full length Creative Commons licensed MP3 tracks)
+            // 1. Jamendo Full-Length MP3 Songs
             if (jamendoRes.status === 'fulfilled' && jamendoRes.value.ok) {
                 const jamendoData = await jamendoRes.value.json();
                 if (Array.isArray(jamendoData)) {
                     jamendoData.forEach(p => {
-                        // Null guard check on track title to prevent runtime exception
+                        const pTitle = (p.title || '').toLowerCase();
+                        if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
+                            tracks.push(p);
+                        }
+                    });
+                }
+            }
+
+            // 2. iTunes 30-second Previews
+            if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
+                const iTunesData = await itunesRes.value.json();
+                if (Array.isArray(iTunesData)) {
+                    iTunesData.forEach(p => {
                         const pTitle = (p.title || '').toLowerCase();
                         if (!tracks.some(tr => (tr.title || '').toLowerCase() === pTitle)) {
                             tracks.push(p);
@@ -416,14 +373,14 @@ function initStudyMusicPlayer() {
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
                     <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')}${durText ? ' · ' + durText : ''}</div>
                 </div>
-                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-itunes'}">${t.source || 'Music'}</span>
-                <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 20px; flex-shrink: 0;"></i>
+                <span class="sp-source-badge ${t.badgeClass || 'sp-badge-jamendo'}">${t.source || 'Full Song'}</span>
+                <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
             div.addEventListener('click', () => {
                 currentPlaylist = items;
                 currentIndex = idx;
-                playPlaylistTrack(idx);
+                playPlaylistTrack(idx, true);
                 searchResults.style.display = 'none';
                 if (searchInput) searchInput.value = '';
             });
