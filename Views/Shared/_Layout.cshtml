@@ -62,182 +62,196 @@
     </div>
 </header>
 
-<!-- ── Main 3-column grid ─────────────────────────────────────────────────── -->
-<div class="app-grid">
+@{
+    var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    bool isAuthPage = currentCtrl.Equals("Account", StringComparison.OrdinalIgnoreCase);
+}
 
-    <!-- Left Sidebar (LHS) -->
-    <aside class="app-sidebar">
-        <div style="position: sticky; top: calc(var(--header-h) + 16px);">
-            <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
-                @if (User.IsInRole("Admin"))
-                {
-                    <a href="/Admin" class="sidebar-item" style="color: var(--warning); font-weight: 700; background: rgba(234, 179, 8, 0.1); border-left: 3px solid var(--warning);">
-                        <i class="bi bi-shield-lock-fill"></i>
-                        <span>Admin Dashboard</span>
-                    </a>
-                }
-                <a href="/" class="sidebar-item">
-                    <i class="bi bi-house-door"></i>
-                    <span>Home Feed</span>
-                </a>
-                <a href="/Courses" class="sidebar-item">
-                    <i class="bi bi-journals"></i>
-                    <span>All SubSubjects</span>
-                </a>
-                <a href="/Posts" class="sidebar-item">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>All Posts</span>
-                </a>
-                <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent); font-weight: 600;">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>+ Create Post</span>
-                </a>
-                <a href="/User/Details" class="sidebar-item">
-                    <i class="bi bi-person-badge"></i>
-                    <span>My Profile</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-label">IUBAT SubSubjects</div>
-
-            <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
-                <a href="/Courses/Details?code=CSC247" class="sidebar-item">
-                    <span class="avatar avatar-sm" style="background: #22c55e;">C</span>
-                    <div>
-                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC247</div>
-                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Computer Architecture</div>
-                    </div>
-                </a>
-                <a href="/Courses/Details?code=CSC391" class="sidebar-item">
-                    <span class="avatar avatar-sm" style="background: #3b82f6;">C</span>
-                    <div>
-                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC391</div>
-                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Data Structures</div>
-                    </div>
-                </a>
-                <a href="/Courses/Details?code=CSC433" class="sidebar-item">
-                    <span class="avatar avatar-sm" style="background: #a855f7;">C</span>
-                    <div>
-                        <div style="font-size: var(--text-sm); font-weight: 600;">CSC433</div>
-                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Database Systems</div>
-                    </div>
-                </a>
-                <a href="/Courses/Details?code=MAT247" class="sidebar-item">
-                    <span class="avatar avatar-sm" style="background: #0ea5e9;">M</span>
-                    <div>
-                        <div style="font-size: var(--text-sm); font-weight: 600;">MAT247</div>
-                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Numerical Analysis</div>
-                    </div>
-                </a>
-            </nav>
-
-            <hr class="divider" />
-
-            <a href="/Courses" class="sidebar-item" style="color: var(--accent);">
-                <i class="bi bi-compass"></i>
-                <span style="font-weight: 600;">Explore all subReadIts</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- Main Content (Swapped seamlessly via PJAX so Music NEVER STOPS!) -->
-    <main class="app-main">
+@if (isAuthPage)
+{
+    <div class="container py-4">
         @RenderBody()
-    </main>
+    </div>
+}
+else
+{
+    <!-- ── Main 3-column grid ─────────────────────────────────────────────────── -->
+    <div class="app-grid">
 
-    <!-- Right Aside Column (RHS) -->
-    <aside class="app-aside">
-        <div style="position: sticky; top: calc(var(--header-h) + 16px);">
-            @if (IsSectionDefined("RightAside"))
-            {
-                @await RenderSectionAsync("RightAside", required: false)
-            }
-            else
-            {
-                <div class="right-card">
-                    <div class="right-card-title">
-                        <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
-                    </div>
-                    <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
-                        ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
-                    </p>
-                    <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
-                        <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
-                        <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
-                    </div>
-                </div>
+        <!-- Left Sidebar (LHS) -->
+        <aside class="app-sidebar">
+            <div style="position: sticky; top: calc(var(--header-h) + 16px);">
+                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/Admin" class="sidebar-item" style="color: var(--warning); font-weight: 700; background: rgba(234, 179, 8, 0.1); border-left: 3px solid var(--warning);">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span>Admin Dashboard</span>
+                        </a>
+                    }
+                    <a href="/" class="sidebar-item">
+                        <i class="bi bi-house-door"></i>
+                        <span>Home Feed</span>
+                    </a>
+                    <a href="/Courses" class="sidebar-item">
+                        <i class="bi bi-journals"></i>
+                        <span>All SubSubjects</span>
+                    </a>
+                    <a href="/Posts" class="sidebar-item">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>All Posts</span>
+                    </a>
+                    <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent); font-weight: 600;">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>+ Create Post</span>
+                    </a>
+                    <a href="/User/Details" class="sidebar-item">
+                        <i class="bi bi-person-badge"></i>
+                        <span>My Profile</span>
+                    </a>
+                </nav>
 
-                <div class="right-card">
-                    <div class="right-card-title">
-                        <i class="bi bi-lightning-fill" style="color: var(--warning);"></i> Quick Search Tips
-                    </div>
-                    <ul style="font-size: var(--text-sm); color: var(--text-secondary); padding-left: var(--sp-5); margin: 0; line-height: 1.8;">
-                        <li>Course codes like <strong>CSC391</strong></li>
-                        <li>Topics like <strong>SQL</strong> or <strong>Notes</strong></li>
-                        <li>Flair like <strong>Question</strong> or <strong>Meme</strong></li>
-                    </ul>
-                </div>
-            }
-        </div>
-    </aside>
-</div>
+                <div class="sidebar-label">IUBAT SubSubjects</div>
 
-<!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Always Pinned & Sleek!) ── -->
-<div id="study-player" class="study-player-card">
-    <!-- Player Header -->
-    <div class="sp-header">
-        <div class="sp-title-badge">
-            <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="sp-eq">
-                <div class="sp-eq-bar"></div>
-                <div class="sp-eq-bar"></div>
-                <div class="sp-eq-bar"></div>
-                <div class="sp-eq-bar"></div>
+                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
+                    <a href="/Courses/Details?code=CSC247" class="sidebar-item">
+                        <span class="avatar avatar-sm" style="background: #22c55e;">C</span>
+                        <div>
+                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC247</div>
+                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Computer Architecture</div>
+                        </div>
+                    </a>
+                    <a href="/Courses/Details?code=CSC391" class="sidebar-item">
+                        <span class="avatar avatar-sm" style="background: #3b82f6;">C</span>
+                        <div>
+                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC391</div>
+                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Data Structures</div>
+                        </div>
+                    </a>
+                    <a href="/Courses/Details?code=CSC433" class="sidebar-item">
+                        <span class="avatar avatar-sm" style="background: #a855f7;">C</span>
+                        <div>
+                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC433</div>
+                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Database Systems</div>
+                        </div>
+                    </a>
+                    <a href="/Courses/Details?code=MAT247" class="sidebar-item">
+                        <span class="avatar avatar-sm" style="background: #0ea5e9;">M</span>
+                        <div>
+                            <div style="font-size: var(--text-sm); font-weight: 600;">MAT247</div>
+                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Numerical Analysis</div>
+                        </div>
+                    </a>
+                </nav>
+
+                <hr class="divider" />
+
+                <a href="/Courses" class="sidebar-item" style="color: var(--accent);">
+                    <i class="bi bi-compass"></i>
+                    <span style="font-weight: 600;">Explore all subReadIts</span>
+                </a>
             </div>
-            <button type="button" id="sp-min-btn" class="sp-btn-subtle" title="Minimize / Expand"><i class="bi bi-chevron-down"></i></button>
-        </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            @RenderBody()
+        </main>
+
+        <!-- Right Aside Column (RHS) -->
+        <aside class="app-aside">
+            <div style="position: sticky; top: calc(var(--header-h) + 16px);">
+                @if (IsSectionDefined("RightAside"))
+                {
+                    @await RenderSectionAsync("RightAside", required: false)
+                }
+                else
+                {
+                    <div class="right-card">
+                        <div class="right-card-title">
+                            <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
+                        </div>
+                        <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
+                            ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
+                        </p>
+                        <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+                            <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
+                            <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
+                        </div>
+                    </div>
+
+                    <div class="right-card">
+                        <div class="right-card-title">
+                            <i class="bi bi-lightning-fill" style="color: var(--warning);"></i> Quick Search Tips
+                        </div>
+                        <ul style="font-size: var(--text-sm); color: var(--text-secondary); padding-left: var(--sp-5); margin: 0; line-height: 1.8;">
+                            <li>Course codes like <strong>CSC391</strong></li>
+                            <li>Topics like <strong>SQL</strong> or <strong>Notes</strong></li>
+                            <li>Flair like <strong>Question</strong> or <strong>Meme</strong></li>
+                        </ul>
+                    </div>
+                }
+            </div>
+        </aside>
     </div>
 
-    <!-- Active Track Display (Cover Art + Title + Artist) -->
-    <div class="sp-track-row">
-        <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
-        <div class="sp-track-info">
-            <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
-            <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
-        </div>
-    </div>
-
-    <!-- Timeline Progress Bar -->
-    <div class="sp-progress-wrapper sp-hide-minimized">
-        <span id="sp-time-current">0:00</span>
-        <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
-        <span id="sp-time-total">0:30</span>
-    </div>
-
-    <!-- Controls & Volume Bar -->
-    <div class="sp-controls-row">
-        <div class="sp-nav-group">
-            <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
-            <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
-            <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
-        </div>
-        <div class="sp-volume-container sp-hide-minimized">
-            <button type="button" id="sp-vol-btn" class="sp-btn-subtle" title="Mute / Unmute"><i id="sp-vol-icon" class="bi bi-volume-up-fill"></i></button>
-            <div class="sp-vol-popover">
-                <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+    <!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Excluded on Auth Pages) ── -->
+    <div id="study-player" class="study-player-card">
+        <!-- Player Header -->
+        <div class="sp-header">
+            <div class="sp-title-badge">
+                <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="sp-eq">
+                    <div class="sp-eq-bar"></div>
+                    <div class="sp-eq-bar"></div>
+                    <div class="sp-eq-bar"></div>
+                    <div class="sp-eq-bar"></div>
+                </div>
+                <button type="button" id="sp-min-btn" class="sp-btn-subtle" title="Minimize / Expand"><i class="bi bi-chevron-down"></i></button>
             </div>
         </div>
-    </div>
 
-    <!-- Live Track Search -->
-    <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
-        <i class="bi bi-search sp-search-icon"></i>
-        <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
-        <div id="sp-search-results" class="sp-search-results"></div>
+        <!-- Active Track Display (Cover Art + Title + Artist) -->
+        <div class="sp-track-row">
+            <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
+            <div class="sp-track-info">
+                <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
+                <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
+            </div>
+        </div>
+
+        <!-- Timeline Progress Bar -->
+        <div class="sp-progress-wrapper sp-hide-minimized">
+            <span id="sp-time-current">0:00</span>
+            <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
+            <span id="sp-time-total">0:30</span>
+        </div>
+
+        <!-- Controls & Volume Bar -->
+        <div class="sp-controls-row">
+            <div class="sp-nav-group">
+                <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
+                <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
+                <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
+            </div>
+            <div class="sp-volume-container sp-hide-minimized">
+                <button type="button" id="sp-vol-btn" class="sp-btn-subtle" title="Mute / Unmute"><i id="sp-vol-icon" class="bi bi-volume-up-fill"></i></button>
+                <div class="sp-vol-popover">
+                    <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Track Search -->
+        <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
+            <i class="bi bi-search sp-search-icon"></i>
+            <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
+            <div id="sp-search-results" class="sp-search-results"></div>
+        </div>
     </div>
-</div>
+}
 
 <!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
@@ -288,7 +302,10 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/study-player.js" asp-append-version="true"></script>
+@if (!isAuthPage)
+{
+    <script src="~/js/study-player.js" asp-append-version="true"></script>
+}
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
