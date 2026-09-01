@@ -38,7 +38,7 @@
                     @foreach (var c in courses)
                     {
                         <!option value="@c.Id" @(c.Code == selectedCourseCode ? "selected" : "")>
-                            c/@c.Code — @c.Title @(c.IsGeneral ? "(General)" : "")
+                            c/@c.Code — @c.Title
                         </!option>
                     }
                 </select>

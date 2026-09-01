@@ -1,6 +1,5 @@
 @{
     ViewData["Title"] = "Create Subpage — Admin";
-    var depts = ViewBag.Departments as IEnumerable<Read_It.Models.Department> ?? Enumerable.Empty<Read_It.Models.Department>();
 }
 
 <div style="max-width: 580px; margin: 20px auto;" class="fade-up">
@@ -30,31 +29,9 @@
                 <input type="text" name="title" class="form-control" placeholder="e.g. Software Engineering & System Design" required />
             </div>
 
-            <div class="mb-3">
-                <label class="form-label style-label">Description / Syllabus Overview</label>
-                <textarea name="description" class="form-control" rows="3" placeholder="Overview of the course topics, objectives, and prerequisites..."></textarea>
-            </div>
-
-            <div class="mb-3 form-check">
-                <input type="checkbox" name="isGeneral" value="true" class="form-check-input" id="isGeneralCheck" />
-                <label class="form-check-label text-light" for="isGeneralCheck" style="font-size: 13px;">
-                    General Course (Visible across all IUBAT departments)
-                </label>
-            </div>
-
             <div class="mb-4">
-                <label class="form-label style-label">Associated Departments (If not general)</label>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    @foreach (var d in depts)
-                    {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="departmentIds" value="@d.Id" id="dept-@d.Id" />
-                            <label class="form-check-label text-secondary" for="dept-@d.Id" style="font-size: 12px;">
-                                @d.Name (@d.Abbreviation)
-                            </label>
-                        </div>
-                    }
-                </div>
+                <label class="form-label style-label">Description / Syllabus Overview</label>
+                <textarea name="description" class="form-control" rows="4" placeholder="Overview of the course topics, objectives, and prerequisites..."></textarea>
             </div>
 
             <button type="submit" class="btn-primary w-100 py-2">Create Subpage</button>

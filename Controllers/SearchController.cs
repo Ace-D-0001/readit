@@ -35,12 +35,9 @@ namespace Read_It.Controllers
             var matchingCourses = await _context.Courses
                 .Include(c => c.Posts)
                 .Include(c => c.Resources)
-                .Include(c => c.CourseDepartments)
-                    .ThenInclude(cd => cd.Department)
                 .Where(c => c.Code.ToLower().Contains(queryLower) ||
                             c.Title.ToLower().Contains(queryLower) ||
-                            c.Description.ToLower().Contains(queryLower) ||
-                            c.CourseDepartments.Any(cd => cd.Department != null && cd.Department.Name.ToLower().Contains(queryLower)))
+                            c.Description.ToLower().Contains(queryLower))
                 .ToListAsync();
 
             // Search Posts (Content)

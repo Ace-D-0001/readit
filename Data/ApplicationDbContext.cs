@@ -10,8 +10,6 @@ namespace Read_It.Data
         {
         }
 
-        public DbSet<Models.Department> Departments { get; set; } = null!;
-        public DbSet<Models.CourseDepartment> CourseDepartments { get; set; } = null!;
         public DbSet<Models.Course> Courses { get; set; } = null!;
         public DbSet<Models.CourseResource> CourseResources { get; set; } = null!;
         public DbSet<Models.CourseFollow> CourseFollows { get; set; } = null!;
@@ -82,22 +80,6 @@ namespace Read_It.Data
             // ----- CourseMembership: composite PK -----
             builder.Entity<Models.CourseMembership>()
                 .HasKey(cm => new { cm.UserId, cm.CourseId });
-
-            // ----- CourseDepartment: composite PK -----
-            builder.Entity<Models.CourseDepartment>()
-                .HasKey(cd => new { cd.CourseId, cd.DepartmentId });
-
-            builder.Entity<Models.CourseDepartment>()
-                .HasOne(cd => cd.Course)
-                .WithMany(c => c.CourseDepartments)
-                .HasForeignKey(cd => cd.CourseId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<Models.CourseDepartment>()
-                .HasOne(cd => cd.Department)
-                .WithMany(d => d.CourseDepartments)
-                .HasForeignKey(cd => cd.DepartmentId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             // ----- CourseFollow: composite PK -----
             builder.Entity<Models.CourseFollow>()

@@ -2,26 +2,25 @@
 
 @{
     ViewData["Title"] = "All SubSubjects — ReadIt IUBAT";
-    var departments   = ViewBag.Departments as IEnumerable<Read_It.Models.Department> ?? Enumerable.Empty<Read_It.Models.Department>();
-    int? activeDeptId = ViewBag.ActiveDeptId as int?;
+    string? searchQuery = ViewBag.SearchQuery as string;
 }
 
 <!-- Page Header -->
-<div style="margin-bottom: var(--sp-5);">
-    <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: var(--sp-1);">All SubSubjects</h1>
-    <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0;">Browse every course community at IUBAT. General courses appear for all departments.</p>
-</div>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <h1 style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-heading); margin-bottom: var(--sp-1);">All SubSubjects & Courses</h1>
+        <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0;">Explore every subject community at IUBAT to access course materials, questions, and notes.</p>
+    </div>
 
-<!-- Department Filter Tabs -->
-<div class="dept-tabs">
-    <a href="@Url.Action("Index", "Courses")" class="dept-tab @(activeDeptId == null ? "active" : "")">All</a>
-    @foreach (var dept in departments)
-    {
-        <a href="@Url.Action("Index", "Courses", new { deptId = dept.Id })"
-           class="dept-tab @(activeDeptId == dept.Id ? "active" : "")">
-            @dept.Abbreviation
-        </a>
-    }
+    <!-- Search Form -->
+    <form action="/Courses" method="get" class="d-flex gap-2">
+        <input type="text" name="search" value="@searchQuery" placeholder="Search subject code or title..." class="form-control form-control-sm bg-transparent text-white border-secondary" style="width: 240px;" />
+        <button type="submit" class="btn-primary py-1 px-3" style="font-size: 12px;">Search</button>
+        @if (!string.IsNullOrEmpty(searchQuery))
+        {
+            <a href="/Courses" class="btn-outline py-1 px-2" style="font-size: 12px;">Clear</a>
+        }
+    </form>
 </div>
 
 <!-- Course Cards Grid -->
@@ -30,18 +29,13 @@
     <div class="courses-grid">
         @foreach (var course in Model)
         {
-            var deptNames = course.CourseDepartments
-                .Select(cd => cd.Department?.Abbreviation ?? "")
-                .Where(n => !string.IsNullOrEmpty(n))
-                .ToList();
-
             <a href="@Url.Action("Details", "Courses", new { code = course.Code })" class="course-card">
                 <div class="course-card-header">
                     <div class="course-card-icon">
                         @course.Code.Substring(0, Math.Min(3, course.Code.Length))
                     </div>
                     <div>
-                        <div class="course-card-title">@course.Code</div>
+                        <div class="course-card-title">c/@course.Code</div>
                         <div class="course-card-code">@course.Title</div>
                     </div>
                 </div>
@@ -53,19 +47,7 @@
                         <span><i class="bi bi-file-post"></i> @(course.Posts?.Count ?? 0) posts</span>
                         <span><i class="bi bi-person-check"></i> @(course.Followers?.Count ?? 0) followers</span>
                     </div>
-                    <div style="display: flex; gap: var(--sp-1); flex-wrap: wrap;">
-                        @if (course.IsGeneral)
-                        {
-                            <span class="flair-badge">General</span>
-                        }
-                        else
-                        {
-                            @foreach (var abbr in deptNames)
-                            {
-                                <span style="display: inline-flex; align-items: center; background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-full);">@abbr</span>
-                            }
-                        }
-                    </div>
+                    <span class="btn btn-sm btn-outline-light py-0 px-2" style="font-size: 11px;">Explore &rarr;</span>
                 </div>
             </a>
         }
@@ -75,7 +57,7 @@ else
 {
     <div class="empty-state">
         <i class="bi bi-search" style="font-size: 2rem; display: block; margin-bottom: var(--sp-3);"></i>
-        <h5>No courses found</h5>
-        <p>Try a different department or <a href="@Url.Action("Index", "Courses")" style="color: var(--accent);">view all courses</a>.</p>
+        <h5>No subjects found</h5>
+        <p><a href="@Url.Action("Index", "Courses")" style="color: var(--accent);">View all subjects</a> or try a different search keyword.</p>
     </div>
 }

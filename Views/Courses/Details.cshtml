@@ -10,11 +10,6 @@
     bool isFollowing     = ViewBag.IsFollowing ?? false;
     string activeSort    = ViewBag.ActiveSort as string ?? "hot";
     var userPostVotes    = ViewBag.UserPostVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
-
-    var deptNames = Model.CourseDepartments
-        .Select(cd => cd.Department?.Name ?? "")
-        .Where(n => !string.IsNullOrEmpty(n))
-        .ToList();
 }
 
 @section RightAside {
@@ -343,17 +338,6 @@ function toggleForm(id) {
                     <h1 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-heading); margin: 0;">
                         c/@Model.Code — @Model.Title
                     </h1>
-                    @if (Model.IsGeneral)
-                    {
-                        <span class="flair-badge">General</span>
-                    }
-                    else
-                    {
-                        @foreach (var n in deptNames)
-                        {
-                            <span style="display: inline-flex; align-items: center; background: var(--bg-panel-alt); color: var(--text-secondary); border: 1px solid var(--border-default); font-size: var(--text-xs); font-weight: 600; padding: 2px 8px; border-radius: var(--r-full);">@n</span>
-                        }
-                    }
                 </div>
                 <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0; max-width: 600px; line-height: 1.6;">@Model.Description</p>
             </div>

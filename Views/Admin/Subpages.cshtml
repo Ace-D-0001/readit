@@ -56,17 +56,6 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                             <div>
                                 <span class="badge bg-success" style="font-size: 12px; font-weight: 800;">c/@course.Code</span>
-                                @if (course.IsGeneral)
-                                {
-                                    <span class="badge bg-secondary ms-1">General</span>
-                                }
-                                else
-                                {
-                                    @foreach (var cd in course.CourseDepartments)
-                                    {
-                                        <span class="badge bg-dark border text-light ms-1">@cd.Department?.Abbreviation</span>
-                                    }
-                                }
                             </div>
                             <a href="/Courses/Details?code=@course.Code" target="_blank" style="font-size: 11px; color: var(--accent); font-weight: 600;">
                                 View Subpage &nearr;

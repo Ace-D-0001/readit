@@ -18,24 +18,19 @@ namespace Read_It.Controllers
             _context = context;
         }
 
-        // GET /Courses?deptId=N
-        public async Task<IActionResult> Index(int? deptId)
+        // GET /Courses?search=keyword
+        public async Task<IActionResult> Index(string? search)
         {
-            var departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
-            ViewBag.Departments  = departments;
-            ViewBag.ActiveDeptId = deptId;
+            ViewBag.SearchQuery = search;
 
             var query = _context.Courses
-                .Include(c => c.CourseDepartments)
-                    .ThenInclude(cd => cd.Department)
                 .Include(c => c.Posts)
                 .Include(c => c.Followers)
                 .AsQueryable();
 
-            if (deptId.HasValue)
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(c => c.IsGeneral ||
-                    c.CourseDepartments.Any(cd => cd.DepartmentId == deptId.Value));
+                query = query.Where(c => c.Code.Contains(search) || c.Title.Contains(search) || c.Description.Contains(search));
             }
 
             var courses = await query.OrderBy(c => c.Code).ToListAsync();
@@ -54,8 +49,6 @@ namespace Read_It.Controllers
                 .Include(c => c.Posts)
                     .ThenInclude(p => p.Comments)
                 .Include(c => c.Resources)
-                .Include(c => c.CourseDepartments)
-                    .ThenInclude(cd => cd.Department)
                 .Include(c => c.Followers)
                 .Include(c => c.Videos)
                     .ThenInclude(v => v.SubmittedByUser)

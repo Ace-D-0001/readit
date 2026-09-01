@@ -73,82 +73,41 @@ namespace Read_It
             var fahim      = context.Users.FirstOrDefault(u => u.UserName == "fahim_dev");
             var nusrat     = context.Users.FirstOrDefault(u => u.UserName == "nusrat_bba");
 
-            // ── 2. Departments ──────────────────────────────────────────────────────────
-            if (!context.Departments.Any())
-            {
-                context.Departments.AddRange(
-                    new Department { Name = "Computer Science and Engineering", Abbreviation = "CSE" },
-                    new Department { Name = "Business Administration",          Abbreviation = "BBA" },
-                    new Department { Name = "Mathematics",                      Abbreviation = "MAT" },
-                    new Department { Name = "English",                          Abbreviation = "ENG" }
-                );
-                context.SaveChanges();
-            }
-
-            var deptCSE = context.Departments.FirstOrDefault(d => d.Abbreviation == "CSE");
-            var deptBBA = context.Departments.FirstOrDefault(d => d.Abbreviation == "BBA");
-            var deptMAT = context.Departments.FirstOrDefault(d => d.Abbreviation == "MAT");
-            var deptENG = context.Departments.FirstOrDefault(d => d.Abbreviation == "ENG");
-
-            // ── 3. Courses ──────────────────────────────────────────────────────────────
+            // ── 2. Courses / Subjects ──────────────────────────────────────────────────
             if (!context.Courses.Any())
             {
-                // General courses — visible to ALL departments, no CourseDepartment rows
                 var eng101 = new Course
                 {
-                    Code = "ENG101", Title = "English Language I", IsGeneral = true,
-                    Description = "Foundation English communication, academic writing, and vocabulary skills common to all IUBAT departments."
+                    Code = "ENG101", Title = "English Language I",
+                    Description = "Foundation English communication, academic writing, and vocabulary skills for IUBAT students."
                 };
                 var mat101 = new Course
                 {
-                    Code = "MAT101", Title = "Basic Mathematics", IsGeneral = true,
-                    Description = "Core algebra, calculus foundations, and mathematical logic prerequisite common to every department at IUBAT."
+                    Code = "MAT101", Title = "Basic Mathematics",
+                    Description = "Core algebra, calculus foundations, and mathematical logic prerequisite."
                 };
-
-                // CSE-specific courses
                 var csc247 = new Course
                 {
-                    Code = "CSC247", Title = "Computer Organization and Architecture", IsGeneral = false,
+                    Code = "CSC247", Title = "Computer Organization and Architecture",
                     Description = "Study of computer architecture, digital logic gates, CPU microarchitecture, and memory hierarchy."
                 };
                 var csc391 = new Course
                 {
-                    Code = "CSC391", Title = "Data Structure and Algorithm", IsGeneral = false,
+                    Code = "CSC391", Title = "Data Structure and Algorithm",
                     Description = "In-depth study of arrays, trees, graphs, sorting, searching, and algorithmic complexity."
                 };
                 var csc433 = new Course
                 {
-                    Code = "CSC433", Title = "Database Management Systems", IsGeneral = false,
+                    Code = "CSC433", Title = "Database Management Systems",
                     Description = "Relational database concepts, ER diagrams, SQL queries, normalization, and indexing."
                 };
-
-                // Shared: CSE + MAT (cross-department course)
                 var mat247 = new Course
                 {
-                    Code = "MAT247", Title = "Numerical Analysis", IsGeneral = false,
-                    Description = "Numerical methods for algebraic equations, interpolation, integration, and differential equations. Offered to both CSE and Mathematics students."
+                    Code = "MAT247", Title = "Numerical Analysis",
+                    Description = "Numerical methods for algebraic equations, interpolation, integration, and differential equations."
                 };
 
                 context.Courses.AddRange(eng101, mat101, csc247, csc391, csc433, mat247);
-                context.SaveChanges();
-
-                // Attach CSE courses to CSE dept
-                if (deptCSE != null)
-                {
-                    context.CourseDepartments.AddRange(
-                        new CourseDepartment { CourseId = csc247.Id, DepartmentId = deptCSE.Id },
-                        new CourseDepartment { CourseId = csc391.Id, DepartmentId = deptCSE.Id },
-                        new CourseDepartment { CourseId = csc433.Id, DepartmentId = deptCSE.Id },
-                        new CourseDepartment { CourseId = mat247.Id, DepartmentId = deptCSE.Id }
-                    );
-                }
-                // MAT247 also belongs to Mathematics dept
-                if (deptMAT != null)
-                {
-                    context.CourseDepartments.Add(
-                        new CourseDepartment { CourseId = mat247.Id, DepartmentId = deptMAT.Id }
-                    );
-                }
                 context.SaveChanges();
             }
 

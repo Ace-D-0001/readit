@@ -410,8 +410,6 @@ namespace Read_It.Controllers
             ViewBag.SearchQuery = search;
 
             var query = _context.Courses
-                .Include(c => c.CourseDepartments)
-                    .ThenInclude(cd => cd.Department)
                 .Include(c => c.Resources)
                 .Include(c => c.Posts)
                 .AsQueryable();
@@ -426,21 +424,19 @@ namespace Read_It.Controllers
         }
 
         // GET: /Admin/CreateSubpage
-        public async Task<IActionResult> CreateSubpage()
+        public IActionResult CreateSubpage()
         {
-            ViewBag.Departments = await _context.Departments.ToListAsync();
             return View();
         }
 
         // POST: /Admin/CreateSubpage
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateSubpage(string code, string title, string description, bool isGeneral, int[]? departmentIds)
+        public async Task<IActionResult> CreateSubpage(string code, string title, string description)
         {
             if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(title))
             {
                 ModelState.AddModelError("", "Subject Code and Title are required.");
-                ViewBag.Departments = await _context.Departments.ToListAsync();
                 return View();
             }
 
@@ -448,7 +444,6 @@ namespace Read_It.Controllers
             if (await _context.Courses.AnyAsync(c => c.Code == code))
             {
                 ModelState.AddModelError("", $"Subpage with code '{code}' already exists.");
-                ViewBag.Departments = await _context.Departments.ToListAsync();
                 return View();
             }
 
@@ -457,23 +452,13 @@ namespace Read_It.Controllers
                 Code = code,
                 Title = title.Trim(),
                 Description = description?.Trim() ?? string.Empty,
-                IsGeneral = isGeneral,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
 
-            if (!isGeneral && departmentIds != null && departmentIds.Length > 0)
-            {
-                foreach (var deptId in departmentIds)
-                {
-                    _context.CourseDepartments.Add(new CourseDepartment { CourseId = course.Id, DepartmentId = deptId });
-                }
-                await _context.SaveChangesAsync();
-            }
-
-            await LogActionAsync("Create Subpage", $"c/{code} — \"{title.Trim()}\"", $"General: {isGeneral}");
+            await LogActionAsync("Create Subpage", $"c/{code} — \"{title.Trim()}\"", null);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Subpage c/{code} created successfully!";
@@ -484,40 +469,25 @@ namespace Read_It.Controllers
         public async Task<IActionResult> EditSubpage(int id)
         {
             var course = await _context.Courses
-                .Include(c => c.CourseDepartments)
                 .Include(c => c.Resources)
                 .Include(c => c.Videos)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (course == null) return NotFound();
 
-            ViewBag.Departments = await _context.Departments.ToListAsync();
             return View(course);
         }
 
         // POST: /Admin/EditSubpage/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditSubpage(int id, string title, string description, bool isGeneral, int[]? departmentIds)
+        public async Task<IActionResult> EditSubpage(int id, string title, string description)
         {
-            var course = await _context.Courses
-                .Include(c => c.CourseDepartments)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
+            var course = await _context.Courses.FindAsync(id);
             if (course == null) return NotFound();
 
             course.Title = title.Trim();
             course.Description = description?.Trim() ?? string.Empty;
-            course.IsGeneral = isGeneral;
-
-            _context.CourseDepartments.RemoveRange(course.CourseDepartments);
-            if (!isGeneral && departmentIds != null && departmentIds.Length > 0)
-            {
-                foreach (var deptId in departmentIds)
-                {
-                    _context.CourseDepartments.Add(new CourseDepartment { CourseId = course.Id, DepartmentId = deptId });
-                }
-            }
 
             await LogActionAsync("Edit Subpage", $"c/{course.Code} — \"{title.Trim()}\"", null);
             await _context.SaveChangesAsync();
