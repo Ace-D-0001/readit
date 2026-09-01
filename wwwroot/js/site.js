@@ -64,7 +64,14 @@ document.addEventListener('click', async (e) => {
     if (!href || href.startsWith('#') || href.startsWith('javascript:') || (href.startsWith('http') && !href.startsWith(window.location.origin))) {
         return;
     }
-    if (link.target === '_blank' || link.hasAttribute('download')) return;
+    if (link.target === '_blank' || link.hasAttribute('download') || link.hasAttribute('data-no-pjax') || link.classList.contains('no-pjax')) {
+        return;
+    }
+
+    // Do NOT intercept auth, login, logout, or admin state changes
+    if (href.startsWith('/Account') || href.startsWith('/Admin') || href.includes('Logout')) {
+        return; // Allow normal browser navigation
+    }
 
     e.preventDefault();
     try {
@@ -72,6 +79,11 @@ document.addEventListener('click', async (e) => {
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
+
+        if (res.redirected && (res.url.includes('/Account') || res.url.includes('/Admin'))) {
+            window.location.href = res.url;
+            return;
+        }
 
         const newMain = doc.querySelector('.app-main');
         const currentMain = document.querySelector('.app-main');
@@ -81,6 +93,13 @@ document.addEventListener('click', async (e) => {
             document.title = doc.title;
             window.history.pushState(null, '', href);
             window.scrollTo(0, 0);
+
+            // Update Right Aside if present
+            const newAside = doc.querySelector('.app-aside');
+            const currentAside = document.querySelector('.app-aside');
+            if (newAside && currentAside) {
+                currentAside.innerHTML = newAside.innerHTML;
+            }
         } else {
             window.location.href = href;
         }
