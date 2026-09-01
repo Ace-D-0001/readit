@@ -73,9 +73,18 @@
                     </div>
 
                     <!-- Report Toggle Button -->
-                    <button type="button" class="action-btn text-muted" onclick="toggleReportForm(@Model.Id)" style="font-size: 11px;">
-                        <i class="bi bi-flag"></i> Report
-                    </button>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <button type="button" class="action-btn text-muted" onclick="toggleReportForm(@Model.Id)" style="font-size: 11px;">
+                            <i class="bi bi-flag"></i> Report
+                        </button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login?returnUrl=/Posts/Details/@Model.PostId" class="action-btn text-muted" style="font-size: 11px;">
+                            <i class="bi bi-flag"></i> Report
+                        </a>
+                    }
                 }
                 else
                 {
@@ -111,9 +120,18 @@
                 <!-- Reply Toggle Button -->
                 @if (Model.Post?.IsLocked != true)
                 {
-                    <button type="button" class="action-btn" onclick="toggleReplyForm(@Model.Id)">
-                        <i class="bi bi-reply-fill"></i> Reply
-                    </button>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <button type="button" class="action-btn" onclick="toggleReplyForm(@Model.Id)">
+                            <i class="bi bi-reply-fill"></i> Reply
+                        </button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login?returnUrl=/Posts/Details/@Model.PostId" class="action-btn">
+                            <i class="bi bi-reply-fill"></i> Reply
+                        </a>
+                    }
                 }
             </div>
 

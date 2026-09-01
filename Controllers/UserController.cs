@@ -29,7 +29,7 @@ namespace Read_It.Controllers
                 }
                 else
                 {
-                    username = await _context.Users.Select(u => u.UserName).FirstOrDefaultAsync();
+                    return RedirectToAction("Login", "Account", new { returnUrl = "/User/Details" });
                 }
             }
 
@@ -51,12 +51,6 @@ namespace Read_It.Controllers
                     currentUserId = currentUser.Id;
                     if (currentUser.Id == user.Id) isOwnProfile = true;
                 }
-            }
-            else
-            {
-                // Guest demo mode: treat first user as logged in
-                var firstUser = await _context.Users.FirstOrDefaultAsync();
-                if (firstUser != null && firstUser.Id == user.Id) isOwnProfile = true;
             }
 
             ViewBag.IsOwnProfile = isOwnProfile;
@@ -128,7 +122,7 @@ namespace Read_It.Controllers
         public async Task<IActionResult> DismissWarning(int warningId)
         {
             if (User?.Identity?.IsAuthenticated != true)
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return RedirectToAction("Login", "Account");
 
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
             if (currentUser == null) return Unauthorized();
@@ -149,7 +143,7 @@ namespace Read_It.Controllers
         public async Task<IActionResult> UpdateBio(string username, string bio)
         {
             if (User?.Identity?.IsAuthenticated != true)
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return RedirectToAction("Login", "Account");
 
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);

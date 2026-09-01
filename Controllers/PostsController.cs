@@ -121,6 +121,12 @@ namespace Read_It.Controllers
         // GET: /Posts/Create?courseCode=CSC391
         public async Task<IActionResult> Create(string? courseCode)
         {
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                TempData["ErrorMessage"] = "Please sign in to create a post.";
+                return RedirectToAction("Login", "Account", new { returnUrl = $"/Posts/Create{(string.IsNullOrEmpty(courseCode) ? "" : $"?courseCode={courseCode}")}" });
+            }
+
             var courses = await _context.Courses.OrderBy(c => c.Code).ToListAsync();
             ViewBag.Courses = courses;
             ViewBag.SelectedCourseCode = courseCode;
@@ -132,17 +138,17 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int courseId, string title, string body, PostFlair flair, bool isAnonymous = false)
         {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (courseId <= 0 || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
             {
                 ViewBag.Courses = await _context.Courses.OrderBy(c => c.Code).ToListAsync();
                 ViewBag.Error = "Please select a course and fill in both the title and body.";
                 return View();
-            }
-
-            var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
             bool isAdmin = User.IsInRole("Admin");
@@ -282,7 +288,7 @@ namespace Read_It.Controllers
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {
-                return Json(new { success = false, message = "Unauthorized" });
+                return Json(new { success = false, requireAuth = true, message = "Please sign in with your student account to vote." });
             }
 
             VoteTargetType typeEnum = request.TargetType.ToLower() == "comment" ? VoteTargetType.Comment : VoteTargetType.Post;
@@ -369,7 +375,7 @@ namespace Read_It.Controllers
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
+                return RedirectToAction("Login", "Account");
             }
 
             VoteTargetType typeEnum = targetType.ToLower() == "comment" ? VoteTargetType.Comment : VoteTargetType.Post;
@@ -429,7 +435,7 @@ namespace Read_It.Controllers
             }
 
             var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
 
             var comment = new Comment
             {
@@ -485,7 +491,7 @@ namespace Read_It.Controllers
         {
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
-                return Json(new { success = false, message = "Please sign in to bookmark posts." });
+                return Json(new { success = false, requireAuth = true, message = "Please sign in to save posts to your library." });
 
             var existing = await _context.PostBookmarks
                 .FirstOrDefaultAsync(pb => pb.UserId == currentUserId && pb.PostId == postId);

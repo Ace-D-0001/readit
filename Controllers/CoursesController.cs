@@ -237,7 +237,7 @@ namespace Read_It.Controllers
             if (course == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
 
             if (!string.IsNullOrWhiteSpace(topic) && !string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(videoUrl))
             {

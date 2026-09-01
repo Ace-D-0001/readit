@@ -225,11 +225,11 @@ function toggleBookmark(postId) {
         <p class="text-secondary mb-0" style="font-size: 13px;">This post has been locked by administration. New replies or comments cannot be posted.</p>
     </div>
 }
-else
+else if (User.Identity?.IsAuthenticated == true)
 {
     <div class="new-comment-box">
         <h6 style="font-weight: 700; color: var(--text-heading); margin-bottom: var(--sp-2);">
-            Comment as <span style="color: var(--accent);">u/@(User.Identity?.Name ?? "Guest Student")</span>
+            Comment as <span style="color: var(--accent);">u/@User.Identity.Name</span>
         </h6>
         <form action="@Url.Action("CreateComment", "Posts")" method="post">
             @Html.AntiForgeryToken()
@@ -241,6 +241,21 @@ else
                 </button>
             </div>
         </form>
+    </div>
+}
+else
+{
+    <div class="card p-3 my-3 text-center" style="background: var(--bg-panel); border: 1px dashed var(--border-default);">
+        <h6 style="font-weight: 700; color: var(--text-heading); margin-bottom: 4px;">
+            <i class="bi bi-chat-dots-fill text-accent"></i> Join the Academic Discussion
+        </h6>
+        <p style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: 12px;">
+            Log in with your IUBAT student account to ask questions, share answers, and vote on community posts.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <a href="/Account/Login?returnUrl=/Posts/Details/@Model.Id" class="btn-primary py-1 px-3" style="font-size: 12px;">Sign In to Comment</a>
+            <a href="/Account/GoogleLogin" class="btn btn-sm btn-outline-light py-1 px-3" style="font-size: 12px;">1-Click Google Sign In</a>
+        </div>
     </div>
 }
 
