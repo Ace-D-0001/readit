@@ -1,0 +1,123 @@
+@model IEnumerable<Read_It.Models.AdminLog>
+
+@{
+    ViewData["Title"] = "Admin Audit Logs & Accountability — Admin";
+    string? searchQuery = ViewBag.SearchQuery as string;
+    string? selectedActionType = ViewBag.SelectedActionType as string;
+}
+
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">
+                <i class="bi bi-clock-history text-info"></i> Administrative Audit Trail & Logs
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">
+                Immutable activity history tracking moderation actions, bans, note approvals, subpage modifications, and announcements.
+            </p>
+        </div>
+        <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Cockpit Dashboard</a>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card p-3">
+        <form action="/Admin/AuditLogs" method="get" class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <!-- Filter Pills -->
+            <div class="dept-tabs mb-0">
+                <a href="/Admin/AuditLogs@(searchQuery != null ? "?search=" + searchQuery : "")" class="dept-tab @(string.IsNullOrEmpty(selectedActionType) ? "active" : "")">
+                    All Actions
+                </a>
+                <a href="/Admin/AuditLogs?actionType=Approve Note@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedActionType == "Approve Note" ? "active" : "")">
+                    Note Approvals
+                </a>
+                <a href="/Admin/AuditLogs?actionType=Ban User@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedActionType == "Ban User" ? "active" : "")">
+                    User Bans
+                </a>
+                <a href="/Admin/AuditLogs?actionType=Warn User@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedActionType == "Warn User" ? "active" : "")">
+                    Warnings
+                </a>
+                <a href="/Admin/AuditLogs?actionType=Broadcast Announcement@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedActionType == "Broadcast Announcement" ? "active" : "")">
+                    Announcements
+                </a>
+            </div>
+
+            <!-- Search Form -->
+            <div class="d-flex gap-2">
+                @if (!string.IsNullOrEmpty(selectedActionType))
+                {
+                    <input type="hidden" name="actionType" value="@selectedActionType" />
+                }
+                <input type="text" name="search" value="@searchQuery" placeholder="Search target or admin..." class="form-control form-control-sm bg-transparent text-white border-secondary" style="width: 220px;" />
+                <button type="submit" class="btn-primary py-1 px-3" style="font-size: 12px;">Search</button>
+                @if (!string.IsNullOrEmpty(searchQuery) || !string.IsNullOrEmpty(selectedActionType))
+                {
+                    <a href="/Admin/AuditLogs" class="btn-outline py-1 px-2" style="font-size: 12px;">Clear</a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="card p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle" style="font-size: 13px;">
+                    <thead style="background: var(--bg-panel-alt); font-size: 11px; text-transform: uppercase; color: var(--text-muted);">
+                        <tr>
+                            <th style="padding: 12px 16px;">Timestamp</th>
+                            <th>Admin Officer</th>
+                            <th>Action Type</th>
+                            <th>Target Entity</th>
+                            <th>Details & Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            string badgeClass = "bg-secondary";
+                            if (log.ActionType.Contains("Ban") || log.ActionType.Contains("Delete")) badgeClass = "bg-danger";
+                            else if (log.ActionType.Contains("Approve")) badgeClass = "bg-success";
+                            else if (log.ActionType.Contains("Warn") || log.ActionType.Contains("Lock")) badgeClass = "bg-warning text-dark";
+                            else if (log.ActionType.Contains("Announcement") || log.ActionType.Contains("Create")) badgeClass = "bg-primary";
+
+                            <tr>
+                                <td style="padding: 12px 16px; white-space: nowrap; color: var(--text-secondary); font-size: 12px;">
+                                    <i class="bi bi-clock"></i> @log.CreatedAt.ToString("MMM dd, yyyy HH:mm:ss")
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span class="avatar avatar-sm" style="background: var(--warning); color: #000; font-weight: 800; width: 22px; height: 22px; font-size: 9px;">
+                                            @(log.AdminUserName?.Substring(0, 1).ToUpper() ?? "A")
+                                        </span>
+                                        <strong style="color: var(--text-heading);">u/@log.AdminUserName</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass" style="font-size: 11px; font-weight: 700;">
+                                        @log.ActionType
+                                    </span>
+                                </td>
+                                <td style="max-width: 280px;">
+                                    <strong style="color: var(--text-heading);">@log.TargetDescription</strong>
+                                </td>
+                                <td style="color: var(--text-secondary); font-size: 12px;">
+                                    @(string.IsNullOrEmpty(log.Details) ? "—" : log.Details)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card p-5 text-center text-secondary">
+            <i class="bi bi-journal-text fs-1 mb-3"></i>
+            <h5>No audit logs found matching criteria.</h5>
+        </div>
+    }
+</div>

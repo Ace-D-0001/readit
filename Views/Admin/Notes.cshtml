@@ -1,35 +1,66 @@
 @model IEnumerable<Read_It.Models.CourseResource>
 
 @{
-    ViewData["Title"] = "Student Notes Approval System — Admin";
+    ViewData["Title"] = "Student Notes Verification — Admin";
     var selectedStatus = ViewBag.SelectedStatus as Read_It.Models.ResourceStatus?;
+    string? searchQuery = ViewBag.SearchQuery as string;
 }
 
 <div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
 
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
-            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">📝 Student Uploaded Notes Approval</h1>
-            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">Student uploaded notes are held in pending status until approved by an admin before becoming publicly visible.</p>
+            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">
+                <i class="bi bi-file-earmark-check-fill text-warning"></i> Student Notes Verification Hub
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">
+                Review student-uploaded lecture notes and study guides before making them publicly discoverable.
+            </p>
         </div>
-        <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Back to Dashboard</a>
+        <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Cockpit Dashboard</a>
     </div>
 
-    <!-- Status Tabs -->
-    <div class="dept-tabs mb-0">
-        <a href="/Admin/Notes" class="dept-tab @(!selectedStatus.HasValue ? "active" : "")">All Notes</a>
-        <a href="/Admin/Notes?status=Pending" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Pending ? "active" : "")">
-            Pending Approval <span class="badge bg-warning text-dark ms-1">Review</span>
-        </a>
-        <a href="/Admin/Notes?status=Approved" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Approved ? "active" : "")">Approved Notes</a>
-        <a href="/Admin/Notes?status=Rejected" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Rejected ? "active" : "")">Rejected Notes</a>
+    <!-- Filter & Search Bar -->
+    <div class="card p-3">
+        <form action="/Admin/Notes" method="get" class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <!-- Status Tabs -->
+            <div class="dept-tabs mb-0">
+                <a href="/Admin/Notes@(searchQuery != null ? "?search=" + searchQuery : "")" class="dept-tab @(!selectedStatus.HasValue ? "active" : "")">
+                    All Notes
+                </a>
+                <a href="/Admin/Notes?status=Pending@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Pending ? "active" : "")">
+                    Pending Review <span class="badge bg-warning text-dark ms-1">Review</span>
+                </a>
+                <a href="/Admin/Notes?status=Approved@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Approved ? "active" : "")">
+                    Approved (Public)
+                </a>
+                <a href="/Admin/Notes?status=Rejected@(searchQuery != null ? "&search=" + searchQuery : "")" class="dept-tab @(selectedStatus == Read_It.Models.ResourceStatus.Rejected ? "active" : "")">
+                    Rejected
+                </a>
+            </div>
+
+            <!-- Search Form -->
+            <div class="d-flex gap-2">
+                @if (selectedStatus.HasValue)
+                {
+                    <input type="hidden" name="status" value="@selectedStatus.Value" />
+                }
+                <input type="text" name="search" value="@searchQuery" placeholder="Search by title or code..." class="form-control form-control-sm bg-transparent text-white border-secondary" style="width: 220px;" />
+                <button type="submit" class="btn-primary py-1 px-3" style="font-size: 12px;">Search</button>
+                @if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    <a href="/Admin/Notes@(selectedStatus.HasValue ? "?status=" + selectedStatus.Value : "")" class="btn-outline py-1 px-2" style="font-size: 12px;">Clear</a>
+                }
+            </div>
+        </form>
     </div>
 
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success p-2" style="font-size: 12px;">
-            @TempData["SuccessMessage"]
+        <div class="alert alert-success d-flex align-items-center gap-2 p-3" style="font-size: 13px;">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <div>@TempData["SuccessMessage"]</div>
         </div>
     }
 
@@ -42,11 +73,11 @@
                     <thead style="background: var(--bg-panel-alt); font-size: 11px; text-transform: uppercase; color: var(--text-muted);">
                         <tr>
                             <th style="padding: 12px 16px;">Subject</th>
-                            <th>Note Title & Description</th>
+                            <th>Note Title & Details</th>
                             <th>Uploaded By</th>
-                            <th>File / URL Link</th>
+                            <th>Document Preview</th>
                             <th>Status</th>
-                            <th style="text-align: right; padding-right: 16px;">Approval Action</th>
+                            <th style="text-align: right; padding-right: 16px;">Verification Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,7 +85,9 @@
                         {
                             <tr>
                                 <td style="padding: 12px 16px;">
-                                    <span class="badge bg-primary" style="font-size: 11px;">c/@(note.Course?.Code ?? "General")</span>
+                                    <a href="/Courses/Details?code=@(note.Course?.Code)" target="_blank" class="badge bg-primary text-decoration-none" style="font-size: 12px;">
+                                        c/@(note.Course?.Code ?? "General") &nearr;
+                                    </a>
                                 </td>
                                 <td>
                                     <strong style="color: var(--text-heading); font-size: 14px;">@note.Title</strong>
@@ -62,29 +95,31 @@
                                     {
                                         <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">@note.Description</div>
                                     }
-                                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Uploaded: @note.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                                        <i class="bi bi-clock"></i> Uploaded: @note.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                                    </div>
                                 </td>
                                 <td>
-                                    <span style="font-weight: 600;">u/@(note.UploadedByUser?.UserName ?? "student")</span>
+                                    <span style="font-weight: 600; color: var(--text-heading);">u/@(note.UploadedByUser?.UserName ?? "student")</span>
                                 </td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(note.FilePath))
                                     {
                                         <a href="@note.FilePath" target="_blank" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 11px;">
-                                            <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF/File
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> View Document &nearr;
                                         </a>
                                     }
                                     else if (!string.IsNullOrEmpty(note.Url))
                                     {
                                         <a href="@note.Url" target="_blank" class="btn btn-sm btn-outline-light py-1 px-2" style="font-size: 11px;">
-                                            <i class="bi bi-box-arrow-up-right"></i> Open Link
+                                            <i class="bi bi-box-arrow-up-right"></i> Open Link &nearr;
                                         </a>
                                     }
                                 </td>
                                 <td>
                                     @if (note.Status == Read_It.Models.ResourceStatus.Pending)
                                     {
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> Pending</span>
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> Pending Review</span>
                                     }
                                     else if (note.Status == Read_It.Models.ResourceStatus.Approved)
                                     {
@@ -99,15 +134,15 @@
                                     @if (note.Status == Read_It.Models.ResourceStatus.Pending)
                                     {
                                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                            <form action="/Admin/ApproveNote" method="post">
+                                            <form action="/Admin/ApproveNote" method="post" style="margin: 0;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="noteId" value="@note.Id" />
-                                                <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="font-size: 12px; font-weight: 700;">
-                                                    <i class="bi bi-check-lg"></i> Approve Note
+                                                <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="font-size: 11px; font-weight: 700;">
+                                                    <i class="bi bi-check-lg"></i> Approve
                                                 </button>
                                             </form>
 
-                                            <button class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 12px;" onclick="toggleRejectModal(@note.Id)">
+                                            <button class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 11px;" onclick="toggleRejectModal(@note.Id)">
                                                 <i class="bi bi-x-lg"></i> Reject
                                             </button>
                                         </div>
@@ -117,8 +152,8 @@
                                             <form action="/Admin/RejectNote" method="post">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="noteId" value="@note.Id" />
-                                                <label class="form-label style-label" style="font-size: 10px;">Rejection Reason (Optional):</label>
-                                                <input type="text" name="rejectionReason" class="form-control form-control-sm mb-2" placeholder="e.g. Incomplete notes / corrupt PDF file" style="font-size: 11px;" />
+                                                <label class="form-label style-label" style="font-size: 10px;">Rejection Feedback:</label>
+                                                <input type="text" name="rejectionReason" class="form-control form-control-sm mb-2" placeholder="e.g. Low resolution / incomplete notes" style="font-size: 11px;" />
                                                 <div style="display: flex; gap: 6px;">
                                                     <button type="submit" class="btn btn-sm btn-danger py-1 px-2" style="font-size: 11px;">Confirm Reject</button>
                                                     <button type="button" class="btn btn-sm btn-ghost py-1 px-2" style="font-size: 11px;" onclick="toggleRejectModal(@note.Id)">Cancel</button>
@@ -136,7 +171,7 @@
                                     }
                                     else
                                     {
-                                        <span style="font-size: 11px; color: var(--text-muted);">Visible on subpage</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);"><i class="bi bi-globe"></i> Publicly Visible</span>
                                     }
                                 </td>
                             </tr>
@@ -149,7 +184,8 @@
     else
     {
         <div class="card p-5 text-center text-secondary">
-            <h5>No notes found matching status filter.</h5>
+            <i class="bi bi-journal-check text-success fs-1 mb-3"></i>
+            <h5>No notes match the current search or status filter.</h5>
         </div>
     }
 </div>

@@ -21,16 +21,34 @@ namespace Read_It.Controllers
             _logger = logger;
         }
 
-        // GET: /?sort=hot|top|new
-        public async Task<IActionResult> Index(string sort = "hot")
+        // GET: /?sort=hot|top|new&feed=all|my
+        public async Task<IActionResult> Index(string sort = "hot", string feed = "all")
         {
             ViewBag.ActiveSort = sort.ToLower();
+            ViewBag.ActiveFeed = feed.ToLower();
+
+            string? currentUserId = null;
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                if (user != null) currentUserId = user.Id;
+            }
 
             var query = _context.Posts
                 .Include(p => p.Course)
                 .Include(p => p.User)
                 .Include(p => p.Comments)
                 .AsQueryable();
+
+            if (feed.ToLower() == "my" && !string.IsNullOrEmpty(currentUserId))
+            {
+                var followedCourseIds = await _context.CourseFollows
+                    .Where(cf => cf.UserId == currentUserId)
+                    .Select(cf => cf.CourseId)
+                    .ToListAsync();
+
+                query = query.Where(p => followedCourseIds.Contains(p.CourseId));
+            }
 
             List<Post> posts;
             if (sort.ToLower() == "top")
@@ -52,13 +70,6 @@ namespace Read_It.Controllers
 
             // User vote states dictionary for highlighting active upvote/downvote arrows
             var userVotes = new Dictionary<int, int>();
-            string? currentUserId = null;
-            if (User?.Identity?.IsAuthenticated == true)
-            {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
-                if (user != null) currentUserId = user.Id;
-            }
-
             if (!string.IsNullOrEmpty(currentUserId))
             {
                 var votes = await _context.Votes
@@ -67,6 +78,7 @@ namespace Read_It.Controllers
                 userVotes = votes.ToDictionary(v => v.TargetId, v => v.VoteValue);
             }
             ViewBag.UserVotes = userVotes;
+            ViewBag.CurrentUserId = currentUserId;
 
             return View(posts);
         }

@@ -21,10 +21,44 @@ namespace Read_It.Data
         public DbSet<Models.Vote> Votes { get; set; } = null!;
         public DbSet<Models.CourseMembership> CourseMemberships { get; set; } = null!;
         public DbSet<Models.Report> Reports { get; set; } = null!;
+        public DbSet<Models.Notification> Notifications { get; set; } = null!;
+        public DbSet<Models.PostBookmark> PostBookmarks { get; set; } = null!;
+        public DbSet<Models.AdminLog> AdminLogs { get; set; } = null!;
+        public DbSet<Models.UserWarning> UserWarnings { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ----- PostBookmark: composite PK -----
+            builder.Entity<Models.PostBookmark>()
+                .HasKey(pb => new { pb.UserId, pb.PostId });
+
+            builder.Entity<Models.PostBookmark>()
+                .HasOne(pb => pb.User)
+                .WithMany()
+                .HasForeignKey(pb => pb.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Models.PostBookmark>()
+                .HasOne(pb => pb.Post)
+                .WithMany(p => p.Bookmarks)
+                .HasForeignKey(pb => pb.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ----- Notification -----
+            builder.Entity<Models.Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ----- UserWarning -----
+            builder.Entity<Models.UserWarning>()
+                .HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ----- Report -----
             builder.Entity<Models.Report>()

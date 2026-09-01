@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "IUBAT ReadIt — Home Feed";
     string activeSort = ViewBag.ActiveSort as string ?? "hot";
+    string activeFeed = ViewBag.ActiveFeed as string ?? "all";
     var userVotes = ViewBag.UserVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
@@ -55,19 +56,34 @@
         </div>
     </div>
 
-    <!-- Feed Label & Sorting Tabs -->
-    <div class="feed-label">
-        <h6>Recent Discussions</h6>
-        <div class="dept-tabs" style="margin-bottom: 0;">
-            <a href="/?sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
-                <i class="bi bi-fire"></i> Hot
-            </a>
-            <a href="/?sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
-                <i class="bi bi-star"></i> Top
-            </a>
-            <a href="/?sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
-                <i class="bi bi-sparkles"></i> New
-            </a>
+    <!-- Feed Scope & Sorting Tabs -->
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <!-- Feed Scope -->
+            <div class="dept-tabs mb-0">
+                <a href="/?feed=all&sort=@activeSort" class="dept-tab @(activeFeed == "all" ? "active" : "")">
+                    <i class="bi bi-globe"></i> All University Feed
+                </a>
+                @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin"))
+                {
+                    <a href="/?feed=my&sort=@activeSort" class="dept-tab @(activeFeed == "my" ? "active" : "")">
+                        <i class="bi bi-bookmark-star-fill text-warning"></i> My Enrolled Subjects
+                    </a>
+                }
+            </div>
+
+            <!-- Sorting Tabs -->
+            <div class="dept-tabs mb-0" style="font-size: 12px;">
+                <a href="/?feed=@activeFeed&sort=hot" class="dept-tab @(activeSort == "hot" ? "active" : "")">
+                    <i class="bi bi-fire"></i> Hot
+                </a>
+                <a href="/?feed=@activeFeed&sort=top" class="dept-tab @(activeSort == "top" ? "active" : "")">
+                    <i class="bi bi-star"></i> Top
+                </a>
+                <a href="/?feed=@activeFeed&sort=new" class="dept-tab @(activeSort == "new" ? "active" : "")">
+                    <i class="bi bi-sparkles"></i> New
+                </a>
+            </div>
         </div>
     </div>
 
@@ -77,37 +93,68 @@
         @foreach (var post in Model)
         {
             int myVote = userVotes.ContainsKey(post.Id) ? userVotes[post.Id] : 0;
-            string authorName = post.User?.UserName ?? "student";
+            bool isAdmin = User.IsInRole("Admin");
+            string authorName = post.IsAnonymous && !isAdmin ? "AnonymousStudent" : (post.User?.UserName ?? "student");
             string flairClass = "flair-" + post.Flair.ToString().ToLower();
 
             <article class="post-card fade-up" onclick="if (!event.target.closest('a, button, input, form')) window.location.href='@Url.Action("Details", "Posts", new { id = post.Id })';">
                 <!-- Integrated Vote Column -->
                 <div class="post-vote-col">
-                    <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" type="button" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
-                        <i class="bi bi-arrow-up-circle-fill"></i>
-                    </button>
+                    @if (!isAdmin)
+                    {
+                        <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" title="Upvote" type="button" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
+                            <i class="bi bi-arrow-up-circle-fill"></i>
+                        </button>
 
-                    <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
+                        <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
 
-                    <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" type="button" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
-                        <i class="bi bi-arrow-down-circle-fill"></i>
-                    </button>
+                        <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" title="Downvote" type="button" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 9px; writing-mode: vertical-rl; transform: rotate(180deg); padding: 4px 2px;">
+                            MOD
+                        </span>
+                        <span class="vote-count text-muted mt-1" style="font-size: 10px;">@(post.UpVotes - post.DownVotes)</span>
+                    }
                 </div>
 
                 <!-- Body Column -->
                 <div class="post-body-col">
-                    <div class="post-meta">
-                        <span class="avatar avatar-sm" style="background: var(--accent); width: 22px; height: 22px; font-size: 10px;">
+                    <div class="post-meta flex-wrap">
+                        <span class="avatar avatar-sm" style="background: @(authorName == "admin" ? "var(--warning)" : (post.IsAnonymous ? "#64748b" : "var(--accent)")); color: @(authorName == "admin" ? "#000" : "#fff"); font-weight: 800; width: 22px; height: 22px; font-size: 10px;">
                             @authorName.Substring(0, 1).ToUpper()
                         </span>
-                        <a href="@Url.Action("Details", "User", new { username = authorName })" style="color: var(--text-heading); font-weight: 700;">
+                        <a href="@Url.Action("Details", "User", new { username = (post.IsAnonymous && !isAdmin ? null : authorName) })" style="color: var(--text-heading); font-weight: 700;">
                             u/@authorName
                         </a>
+                        @if (post.IsAnonymous && isAdmin)
+                        {
+                            <span class="badge bg-secondary" style="font-size: 9px;">Anon (u/@post.User?.UserName)</span>
+                        }
+                        @if (authorName == "admin")
+                        {
+                            <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 9px; padding: 1px 4px;">ADMIN</span>
+                        }
                         <span>·</span>
                         <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })" style="color: var(--accent); font-weight: 600;">
                             c/@post.Course?.Code
                         </a>
                         <span class="flair-badge @flairClass">@post.Flair.ToString()</span>
+                        @if (post.IsPinned)
+                        {
+                            <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 10px;"><i class="bi bi-pin-angle-fill"></i> Pinned</span>
+                        }
+                        @if (post.IsLocked)
+                        {
+                            <span class="badge bg-danger" style="font-size: 10px;"><i class="bi bi-lock-fill"></i> Locked</span>
+                        }
+                        @if (post.AcceptedCommentId.HasValue)
+                        {
+                            <span class="badge bg-success" style="font-size: 10px;"><i class="bi bi-check-circle-fill"></i> Solved</span>
+                        }
                         <span>·</span>
                         <span>@post.CreatedAt.ToString("MMM dd")</span>
                     </div>
@@ -118,7 +165,7 @@
 
                     <p class="post-preview">@post.Body</p>
 
-                    <div class="post-actions">
+                    <div class="post-actions flex-wrap">
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
                             <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
                             @(post.Comments?.Count ?? 0) Comments
@@ -138,8 +185,15 @@
     {
         <div class="empty-state">
             <i class="bi bi-journal-x" style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: var(--sp-3);"></i>
-            <h5>No posts in the feed yet</h5>
-            <p>Check out <a href="/Courses" style="color: var(--accent);">All Courses</a> to explore course pages.</p>
+            <h5>No posts found in this feed</h5>
+            @if (activeFeed == "my")
+            {
+                <p>You haven't followed any subsubjects yet, or there are no posts in your followed subjects. <a href="/Courses" style="color: var(--accent);">Explore all subjects</a> to follow some!</p>
+            }
+            else
+            {
+                <p><a href="/Posts/Create" style="color: var(--accent);">Create the first post</a> to get the conversation started!</p>
+            }
         </div>
     }
 </div>

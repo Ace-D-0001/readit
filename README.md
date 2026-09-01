@@ -8,41 +8,39 @@
 
 ## 🌟 Key Features
 
-### 🎓 1. SubReadIt Course Communities & Feeds
+### 🎓 1. Student Academic & Community Suite
 - **Department & Course Subpages**: Dedicated hubs for subjects such as `c/CSC391` (Data Structures), `c/CSC433` (DBMS), `c/CSC247` (Architecture), `c/MAT247`, `c/ENG101`, and general university courses.
+- **Dual Feed Modes**: Switch seamlessly between **All University Feed** and **My Enrolled Subjects** (personalized to followed courses).
+- **Exam-Categorized Notes**: Filter and upload study materials by **Midterm**, **Finals**, **Labs / Assignments**, and **Lecture Notes**.
+- **Post Bookmarking / Saved Library**: Save helpful questions, notes, and discussions to your private library on your profile.
+- **Accepted Solution Checkmark**: Post authors can mark peer answers as the accepted solution with green badge recognition.
+- **Anonymous Question Posting**: Students can toggle anonymous posting (`u/AnonymousStudent`) to ask sensitive academic questions without hesitation.
+- **Live In-App Notification Bell**: Real-time unread count and dropdown feed notifying students of replies, note approvals, warnings, and announcements.
 - **Feed Filtering & Sorting**: Sort discussions by **Hot** (decay algorithm), **Top** (upvotes), or **New**.
 - **Interactive Voting & Copy Link**: Upvote/downvote posts and comments, with single-click post sharing.
 
-### 🔑 2. Authentication & Role Separation
+### 🛡️ 2. Administrative Governance & Control Center
+- **Live Cockpit Metrics** (`/Admin`): Real-time analytics for students, pending notes, pending reports, posts, comments, announcements, and banned users.
+- **Administrative Audit Action Logs** (`/Admin/AuditLogs`): Immutable trail tracking admin actions (bans, approvals, deletions, warnings, thread locks).
+- **Discussion Thread Locking**: Admins can freeze toxic/concluded threads to prevent new comments.
+- **Student Formal Warning System**: Issue formal warnings (`UserWarning`) with mandatory student acknowledgement banners.
+- **Broadcast Announcements**: Post and pin university notices with optional expiry timestamps (`ExpiresAt`).
+- **Content Moderation & Reports Queue** (`/Admin/Reports`): Review flagged posts and comments with 1-click delete, ban, or dismiss.
+- **Notes Quality Control** (`/Admin/Notes`): Review pending student note submissions with approve or reject feedback.
+- **Subpage Management** (`/Admin/Subpages`): Create, edit, and manage department subjects, descriptions, and curated video playlists.
+- **User Accounts & Bans** (`/Admin/Users`): Search student directory, issue warnings, or toggle ban status.
+
+### 🔑 3. Authentication & Role Separation
 - **Dual Login Portals**:
-  - **Student Portal** (`/Account/Login`): Includes 1-click **Sign in with Google** (Test Student OAuth simulation) and registration.
+  - **Student Portal** (`/Account/Login`): Includes 1-click **Sign in with Google** (OAuth simulation) and student registration.
   - **Admin Portal** (`/Account/AdminLogin`): Dedicated secure login verifying `Admin` role privileges.
-- **Security & Account Banning**: Middleware & Controller checks automatically prevent banned users from logging in or creating content.
+- **Role Isolation**: Admins are neutral moderators (voting and course following restricted to students; admin comments and posts badged).
 - **Password Reset Flow**: Self-service forgot password & token reset system (`/Account/ForgotPassword`).
 
-### 🚨 3. Content Reporting & Moderation
-- **Post & Comment Reporting**: Students can flag inappropriate posts or comments with specific reasons (`Inappropriate Content`, `Harassment`, `Spam`, `Academic Misconduct`).
-- **Admin Moderation Queue** (`/Admin/Reports`):
-  - View reported snippets, reasons, reporter, and content author.
-  - **Actions**: Approve report, Approve & Delete Content, Approve & Ban Author, or Reject Report.
-
-### 📝 4. Notes Approval System
-- **Student Uploads**: Upload PDF/document notes or Google Drive study links directly on subpage courses.
-- **Admin Pre-Approval**: All student-submitted notes start in **Pending** status and are **NOT publicly visible** until reviewed.
-- **Admin Notes Portal** (`/Admin/Notes`): Admins preview files, approve notes for public release, or reject with custom feedback.
-
-### 🛡️ 5. Admin Dashboard & Subpage Management
-- **Live Metrics Dashboard** (`/Admin`): Overview counters for Total Students, Pending Notes, Pending Reports, Total Posts, Total Comments, and Banned Users.
-- **Subpage Management** (`/Admin/Subpages`):
-  - Create new subpages (e.g. `/CSC440`, `/CSC183`, `/MAT257`).
-  - Edit titles, descriptions, general/department tags, and curated YouTube video playlists.
-  - Delete/Archive subpages.
-- **User Accounts Management** (`/Admin/Users`): View user roles, inspect profiles, and toggle Ban/Unban status.
-
-### 🎵 6. Floating Glassmorphic Study Music Player
-- **Lofi & Focus Audio Dock**: Floating bottom-right music player supporting iTunes 30-second audio previews.
-- **Interactive UI**: Album cover art, title/artist display, progress timeline seeking, mute toggle button, hover volume popover, and live iTunes track search.
-- **Cross-Tab Sync**: Synchronizes volume and playback state across browser tabs via `BroadcastChannel`.
+### 🎵 4. Floating Glassmorphic Study Music Player
+- **Lofi & Focus Audio Dock**: Floating bottom-right music player supporting iTunes audio previews.
+- **Interactive UI**: Album cover art, title/artist display, progress timeline seeking, mute toggle button, volume slider, and live track search.
+- **Cross-Tab Sync**: Synchronizes playback state and volume across browser tabs.
 
 ---
 

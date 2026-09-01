@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = "Post Official Announcement — Admin";
+    var courses = ViewBag.Courses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
+    string? selectedCourseCode = ViewBag.SelectedCourseCode as string;
+}
+
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="h3 m-0" style="color: var(--warning); font-weight: 800;">
+                <i class="bi bi-megaphone-fill"></i> Broadcast Official Announcement
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">
+                Publish an administrative notice or guideline pinned to the top of the course feed.
+            </p>
+        </div>
+        <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Back to Dashboard</a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger p-3" style="font-size: 13px;">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <div class="card p-4" style="border-top: 4px solid var(--warning);">
+        <form action="/Admin/CreateAnnouncement" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label font-weight-bold" style="font-size: 13px; color: var(--text-heading);">Target SubSubject / Course</label>
+                <select name="courseId" class="form-select bg-dark text-white border-secondary" required style="font-size: 13px;">
+                    @foreach (var c in courses)
+                    {
+                        <option value="@c.Id" selected="@(selectedCourseCode == c.Code ? "selected" : null)">
+                            c/@c.Code — @c.Title
+                        </option>
+                    }
+                </select>
+                <div class="form-text" style="font-size: 11px; color: var(--text-muted);">
+                    Select which course subReadIt will display this announcement.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label font-weight-bold" style="font-size: 13px; color: var(--text-heading);">Announcement Title</label>
+                <input type="text" name="title" class="form-control bg-transparent text-white border-secondary" placeholder="e.g. Midterm Examination Guidelines & Question Format" required style="font-size: 14px;" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label font-weight-bold" style="font-size: 13px; color: var(--text-heading);">Announcement Body</label>
+                <textarea name="body" rows="6" class="form-control bg-transparent text-white border-secondary" placeholder="Write full announcement details, rules, or instructions here..." required style="font-size: 13px;"></textarea>
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="isPinned" value="true" id="pinCheck" checked>
+                <label class="form-check-label text-light" for="pinCheck" style="font-size: 13px;">
+                    📌 Pin this announcement to the top of the feed
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn-warning py-2 px-4" style="font-weight: 700;">
+                    <i class="bi bi-send-fill"></i> Publish Announcement
+                </button>
+                <a href="/Admin" class="btn-outline py-2 px-3">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

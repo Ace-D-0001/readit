@@ -71,10 +71,26 @@
 </div>
 
 <!-- Approved Student Notes -->
-<div class="right-card right-section" data-section-label="notes approved pdf study materials">
+<div class="right-card right-section" data-section-label="notes approved pdf study materials" id="notes">
     <div class="right-card-title" style="justify-content: space-between;">
         <span><i class="bi bi-journal-text" style="color: var(--warning);"></i> Course Notes</span>
-        <button class="topic-add-btn" onclick="toggleForm('upload-note-form')">+ upload note</button>
+        @if (!User.IsInRole("Admin"))
+        {
+            <button class="topic-add-btn" onclick="toggleForm('upload-note-form')">+ upload note</button>
+        }
+    </div>
+
+    <!-- Exam Category Filter Pills -->
+    @{
+        string activeExamCat = ViewBag.ActiveExamCategory as string ?? "all";
+        string currentSort = ViewBag.ActiveSort as string ?? "hot";
+    }
+    <div class="d-flex flex-wrap gap-1 mb-3 pt-1 border-bottom border-secondary pb-2">
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=all#notes" class="badge @(activeExamCat == "all" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">All</a>
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Midterm#notes" class="badge @(activeExamCat == "Midterm" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Midterm</a>
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Final Exam#notes" class="badge @(activeExamCat == "Final Exam" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Finals</a>
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Lab / Assignment#notes" class="badge @(activeExamCat == "Lab / Assignment" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Labs</a>
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Lecture Notes#notes" class="badge @(activeExamCat == "Lecture Notes" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Lectures</a>
     </div>
 
     @if (notesResources.Any())
@@ -82,11 +98,17 @@
         @foreach (var r in notesResources)
         {
             <div class="right-col-item mb-2" data-label="@r.Title.ToLower() notes pdf">
-                <a href="@(!string.IsNullOrEmpty(r.FilePath) ? r.FilePath : r.Url)" target="_blank" rel="noopener noreferrer"
-                   class="resource-link" style="font-weight: 700; color: var(--text-heading);">
-                    <i class="bi bi-file-earmark-pdf-fill" style="color: var(--warning);"></i>
-                    <span>@r.Title</span>
-                </a>
+                <div class="d-flex align-items-center justify-content-between">
+                    <a href="@(!string.IsNullOrEmpty(r.FilePath) ? r.FilePath : r.Url)" target="_blank" rel="noopener noreferrer"
+                       class="resource-link" style="font-weight: 700; color: var(--text-heading);">
+                        <i class="bi bi-file-earmark-pdf-fill" style="color: var(--warning);"></i>
+                        <span>@r.Title</span>
+                    </a>
+                    @if (!string.IsNullOrEmpty(r.ExamCategory))
+                    {
+                        <span class="badge bg-secondary" style="font-size: 9px; font-weight: 600;">@r.ExamCategory</span>
+                    }
+                </div>
                 @if (!string.IsNullOrEmpty(r.Description))
                 {
                     <div style="font-size: 11px; color: var(--text-secondary); margin-left: 20px; line-height: 1.3;">@r.Description</div>
@@ -96,16 +118,27 @@
     }
     else
     {
-        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No approved notes yet. Upload your notes for admin review!</p>
+        <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No approved notes found in this category.</p>
     }
 
     <!-- Inline Upload Note Form -->
-    <div id="upload-note-form" class="add-video-form" style="display: none;">
+    <div id="upload-note-form" class="add-video-form" style="display: none; margin-top: 12px;">
         <form action="/Courses/UploadNote" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <input type="hidden" name="code" value="@Model.Code" />
             <input type="text" name="title" placeholder="Note Title (e.g. Midterm Chapter 1-4 Summary)" required class="form-control mb-2" style="font-size: 12px;" />
             <textarea name="description" placeholder="Short description of notes..." class="form-control mb-2" rows="2" style="font-size: 11px;"></textarea>
+
+            <div class="mb-2">
+                <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Exam & Study Category:</label>
+                <select name="examCategory" class="form-select form-select-sm bg-dark text-white border-secondary" style="font-size: 11px;">
+                    <option value="Midterm">Midterm Exam Preparation</option>
+                    <option value="Final Exam">Final Exam Comprehensive</option>
+                    <option value="Lab / Assignment">Lab / Assignment Solution</option>
+                    <option value="Lecture Notes">Lecture Notes & Slides</option>
+                    <option value="General" selected>General Study Material</option>
+                </select>
+            </div>
 
             <div class="mb-2">
                 <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Upload PDF or Document File:</label>
@@ -128,26 +161,45 @@
     </div>
 </div>
 
-<!-- Follow Button -->
+<!-- Follow / Admin Subpage Control -->
 <div class="right-card">
-    <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post">
-        @Html.AntiForgeryToken()
-        <div style="display: flex; align-items: center; gap: var(--sp-3);">
-            <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary")" style="flex: 1;">
-                @if (isFollowing)
-                {
-                    <i class="bi bi-check-circle-fill"></i> <text>Following</text>
-                }
-                else
-                {
-                    <i class="bi bi-plus-lg"></i> <text>Follow</text>
-                }
-            </button>
-            <span style="font-size: var(--text-xs); color: var(--text-secondary); white-space: nowrap;">
-                @followerCount followers
-            </span>
+    @if (User.IsInRole("Admin"))
+    {
+        <div style="border-left: 3px solid var(--warning); padding-left: 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 6px;">
+                <i class="bi bi-shield-lock-fill"></i> Admin Subpage Controls
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <a href="/Admin/EditSubpage/@Model.Id" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 12px; font-weight: 600;">
+                    <i class="bi bi-pencil-square"></i> Edit Subject Subpage
+                </a>
+                <a href="/Admin/CreateAnnouncement?courseCode=@Model.Code" class="btn btn-sm btn-warning py-1 px-2" style="font-size: 12px; font-weight: 700;">
+                    <i class="bi bi-megaphone-fill"></i> Broadcast Notice
+                </a>
+            </div>
         </div>
-    </form>
+    }
+    else
+    {
+        <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post">
+            @Html.AntiForgeryToken()
+            <div style="display: flex; align-items: center; gap: var(--sp-3);">
+                <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary")" style="flex: 1;">
+                    @if (isFollowing)
+                    {
+                        <i class="bi bi-check-circle-fill"></i> <text>Following</text>
+                    }
+                    else
+                    {
+                        <i class="bi bi-plus-lg"></i> <text>Follow</text>
+                    }
+                </button>
+                <span style="font-size: var(--text-xs); color: var(--text-secondary); white-space: nowrap;">
+                    @followerCount followers
+                </span>
+            </div>
+        </form>
+    }
 </div>
 
 <!-- YouTube Videos by Topic -->
@@ -305,9 +357,23 @@ function toggleForm(id) {
                 </div>
                 <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0; max-width: 600px; line-height: 1.6;">@Model.Description</p>
             </div>
-            <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary">
-                <i class="bi bi-plus-lg"></i> Create Post
-            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <div style="display: flex; gap: 8px;">
+                    <a href="/Admin/CreateAnnouncement?courseCode=@Model.Code" class="btn-warning py-2 px-3" style="font-size: 13px; font-weight: 700;">
+                        <i class="bi bi-megaphone-fill"></i> Post Notice
+                    </a>
+                    <a href="/Admin/EditSubpage/@Model.Id" class="btn-outline py-2 px-3" style="font-size: 13px;">
+                        <i class="bi bi-gear-fill"></i> Manage
+                    </a>
+                </div>
+            }
+            else
+            {
+                <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary">
+                    <i class="bi bi-plus-lg"></i> Create Post
+                </a>
+            }
         </div>
     </div>
 </div>
@@ -337,30 +403,49 @@ function toggleForm(id) {
             int myVote = userPostVotes.ContainsKey(post.Id) ? userPostVotes[post.Id] : 0;
             string authorName = post.User?.UserName ?? "student";
             string flairClass = "flair-" + post.Flair.ToString().ToLower();
+            bool isAdmin = User.IsInRole("Admin");
 
             <article class="post-card fade-up" onclick="if (!event.target.closest('a, button, input, form')) window.location.href='@Url.Action("Details", "Posts", new { id = post.Id })';">
                 <div class="post-vote-col">
-                    <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" type="button" title="Upvote" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
-                        <i class="bi bi-arrow-up-circle-fill"></i>
-                    </button>
+                    @if (!isAdmin)
+                    {
+                        <button class="vote-arrow up @(myVote == 1 ? "upvoted" : "")" type="button" title="Upvote" onclick="asyncVote(this, @post.Id, 'post', 1, event)">
+                            <i class="bi bi-arrow-up-circle-fill"></i>
+                        </button>
 
-                    <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
+                        <span class="vote-count @(myVote == 1 ? "text-accent" : "")">@(post.UpVotes - post.DownVotes)</span>
 
-                    <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" type="button" title="Downvote" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
-                        <i class="bi bi-arrow-down-circle-fill"></i>
-                    </button>
+                        <button class="vote-arrow down @(myVote == -1 ? "downvoted" : "")" type="button" title="Downvote" onclick="asyncVote(this, @post.Id, 'post', -1, event)">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 9px; writing-mode: vertical-rl; transform: rotate(180deg); padding: 4px 2px;">
+                            MOD
+                        </span>
+                        <span class="vote-count text-muted mt-1" style="font-size: 10px;">@(post.UpVotes - post.DownVotes)</span>
+                    }
                 </div>
                 <div class="post-body-col">
                     <div class="post-meta">
-                        <span class="avatar avatar-sm" style="background: var(--accent); width: 22px; height: 22px; font-size: 10px;">
+                        <span class="avatar avatar-sm" style="background: @(authorName == "admin" ? "var(--warning)" : "var(--accent)"); color: @(authorName == "admin" ? "#000" : "#fff"); font-weight: 800; width: 22px; height: 22px; font-size: 10px;">
                             @authorName.Substring(0, 1).ToUpper()
                         </span>
                         <a href="@Url.Action("Details", "User", new { username = authorName })" style="color: var(--text-heading); font-weight: 700;">
                             u/@authorName
                         </a>
+                        @if (authorName == "admin")
+                        {
+                            <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 9px; padding: 1px 4px;">ADMIN</span>
+                        }
                         <span>·</span>
                         <span>c/@Model.Code</span>
                         <span class="flair-badge @flairClass">@post.Flair.ToString()</span>
+                        @if (post.IsPinned)
+                        {
+                            <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 10px;"><i class="bi bi-pin-angle-fill"></i> Pinned</span>
+                        }
                         <span>·</span>
                         <span>@post.CreatedAt.ToString("MMM dd")</span>
                     </div>
@@ -370,7 +455,7 @@ function toggleForm(id) {
                     </a>
                     <p class="post-preview">@post.Body</p>
 
-                    <div class="post-actions">
+                    <div class="post-actions flex-wrap">
                         <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
                             <i class="bi bi-chat-left-text-fill" style="color: var(--accent);"></i>
                             @(post.Comments?.Count ?? 0) Comments
@@ -381,6 +466,16 @@ function toggleForm(id) {
                         <button class="action-btn" style="margin-left: auto;" onclick="navigator.clipboard.writeText(window.location.origin + '/Posts/Details/@post.Id'); alert('Post link copied!');">
                             <i class="bi bi-link-45deg"></i> Copy Link
                         </button>
+                        @if (isAdmin)
+                        {
+                            <form action="/Admin/DeletePost" method="post" style="margin: 0;" onsubmit="return confirm('Delete this post?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="postId" value="@post.Id" />
+                                <button type="submit" class="action-btn" style="color: var(--error);" title="Delete Post">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        }
                     </div>
                 </div>
             </article>

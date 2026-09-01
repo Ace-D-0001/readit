@@ -21,6 +21,8 @@ namespace Read_It.Models
         public string? UploadedByUserId { get; set; }
         public virtual ApplicationUser? UploadedByUser { get; set; }
 
+        public string? ExamCategory { get; set; } // e.g. "Midterm", "Final Exam", "Lab / Assignment", "Lecture Notes", "General"
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

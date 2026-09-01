@@ -6,12 +6,38 @@
     var posts = ViewBag.Posts as IEnumerable<Read_It.Models.Post> ?? Enumerable.Empty<Read_It.Models.Post>();
     var comments = ViewBag.Comments as IEnumerable<Read_It.Models.Comment> ?? Enumerable.Empty<Read_It.Models.Comment>();
     var followedCourses = ViewBag.FollowedCourses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
+    var bookmarkedPosts = ViewBag.BookmarkedPosts as IEnumerable<Read_It.Models.Post> ?? Enumerable.Empty<Read_It.Models.Post>();
+    var activeWarnings = ViewBag.ActiveWarnings as IEnumerable<Read_It.Models.UserWarning> ?? Enumerable.Empty<Read_It.Models.UserWarning>();
     int totalKarma = ViewBag.TotalKarma ?? 0;
     bool isOwnProfile = ViewBag.IsOwnProfile ?? false;
     string initialLetter = (!string.IsNullOrEmpty(Model?.UserName)) ? Model.UserName.Substring(0, 1).ToUpper() : "U";
 }
 
 <div style="display: flex; flex-direction: column; gap: var(--sp-4);">
+
+    <!-- Active Warnings Banner for Student -->
+    @if (isOwnProfile && activeWarnings.Any())
+    {
+        @foreach (var w in activeWarnings)
+        {
+            <div class="card p-3 border-danger" style="background: rgba(239, 68, 68, 0.12); border-left: 5px solid var(--error); display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div>
+                    <h6 class="text-danger fw-bold mb-1">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Official Notice from Administration
+                    </h6>
+                    <p class="text-white mb-0" style="font-size: 13px;">@w.Reason</p>
+                    <span style="font-size: 11px; color: var(--text-muted);">Issued on @w.CreatedAt.ToString("MMM dd, yyyy")</span>
+                </div>
+                <form action="/User/DismissWarning" method="post" style="margin: 0;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="warningId" value="@w.Id" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 11px; white-space: nowrap;">
+                        I Acknowledge
+                    </button>
+                </form>
+            </div>
+        }
+    }
 
     <!-- User Header Card -->
     <div class="card p-4">
@@ -61,6 +87,10 @@
                     <span><i class="bi bi-file-post"></i> <strong>@posts.Count()</strong> Posts</span>
                     <span><i class="bi bi-chat-text"></i> <strong>@comments.Count()</strong> Comments</span>
                     <span><i class="bi bi-bookmark-heart-fill" style="color: var(--accent);"></i> <strong>@followedCourses.Count()</strong> Followed SubSubjects</span>
+                    @if (isOwnProfile)
+                    {
+                        <span><i class="bi bi-bookmark-star-fill text-warning"></i> <strong>@bookmarkedPosts.Count()</strong> Saved</span>
+                    }
                 </div>
             </div>
         </div>
@@ -71,6 +101,10 @@
         <button class="dept-tab active" onclick="switchTab('posts', this)">Posts (@posts.Count())</button>
         <button class="dept-tab" onclick="switchTab('comments', this)">Comments (@comments.Count())</button>
         <button class="dept-tab" onclick="switchTab('following', this)">SubSubjects (@followedCourses.Count())</button>
+        @if (isOwnProfile)
+        {
+            <button class="dept-tab" onclick="switchTab('bookmarks', this)"><i class="bi bi-bookmark-star-fill text-warning"></i> Saved Posts (@bookmarkedPosts.Count())</button>
+        }
     </div>
 
     <!-- User Posts Tab -->
@@ -180,6 +214,53 @@
             </div>
         }
     </div>
+
+    <!-- Saved / Bookmarked Posts Tab -->
+    @if (isOwnProfile)
+    {
+        <div id="tab-bookmarks" class="tab-content" style="display: none; flex-direction: column; gap: var(--sp-3);">
+            @if (bookmarkedPosts.Any())
+            {
+                @foreach (var post in bookmarkedPosts)
+                {
+                    <article class="post-card fade-up">
+                        <div class="post-vote-col">
+                            <i class="bi bi-bookmark-star-fill text-warning fs-5"></i>
+                            <span class="vote-count text-accent">@(post.UpVotes - post.DownVotes)</span>
+                        </div>
+                        <div class="post-body-col">
+                            <div class="post-meta">
+                                <span class="flair-badge">@post.Flair.ToString()</span>
+                                <a href="@Url.Action("Details", "Courses", new { code = post.Course?.Code })">c/@post.Course?.Code</a>
+                                <span>· Saved post</span>
+                            </div>
+                            <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="post-title">
+                                @post.Title
+                            </a>
+                            <p class="post-preview">@post.Body</p>
+
+                            <div class="post-actions">
+                                <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                                    <i class="bi bi-chat-left-text-fill text-accent"></i> @(post.Comments?.Count ?? 0) Comments
+                                </a>
+                                <a href="@Url.Action("Details", "Posts", new { id = post.Id })" class="action-btn">
+                                    <i class="bi bi-arrow-right-circle"></i> Open Post
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-bookmark-x" style="font-size: 2.5rem; color: var(--text-muted); display: block; margin-bottom: var(--sp-2);"></i>
+                    <h5>Your Saved Library is Empty</h5>
+                    <p style="font-size: 13px;">Bookmark helpful study questions, guides, or solutions to quickly reference them here.</p>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 <script>

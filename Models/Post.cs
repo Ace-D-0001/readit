@@ -21,7 +21,12 @@ namespace Read_It.Models
         public int UpVotes { get; set; }
         public int DownVotes { get; set; }
         public bool IsPinned { get; set; }
+        public bool IsLocked { get; set; }
+        public bool IsAnonymous { get; set; }
+        public int? AcceptedCommentId { get; set; }
+        public DateTime? ExpiresAt { get; set; }
 
         public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public virtual ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
     }
 }

@@ -1,0 +1,71 @@
+@model IEnumerable<Read_It.Models.Notification>
+
+@{
+    ViewData["Title"] = "Your Notifications — IUBAT ReadIt";
+}
+
+<div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">
+                <i class="bi bi-bell-fill text-warning"></i> Notifications & Activity Feed
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">
+                Updates on your discussion replies, verified notes, accepted answers, warnings, and announcements.
+            </p>
+        </div>
+        <button class="btn-outline py-1 px-3" style="font-size: 12px;" onclick="markAllNotificationsRead()">
+            <i class="bi bi-check2-all"></i> Mark All as Read
+        </button>
+    </div>
+
+    <!-- Notification List -->
+    @if (Model != null && Model.Any())
+    {
+        <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+            @foreach (var notif in Model)
+            {
+                string iconClass = "bi-bell-fill text-warning";
+                if (notif.Type == Read_It.Models.NotificationType.Reply) iconClass = "bi-chat-left-dots-fill text-primary";
+                else if (notif.Type == Read_It.Models.NotificationType.NoteApproved) iconClass = "bi-journal-check text-success";
+                else if (notif.Type == Read_It.Models.NotificationType.NoteRejected) iconClass = "bi-journal-x text-danger";
+                else if (notif.Type == Read_It.Models.NotificationType.AcceptedSolution) iconClass = "bi-check-circle-fill text-success";
+                else if (notif.Type == Read_It.Models.NotificationType.Warning) iconClass = "bi-exclamation-triangle-fill text-danger";
+                else if (notif.Type == Read_It.Models.NotificationType.Announcement) iconClass = "bi-megaphone-fill text-warning";
+
+                <div class="card p-3 @(!notif.IsRead ? "border-start border-3 border-warning" : "")" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: @(!notif.IsRead ? "var(--bg-panel-alt)" : "var(--bg-panel)");">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <i class="bi @iconClass fs-4 mt-1"></i>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <strong style="color: var(--text-heading); font-size: 14px;">@notif.Title</strong>
+                                @if (!notif.IsRead)
+                                {
+                                    <span class="badge bg-warning text-dark" style="font-size: 9px;">NEW</span>
+                                }
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 13px; margin: 2px 0 6px;">@notif.Message</p>
+                            <span style="font-size: 11px; color: var(--text-muted);"><i class="bi bi-clock"></i> @notif.CreatedAt.ToString("MMM dd, yyyy 'at' hh:mm tt")</span>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(notif.LinkUrl))
+                    {
+                        <a href="@notif.LinkUrl" class="btn btn-sm btn-outline-light py-1 px-3" style="font-size: 12px; white-space: nowrap;" onclick="markNotificationRead(@notif.Id)">
+                            View &rarr;
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card p-5 text-center text-secondary">
+            <i class="bi bi-bell-slash fs-1 mb-3"></i>
+            <h5>No notifications yet.</h5>
+            <p style="font-size: 13px;">When peers reply to your questions or admins verify your notes, alerts will show up here.</p>
+        </div>
+    }
+</div>

@@ -20,6 +20,7 @@ namespace Read_It.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int UpVotes { get; set; }
         public int DownVotes { get; set; }
+        public bool IsAcceptedSolution { get; set; }
 
         public virtual ICollection<Comment> ChildComments { get; set; } = new List<Comment>();
     }

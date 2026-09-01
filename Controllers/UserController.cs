@@ -84,6 +84,30 @@ namespace Read_It.Controllers
                 .Select(cf => cf.Course!)
                 .ToListAsync();
 
+            // Load bookmarked posts
+            var bookmarkedPosts = new List<Post>();
+            var warnings = new List<UserWarning>();
+
+            if (isOwnProfile)
+            {
+                bookmarkedPosts = await _context.PostBookmarks
+                    .Include(pb => pb.Post)
+                        .ThenInclude(p => p!.Course)
+                    .Include(pb => pb.Post)
+                        .ThenInclude(p => p!.User)
+                    .Include(pb => pb.Post)
+                        .ThenInclude(p => p!.Comments)
+                    .Where(pb => pb.UserId == user.Id && pb.Post != null)
+                    .OrderByDescending(pb => pb.CreatedAt)
+                    .Select(pb => pb.Post!)
+                    .ToListAsync();
+
+                warnings = await _context.UserWarnings
+                    .Where(w => w.UserId == user.Id && !w.IsDismissed)
+                    .OrderByDescending(w => w.CreatedAt)
+                    .ToListAsync();
+            }
+
             // Calculate total karma
             int totalPostVotes = posts.Sum(p => p.UpVotes - p.DownVotes);
             int totalCommentVotes = comments.Sum(c => c.UpVotes - c.DownVotes);
@@ -91,9 +115,32 @@ namespace Read_It.Controllers
             ViewBag.Posts = posts;
             ViewBag.Comments = comments;
             ViewBag.FollowedCourses = followedCourses;
+            ViewBag.BookmarkedPosts = bookmarkedPosts;
+            ViewBag.ActiveWarnings = warnings;
             ViewBag.TotalKarma = totalPostVotes + totalCommentVotes;
 
             return View(user);
+        }
+
+        // POST: /User/DismissWarning
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DismissWarning(int warningId)
+        {
+            if (User?.Identity?.IsAuthenticated != true)
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+            if (currentUser == null) return Unauthorized();
+
+            var warning = await _context.UserWarnings.FirstOrDefaultAsync(w => w.Id == warningId && w.UserId == currentUser.Id);
+            if (warning != null)
+            {
+                warning.IsDismissed = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Details));
         }
 
         // POST: /User/UpdateBio

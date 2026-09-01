@@ -1,35 +1,67 @@
 @model IEnumerable<Read_It.Models.Report>
 
 @{
-    ViewData["Title"] = "Content Reports Moderation — Admin";
+    ViewData["Title"] = "Content Moderation & Reports — Admin";
     var selectedStatus = ViewBag.SelectedStatus as Read_It.Models.ReportStatus?;
+    string? selectedTarget = ViewBag.SelectedTarget as string;
 }
 
 <div style="display: flex; flex-direction: column; gap: var(--sp-4);" class="fade-up">
 
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
-            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">🚨 Post & Comment Reports</h1>
-            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">Review student user flags, see report reasons, approve/reject reports, delete content, or ban users.</p>
+            <h1 class="h3 m-0" style="color: var(--text-heading); font-weight: 800;">
+                <i class="bi bi-shield-shaded text-danger"></i> Community Content Reports
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: var(--text-sm);">
+                Investigate flagged posts and comments, enforce community guidelines, remove violations, and ban repeat offenders.
+            </p>
         </div>
-        <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Back to Dashboard</a>
+        <div style="display: flex; gap: 8px;">
+            <a href="/Admin" class="btn-outline py-1 px-3" style="font-size: 12px;">&larr; Cockpit Dashboard</a>
+        </div>
     </div>
 
-    <!-- Status Filter Tabs -->
-    <div class="dept-tabs mb-0">
-        <a href="/Admin/Reports" class="dept-tab @(!selectedStatus.HasValue ? "active" : "")">All Reports</a>
-        <a href="/Admin/Reports?status=Pending" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Pending ? "active" : "")">
-            Pending <span class="badge bg-warning text-dark ms-1">Action Needed</span>
-        </a>
-        <a href="/Admin/Reports?status=Approved" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Approved ? "active" : "")">Approved / Action Taken</a>
-        <a href="/Admin/Reports?status=Rejected" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Rejected ? "active" : "")">Rejected Reports</a>
+    <!-- Status & Target Filter Bar -->
+    <div class="card p-3">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <!-- Status Tabs -->
+            <div class="dept-tabs mb-0">
+                <a href="/Admin/Reports@(selectedTarget != null ? "?target=" + selectedTarget : "")" class="dept-tab @(!selectedStatus.HasValue ? "active" : "")">
+                    All Reports
+                </a>
+                <a href="/Admin/Reports?status=Pending@(selectedTarget != null ? "&target=" + selectedTarget : "")" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Pending ? "active" : "")">
+                    Pending Review <span class="badge bg-danger ms-1">Action Needed</span>
+                </a>
+                <a href="/Admin/Reports?status=Approved@(selectedTarget != null ? "&target=" + selectedTarget : "")" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Approved ? "active" : "")">
+                    Action Taken
+                </a>
+                <a href="/Admin/Reports?status=Rejected@(selectedTarget != null ? "&target=" + selectedTarget : "")" class="dept-tab @(selectedStatus == Read_It.Models.ReportStatus.Rejected ? "active" : "")">
+                    Dismissed
+                </a>
+            </div>
+
+            <!-- Target Type Filter -->
+            <div style="display: flex; gap: 6px; font-size: 12px;">
+                <a href="/Admin/Reports@(selectedStatus.HasValue ? "?status=" + selectedStatus.Value : "")" class="btn btn-sm @(string.IsNullOrEmpty(selectedTarget) ? "btn-secondary" : "btn-outline-secondary") py-1 px-2">
+                    All Types
+                </a>
+                <a href="/Admin/Reports?target=post@(selectedStatus.HasValue ? "&status=" + selectedStatus.Value : "")" class="btn btn-sm @(selectedTarget == "post" ? "btn-primary" : "btn-outline-primary") py-1 px-2">
+                    Posts Only
+                </a>
+                <a href="/Admin/Reports?target=comment@(selectedStatus.HasValue ? "&status=" + selectedStatus.Value : "")" class="btn btn-sm @(selectedTarget == "comment" ? "btn-info" : "btn-outline-info") py-1 px-2">
+                    Comments Only
+                </a>
+            </div>
+        </div>
     </div>
 
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success p-2" style="font-size: 12px;">
-            @TempData["SuccessMessage"]
+        <div class="alert alert-success d-flex align-items-center gap-2 p-3" style="font-size: 13px;">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <div>@TempData["SuccessMessage"]</div>
         </div>
     }
 
@@ -42,18 +74,18 @@
                     <thead style="background: var(--bg-panel-alt); font-size: 11px; text-transform: uppercase; color: var(--text-muted);">
                         <tr>
                             <th style="padding: 12px 16px;">Target</th>
-                            <th>Report Reason</th>
+                            <th>Report Reason & Date</th>
                             <th>Reported By</th>
-                            <th>Content Preview & Author</th>
+                            <th>Flagged Content & Author</th>
                             <th>Status</th>
-                            <th style="text-align: right; padding-right: 16px;">Admin Action</th>
+                            <th style="text-align: right; padding-right: 16px;">Moderation Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var rep in Model)
                         {
                             string targetAuthor = rep.Post?.User?.UserName ?? rep.Comment?.User?.UserName ?? "unknown";
-                            string targetSnippet = rep.Post?.Title ?? rep.Comment?.Body ?? "(Content Deleted)";
+                            string targetSnippet = rep.Post?.Title ?? rep.Comment?.Body ?? "(Content deleted or removed)";
 
                             <tr>
                                 <td style="padding: 12px 16px;">
@@ -62,86 +94,90 @@
                                         <span class="badge bg-primary"><i class="bi bi-file-text-fill"></i> Post</span>
                                         @if (rep.PostId != null)
                                         {
-                                            <a href="/Posts/Details/@rep.PostId" target="_blank" style="color: var(--accent); font-size: 11px; display: block; margin-top: 2px;">View Post #@rep.PostId</a>
+                                            <a href="/Posts/Details/@rep.PostId" target="_blank" style="color: var(--accent); font-size: 11px; display: block; margin-top: 2px;">
+                                                View Post #@rep.PostId &nearr;
+                                            </a>
                                         }
                                     }
                                     else
                                     {
                                         <span class="badge bg-info text-dark"><i class="bi bi-chat-dots-fill"></i> Comment</span>
+                                        @if (rep.Comment != null)
+                                        {
+                                            <a href="/Posts/Details/@rep.Comment.PostId" target="_blank" style="color: var(--accent); font-size: 11px; display: block; margin-top: 2px;">
+                                                On Post #@rep.Comment.PostId &nearr;
+                                            </a>
+                                        }
                                     }
                                 </td>
                                 <td>
-                                    <strong style="color: var(--warning);">"@rep.Reason"</strong>
-                                    <div style="font-size: 10px; color: var(--text-muted);">@rep.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                    <strong style="color: var(--warning); font-size: 13px;">"@rep.Reason"</strong>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                        <i class="bi bi-clock"></i> @rep.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                                    </div>
                                 </td>
                                 <td>
-                                    <span style="font-weight: 600;">u/@(rep.ReportedByUser?.UserName ?? "student")</span>
+                                    <span style="font-weight: 600; color: var(--text-heading);">
+                                        u/@(rep.ReportedByUser?.UserName ?? "student")
+                                    </span>
                                 </td>
-                                <td style="max-width: 260px;">
-                                    <div class="text-truncate" style="font-weight: 600; color: var(--text-heading);">@targetSnippet</div>
-                                    <div style="font-size: 11px; color: var(--text-secondary);">Author: <strong>u/@targetAuthor</strong></div>
+                                <td style="max-width: 280px;">
+                                    <div class="text-truncate" style="font-weight: 600; color: var(--text-heading);" title="@targetSnippet">
+                                        @targetSnippet
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                        Author: <strong class="text-white">u/@targetAuthor</strong>
+                                    </div>
                                 </td>
                                 <td>
                                     @if (rep.Status == Read_It.Models.ReportStatus.Pending)
                                     {
-                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        <span class="badge bg-danger">Pending</span>
                                     }
                                     else if (rep.Status == Read_It.Models.ReportStatus.Approved)
                                     {
-                                        <span class="badge bg-success">Approved / Action Taken</span>
+                                        <span class="badge bg-success">Action Taken</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary">Rejected</span>
+                                        <span class="badge bg-secondary">Dismissed</span>
                                     }
                                 </td>
                                 <td style="text-align: right; padding-right: 16px;">
                                     @if (rep.Status == Read_It.Models.ReportStatus.Pending)
                                     {
-                                        <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-light dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" style="font-size: 11px;">
-                                                Take Action
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow" style="font-size: 12px;">
-                                                <li>
-                                                    <form action="/Admin/ResolveReport" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="reportId" value="@rep.Id" />
-                                                        <input type="hidden" name="actionType" value="approve" />
-                                                        <button type="submit" class="dropdown-item text-success"><i class="bi bi-check-circle"></i> Approve Report (Acknowledge)</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="/Admin/ResolveReport" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="reportId" value="@rep.Id" />
-                                                        <input type="hidden" name="actionType" value="delete_content" />
-                                                        <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Delete this reported content?');"><i class="bi bi-trash-fill"></i> Approve & Delete Content</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="/Admin/ResolveReport" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="reportId" value="@rep.Id" />
-                                                        <input type="hidden" name="actionType" value="ban_user" />
-                                                        <button type="submit" class="dropdown-item text-warning" onclick="return confirm('Ban author u/@targetAuthor?');"><i class="bi bi-person-x-fill"></i> Approve & Ban User (u/@targetAuthor)</button>
-                                                    </form>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form action="/Admin/ResolveReport" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="reportId" value="@rep.Id" />
-                                                        <input type="hidden" name="actionType" value="reject" />
-                                                        <button type="submit" class="dropdown-item text-secondary"><i class="bi bi-x-circle"></i> Reject Report (Dismiss)</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div style="display: inline-flex; gap: 6px;">
+                                            <form action="/Admin/ResolveReport" method="post" style="margin: 0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reportId" value="@rep.Id" />
+                                                <input type="hidden" name="actionType" value="delete_content" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 11px;" title="Delete the reported content" onclick="return confirm('Delete this reported content?');">
+                                                    <i class="bi bi-trash-fill"></i> Delete
+                                                </button>
+                                            </form>
+
+                                            <form action="/Admin/ResolveReport" method="post" style="margin: 0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reportId" value="@rep.Id" />
+                                                <input type="hidden" name="actionType" value="ban_user" />
+                                                <button type="submit" class="btn btn-sm btn-outline-warning py-1 px-2" style="font-size: 11px;" title="Ban offending author and delete content" onclick="return confirm('Ban author u/@targetAuthor and remove their content?');">
+                                                    <i class="bi bi-person-x-fill"></i> Ban Author
+                                                </button>
+                                            </form>
+
+                                            <form action="/Admin/ResolveReport" method="post" style="margin: 0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reportId" value="@rep.Id" />
+                                                <input type="hidden" name="actionType" value="reject" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" title="Dismiss report as invalid">
+                                                    Dismiss
+                                                </button>
+                                            </form>
                                         </div>
                                     }
                                     else
                                     {
-                                        <span style="font-size: 11px; color: var(--text-muted);">Resolved</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);"><i class="bi bi-check-all"></i> Resolved</span>
                                     }
                                 </td>
                             </tr>
@@ -154,7 +190,9 @@
     else
     {
         <div class="card p-5 text-center text-secondary">
-            <h5>No reports found matching status filter.</h5>
+            <i class="bi bi-shield-check text-success fs-1 mb-3"></i>
+            <h5>No reports match the current filters.</h5>
+            <p style="font-size: 13px;">Community content is healthy and moderated.</p>
         </div>
     }
 </div>

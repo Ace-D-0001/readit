@@ -15,6 +15,9 @@
 @{
     var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     bool isAuthPage = currentCtrl.Equals("Account", StringComparison.OrdinalIgnoreCase);
+    bool isAdmin = User.IsInRole("Admin");
+    bool isAdminPage = currentCtrl.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+    bool hideMusicPlayer = isAuthPage || isAdmin || isAdminPage;
 }
 
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
@@ -43,20 +46,71 @@
         </form>
 
         <div class="header-right">
-            @if (User.IsInRole("Admin"))
+            @if (isAdmin)
             {
-                <a href="/Admin" class="btn-warning btn-sm py-1 px-3" style="font-weight: 700; font-size: var(--text-xs);">
-                    <i class="bi bi-shield-lock-fill"></i> Admin Panel
+                <span class="badge bg-warning text-dark font-weight-bold d-none d-md-inline" style="font-size: 11px; padding: 4px 8px;">
+                    <i class="bi bi-shield-lock-fill"></i> Admin Mode
+                </span>
+
+                <!-- Notification Bell for Admin -->
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-ghost position-relative py-1 px-2" type="button" id="notifDropdownAdmin" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadNotifications()" title="Notifications">
+                        <i class="bi bi-bell-fill fs-5" style="color: var(--text-secondary);"></i>
+                        <span id="notif-badge-admin" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 9px;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownAdmin" style="width: 320px; max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                        <div class="d-flex justify-content-between align-items-center mb-2 px-2 pb-1 border-bottom border-secondary">
+                            <strong style="color: var(--text-heading);">Notifications</strong>
+                            <a href="javascript:void(0)" onclick="markAllNotificationsRead()" class="text-accent" style="font-size: 11px;">Mark all read</a>
+                        </div>
+                        <div id="notif-list-admin">
+                            <div class="text-center text-muted py-3">Loading notifications...</div>
+                        </div>
+                        <div class="text-center pt-2 mt-1 border-top border-secondary">
+                            <a href="/Notifications" class="text-muted" style="font-size: 11px;">View All &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="/Admin/CreateAnnouncement" class="btn btn-sm btn-outline-warning py-1 px-2" style="font-size: 12px; font-weight: 600;">
+                    <i class="bi bi-megaphone-fill"></i> Post Notice
+                </a>
+
+                <a href="/Admin" class="btn-ghost" title="Admin Control Center (@User.Identity?.Name)" style="padding: 6px 10px;">
+                    <i class="bi bi-person-badge fs-5" style="color: var(--warning);"></i>
+                </a>
+
+                <a href="/Account/Logout" class="btn-ghost" title="Sign Out" style="font-size: 12px; color: var(--text-muted);">
+                    <i class="bi bi-box-arrow-right"></i>
                 </a>
             }
-
-            <!-- Create Post Action -->
-            <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
-                <i class="bi bi-plus-lg"></i> Create Post
-            </a>
-
-            @if (User.Identity?.IsAuthenticated == true)
+            else if (User.Identity?.IsAuthenticated == true)
             {
+                <!-- Notification Bell for Students -->
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-ghost position-relative py-1 px-2" type="button" id="notifDropdownStudent" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadNotifications()" title="Notifications">
+                        <i class="bi bi-bell-fill fs-5" style="color: var(--text-secondary);"></i>
+                        <span id="notif-badge-student" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 9px;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownStudent" style="width: 320px; max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                        <div class="d-flex justify-content-between align-items-center mb-2 px-2 pb-1 border-bottom border-secondary">
+                            <strong style="color: var(--text-heading);">Notifications</strong>
+                            <a href="javascript:void(0)" onclick="markAllNotificationsRead()" class="text-accent" style="font-size: 11px;">Mark all read</a>
+                        </div>
+                        <div id="notif-list-student">
+                            <div class="text-center text-muted py-3">Loading notifications...</div>
+                        </div>
+                        <div class="text-center pt-2 mt-1 border-top border-secondary">
+                            <a href="/Notifications" class="text-muted" style="font-size: 11px;">View All &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Post Action for Students -->
+                <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
+                    <i class="bi bi-plus-lg"></i> Create Post
+                </a>
+
                 <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 10px;">
                     <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
                 </a>
@@ -95,14 +149,44 @@ else
         <!-- Left Sidebar (LHS) -->
         <aside class="app-sidebar">
             <div style="position: sticky; top: calc(var(--header-h) + 16px);">
-                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a href="/Admin" class="sidebar-item" style="color: var(--warning); font-weight: 700; background: rgba(234, 179, 8, 0.1); border-left: 3px solid var(--warning);">
-                            <i class="bi bi-shield-lock-fill"></i>
+                @if (isAdmin)
+                {
+                    <div class="sidebar-label" style="color: var(--warning); font-weight: 800;">ADMIN MANAGEMENT</div>
+                    <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
+                        <a href="/Admin" class="sidebar-item @(currentCtrl.Equals("Admin", StringComparison.OrdinalIgnoreCase) && (ViewContext.RouteData.Values["action"]?.ToString() == "Index" || ViewContext.RouteData.Values["action"]?.ToString() == null) ? "active" : "")" style="color: var(--warning); font-weight: 700;">
+                            <i class="bi bi-speedometer2"></i>
                             <span>Admin Dashboard</span>
                         </a>
-                    }
+                        <a href="/Admin/Reports" class="sidebar-item">
+                            <i class="bi bi-flag-fill"></i>
+                            <span>Content Reports</span>
+                        </a>
+                        <a href="/Admin/Notes" class="sidebar-item">
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                            <span>Notes Approvals</span>
+                        </a>
+                        <a href="/Admin/Subpages" class="sidebar-item">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>Subpage Catalog</span>
+                        </a>
+                        <a href="/Admin/Users" class="sidebar-item">
+                            <i class="bi bi-people-fill"></i>
+                            <span>User Accounts & Bans</span>
+                        </a>
+                        <a href="/Admin/AuditLogs" class="sidebar-item" style="color: var(--info);">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Audit Action Logs</span>
+                        </a>
+                        <a href="/Admin/CreateAnnouncement" class="sidebar-item" style="color: var(--warning);">
+                            <i class="bi bi-megaphone-fill"></i>
+                            <span>Post Announcement</span>
+                        </a>
+                    </nav>
+
+                    <div class="sidebar-label">COMMUNITY FEEDS</div>
+                }
+
+                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
                     <a href="/" class="sidebar-item">
                         <i class="bi bi-house-door"></i>
                         <span>Home Feed</span>
@@ -115,14 +199,17 @@ else
                         <i class="bi bi-file-earmark-text"></i>
                         <span>All Posts</span>
                     </a>
-                    <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent); font-weight: 600;">
-                        <i class="bi bi-pencil-square"></i>
-                        <span>+ Create Post</span>
-                    </a>
-                    <a href="/User/Details" class="sidebar-item">
-                        <i class="bi bi-person-badge"></i>
-                        <span>My Profile</span>
-                    </a>
+                    @if (!isAdmin)
+                    {
+                        <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent); font-weight: 600;">
+                            <i class="bi bi-pencil-square"></i>
+                            <span>+ Create Post</span>
+                        </a>
+                        <a href="/User/Details" class="sidebar-item">
+                            <i class="bi bi-person-badge"></i>
+                            <span>My Profile</span>
+                        </a>
+                    }
                 </nav>
 
                 <div class="sidebar-label">IUBAT SubSubjects</div>
@@ -181,90 +268,112 @@ else
                 }
                 else
                 {
-                    <div class="right-card">
-                        <div class="right-card-title">
-                            <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
+                    @if (isAdmin)
+                    {
+                        <div class="right-card" style="border-left: 4px solid var(--warning);">
+                            <div class="right-card-title">
+                                <i class="bi bi-shield-shaded" style="color: var(--warning);"></i> Admin Quick Actions
+                            </div>
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-3); line-height: 1.6;">
+                                Manage reported content, evaluate pending course notes, and broadcast official announcements.
+                            </p>
+                            <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+                                <a href="/Admin/Reports" class="btn-warning btn-sm py-2" style="font-weight: 700; text-align: center;">Review Reports</a>
+                                <a href="/Admin/Notes" class="btn-outline btn-sm py-2" style="text-align: center;">Approve Notes</a>
+                                <a href="/Admin/CreateAnnouncement" class="btn-ghost btn-sm py-1" style="text-align: center; color: var(--warning);">+ Post Announcement</a>
+                            </div>
                         </div>
-                        <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
-                            ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
-                        </p>
-                        <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
-                            <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
-                            <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
+                    }
+                    else
+                    {
+                        <div class="right-card">
+                            <div class="right-card-title">
+                                <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
+                            </div>
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
+                                ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
+                            </p>
+                            <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+                                <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
+                                <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="right-card">
-                        <div class="right-card-title">
-                            <i class="bi bi-lightning-fill" style="color: var(--warning);"></i> Quick Search Tips
+                        <div class="right-card">
+                            <div class="right-card-title">
+                                <i class="bi bi-lightning-fill" style="color: var(--warning);"></i> Quick Search Tips
+                            </div>
+                            <ul style="font-size: var(--text-sm); color: var(--text-secondary); padding-left: var(--sp-5); margin: 0; line-height: 1.8;">
+                                <li>Course codes like <strong>CSC391</strong></li>
+                                <li>Topics like <strong>SQL</strong> or <strong>Notes</strong></li>
+                                <li>Flair like <strong>Question</strong> or <strong>Meme</strong></li>
+                            </ul>
                         </div>
-                        <ul style="font-size: var(--text-sm); color: var(--text-secondary); padding-left: var(--sp-5); margin: 0; line-height: 1.8;">
-                            <li>Course codes like <strong>CSC391</strong></li>
-                            <li>Topics like <strong>SQL</strong> or <strong>Notes</strong></li>
-                            <li>Flair like <strong>Question</strong> or <strong>Meme</strong></li>
-                        </ul>
-                    </div>
+                    }
                 }
             </div>
         </aside>
     </div>
 
-    <!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Excluded on Auth Pages) ── -->
-    <div id="study-player" class="study-player-card">
-        <!-- Player Header -->
-        <div class="sp-header">
-            <div class="sp-title-badge">
-                <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div class="sp-eq">
-                    <div class="sp-eq-bar"></div>
-                    <div class="sp-eq-bar"></div>
-                    <div class="sp-eq-bar"></div>
-                    <div class="sp-eq-bar"></div>
+    @if (!hideMusicPlayer)
+    {
+        <!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Excluded for Admins & Auth Pages) ── -->
+        <div id="study-player" class="study-player-card">
+            <!-- Player Header -->
+            <div class="sp-header">
+                <div class="sp-title-badge">
+                    <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
                 </div>
-                <button type="button" id="sp-min-btn" class="sp-btn-subtle" title="Minimize / Expand"><i class="bi bi-chevron-down"></i></button>
-            </div>
-        </div>
-
-        <!-- Active Track Display (Cover Art + Title + Artist) -->
-        <div class="sp-track-row">
-            <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
-            <div class="sp-track-info">
-                <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
-                <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
-            </div>
-        </div>
-
-        <!-- Timeline Progress Bar -->
-        <div class="sp-progress-wrapper sp-hide-minimized">
-            <span id="sp-time-current">0:00</span>
-            <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
-            <span id="sp-time-total">0:30</span>
-        </div>
-
-        <!-- Controls & Volume Bar -->
-        <div class="sp-controls-row">
-            <div class="sp-nav-group">
-                <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
-                <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
-                <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
-            </div>
-            <div class="sp-volume-container sp-hide-minimized">
-                <button type="button" id="sp-vol-btn" class="sp-btn-subtle" title="Mute / Unmute"><i id="sp-vol-icon" class="bi bi-volume-up-fill"></i></button>
-                <div class="sp-vol-popover">
-                    <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="sp-eq">
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                        <div class="sp-eq-bar"></div>
+                    </div>
+                    <button type="button" id="sp-min-btn" class="sp-btn-subtle" title="Minimize / Expand"><i class="bi bi-chevron-down"></i></button>
                 </div>
             </div>
-        </div>
 
-        <!-- Live Track Search -->
-        <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
-            <i class="bi bi-search sp-search-icon"></i>
-            <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
-            <div id="sp-search-results" class="sp-search-results"></div>
+            <!-- Active Track Display (Cover Art + Title + Artist) -->
+            <div class="sp-track-row">
+                <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
+                <div class="sp-track-info">
+                    <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
+                    <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
+                </div>
+            </div>
+
+            <!-- Timeline Progress Bar -->
+            <div class="sp-progress-wrapper sp-hide-minimized">
+                <span id="sp-time-current">0:00</span>
+                <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
+                <span id="sp-time-total">0:30</span>
+            </div>
+
+            <!-- Controls & Volume Bar -->
+            <div class="sp-controls-row">
+                <div class="sp-nav-group">
+                    <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
+                    <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
+                    <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
+                </div>
+                <div class="sp-volume-container sp-hide-minimized">
+                    <button type="button" id="sp-vol-btn" class="sp-btn-subtle" title="Mute / Unmute"><i id="sp-vol-icon" class="bi bi-volume-up-fill"></i></button>
+                    <div class="sp-vol-popover">
+                        <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Track Search -->
+            <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
+                <i class="bi bi-search sp-search-icon"></i>
+                <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
+                <div id="sp-search-results" class="sp-search-results"></div>
+            </div>
         </div>
-    </div>
+    }
 }
 
 @if (!isAuthPage)
@@ -284,12 +393,30 @@ else
                 <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Go</button>
             </form>
 
+            @if (isAdmin)
+            {
+                <div class="sidebar-label" style="color: var(--warning);">Admin Controls</div>
+                <a href="/Admin" class="sidebar-item" style="color: var(--warning); font-weight: 700;"><i class="bi bi-speedometer2"></i> Admin Dashboard</a>
+                <a href="/Admin/Reports" class="sidebar-item"><i class="bi bi-flag-fill"></i> Content Reports</a>
+                <a href="/Admin/Notes" class="sidebar-item"><i class="bi bi-file-earmark-check-fill"></i> Notes Approvals</a>
+                <a href="/Admin/Subpages" class="sidebar-item"><i class="bi bi-folder2-open"></i> Subpages</a>
+                <a href="/Admin/Users" class="sidebar-item"><i class="bi bi-people-fill"></i> User Bans</a>
+                <a href="/Admin/CreateAnnouncement" class="sidebar-item"><i class="bi bi-megaphone-fill"></i> Post Notice</a>
+                <hr class="divider" />
+            }
+
             <div class="sidebar-label">Navigation</div>
             <a href="/"             class="sidebar-item"><i class="bi bi-house-door"></i> Home Feed</a>
-            <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
+            @if (!isAdmin)
+            {
+                <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
+            }
             <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
             <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Posts</a>
-            <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
+            @if (!isAdmin)
+            {
+                <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
+            }
 
             <hr class="divider" />
             <div class="sidebar-label">IUBAT SubSubjects</div>
@@ -312,17 +439,106 @@ else
         <a href="#">Privacy & Terms</a>
     </div>
     <div style="font-size: var(--text-xs); color: var(--text-muted);">
-        &copy; @DateTime.Now.Year ReadIt — IUBAT Edition. Built for students.
+        &copy; @DateTime.Now.Year ReadIt — IUBAT Edition. Admin & Student Workspace.
     </div>
 </footer>
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-@if (!isAuthPage)
+@if (!hideMusicPlayer)
 {
     <script src="~/js/study-player.js" asp-append-version="true"></script>
 }
+
+<script>
+// ── Notifications Hub JS ───────────────────────────────────
+function updateUnreadNotificationBadge() {
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <text>
+        fetch('/Notifications/GetUnreadCount')
+            .then(res => res.json())
+            .then(data => {
+                const count = data.count || 0;
+                const badges = [document.getElementById('notif-badge-admin'), document.getElementById('notif-badge-student')];
+                badges.forEach(b => {
+                    if (b) {
+                        if (count > 0) {
+                            b.textContent = count > 99 ? '99+' : count;
+                            b.style.display = 'inline-block';
+                        } else {
+                            b.style.display = 'none';
+                        }
+                    }
+                });
+            })
+            .catch(() => {});
+        </text>
+    }
+}
+
+function loadNotifications() {
+    const listContainers = [document.getElementById('notif-list-admin'), document.getElementById('notif-list-student')];
+    fetch('/Notifications/GetRecent')
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            if (data.success && data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(n => {
+                    let icon = 'bi-bell-fill text-warning';
+                    if (n.type === 'Reply') icon = 'bi-chat-left-dots-fill text-primary';
+                    else if (n.type === 'NoteApproved') icon = 'bi-journal-check text-success';
+                    else if (n.type === 'NoteRejected') icon = 'bi-journal-x text-danger';
+                    else if (n.type === 'AcceptedSolution') icon = 'bi-check-circle-fill text-success';
+                    else if (n.type === 'Warning') icon = 'bi-exclamation-triangle-fill text-danger';
+                    else if (n.type === 'Announcement') icon = 'bi-megaphone-fill text-warning';
+
+                    html += `
+                        <a href="${n.linkUrl || 'javascript:void(0)'}" onclick="markNotificationRead(${n.id})" class="dropdown-item p-2 mb-1 rounded ${!n.isRead ? 'bg-dark border-start border-3 border-warning' : ''}" style="white-space: normal; line-height: 1.3;">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi ${icon} mt-1"></i>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong style="color: var(--text-heading); font-size: 11px;">${n.title}</strong>
+                                        <span style="font-size: 9px; color: var(--text-muted);">${n.timeAgo}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);" class="text-truncate">${n.message}</div>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+            } else {
+                html = '<div class="text-center text-secondary py-3" style="font-size: 11px;"><i class="bi bi-bell-slash fs-4 d-block mb-1"></i>No notifications yet.</div>';
+            }
+
+            listContainers.forEach(c => {
+                if (c) c.innerHTML = html;
+            });
+        })
+        .catch(() => {});
+}
+
+function markNotificationRead(id) {
+    fetch('/Notifications/MarkAsRead?id=' + id, { method: 'POST' })
+        .then(() => updateUnreadNotificationBadge());
+}
+
+function markAllNotificationsRead() {
+    fetch('/Notifications/MarkAllAsRead', { method: 'POST' })
+        .then(() => {
+            updateUnreadNotificationBadge();
+            loadNotifications();
+        });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateUnreadNotificationBadge();
+    setInterval(updateUnreadNotificationBadge, 30000); // 30s polling
+});
+</script>
+
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -81,6 +81,22 @@
                           required class="form-control" style="min-height: 180px; font-size: var(--text-md); line-height: 1.6;"></textarea>
             </div>
 
+            <!-- Anonymous Post Option (Students only) -->
+            @if (!User.IsInRole("Admin"))
+            {
+                <div class="mb-4 p-3 rounded" style="background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" name="isAnonymous" value="true" id="anonCheck" style="cursor: pointer;" />
+                        <label class="form-check-label fw-bold" for="anonCheck" style="color: var(--text-heading); cursor: pointer; font-size: 13px;">
+                            <i class="bi bi-incognito text-warning"></i> Post Anonymously (u/AnonymousStudent)
+                        </label>
+                    </div>
+                    <p class="text-secondary mb-0 mt-1" style="font-size: 11px;">
+                        Your identity will be masked from fellow classmates. Ideal for sensitive academic inquiries or asking questions without hesitation.
+                    </p>
+                </div>
+            }
+
             <!-- Actions -->
             <div style="display: flex; justify-content: flex-end; gap: var(--sp-3); border-top: 1px solid var(--border-default); padding-top: var(--sp-4);">
                 <a href="/Posts" class="btn-ghost">Cancel</a>

@@ -108,6 +108,13 @@ namespace Read_It.Controllers
             ViewBag.UserCommentVotes = userCommentVotes;
             ViewBag.CurrentUserId = currentUserId;
 
+            bool isBookmarked = false;
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                isBookmarked = await _context.PostBookmarks.AnyAsync(pb => pb.UserId == currentUserId && pb.PostId == id);
+            }
+            ViewBag.IsBookmarked = isBookmarked;
+
             return View(post);
         }
 
@@ -123,7 +130,7 @@ namespace Read_It.Controllers
         // POST: /Posts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(int courseId, string title, string body, PostFlair flair)
+        public async Task<IActionResult> Create(int courseId, string title, string body, PostFlair flair, bool isAnonymous = false)
         {
             if (courseId <= 0 || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
             {
@@ -138,30 +145,36 @@ namespace Read_It.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
+            bool isAdmin = User.IsInRole("Admin");
+
             var post = new Post
             {
-                CourseId  = courseId,
-                UserId    = currentUserId,
-                Title     = title.Trim(),
-                Body      = body.Trim(),
-                Flair     = flair,
-                CreatedAt = DateTime.UtcNow,
-                UpVotes   = 1,
-                DownVotes = 0,
-                IsPinned  = false
+                CourseId    = courseId,
+                UserId      = currentUserId,
+                Title       = isAdmin ? "[OFFICIAL ANNOUNCEMENT] " + title.Trim() : title.Trim(),
+                Body        = body.Trim(),
+                Flair       = isAdmin ? PostFlair.Announcement : flair,
+                CreatedAt   = DateTime.UtcNow,
+                UpVotes     = 1,
+                DownVotes   = 0,
+                IsPinned    = isAdmin,
+                IsAnonymous = !isAdmin && isAnonymous
             };
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
 
-            _context.Votes.Add(new Vote
+            if (!isAdmin)
             {
-                UserId = currentUserId,
-                TargetType = VoteTargetType.Post,
-                TargetId = post.Id,
-                VoteValue = 1
-            });
-            await _context.SaveChangesAsync();
+                _context.Votes.Add(new Vote
+                {
+                    UserId = currentUserId,
+                    TargetType = VoteTargetType.Post,
+                    TargetId = post.Id,
+                    VoteValue = 1
+                });
+                await _context.SaveChangesAsync();
+            }
 
             return RedirectToAction(nameof(Details), new { id = post.Id });
         }
@@ -173,7 +186,8 @@ namespace Read_It.Controllers
             if (post == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (post.UserId != currentUserId && User?.Identity?.IsAuthenticated == true)
+            bool isAdmin = User.IsInRole("Admin");
+            if (post.UserId != currentUserId && !isAdmin && User?.Identity?.IsAuthenticated == true)
             {
                 return Unauthorized();
             }
@@ -191,7 +205,8 @@ namespace Read_It.Controllers
             if (post == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (post.UserId != currentUserId && User?.Identity?.IsAuthenticated == true)
+            bool isAdmin = User.IsInRole("Admin");
+            if (post.UserId != currentUserId && !isAdmin && User?.Identity?.IsAuthenticated == true)
             {
                 return Unauthorized();
             }
@@ -206,7 +221,7 @@ namespace Read_It.Controllers
             post.CourseId = courseId;
             post.Title    = title.Trim();
             post.Body     = body.Trim();
-            post.Flair    = flair;
+            post.Flair    = isAdmin ? PostFlair.Announcement : flair;
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Details), new { id = post.Id });
@@ -221,13 +236,37 @@ namespace Read_It.Controllers
             if (post != null)
             {
                 var currentUserId = GetCurrentUserId();
-                if (post.UserId == currentUserId || User?.Identity?.IsAuthenticated != true)
+                bool isAdmin = User.IsInRole("Admin");
+                if (post.UserId == currentUserId || isAdmin)
                 {
                     _context.Posts.Remove(post);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Post deleted successfully.";
                 }
             }
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Posts/DeleteComment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(int commentId)
+        {
+            var comment = await _context.Comments.FindAsync(commentId);
+            if (comment != null)
+            {
+                var currentUserId = GetCurrentUserId();
+                bool isAdmin = User.IsInRole("Admin");
+                if (comment.UserId == currentUserId || isAdmin)
+                {
+                    int postId = comment.PostId;
+                    _context.Comments.Remove(comment);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Comment deleted.";
+                    return RedirectToAction(nameof(Details), new { id = postId });
+                }
+            }
             return RedirectToAction(nameof(Index));
         }
 
@@ -235,6 +274,11 @@ namespace Read_It.Controllers
         [HttpPost]
         public async Task<IActionResult> VoteApi([FromBody] VoteRequestModel request)
         {
+            if (User.IsInRole("Admin"))
+            {
+                return Json(new { success = false, message = "Administrators are neutral and cannot vote on community content." });
+            }
+
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {
@@ -314,6 +358,14 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Vote(int targetId, string targetType, int direction, string? returnUrl)
         {
+            if (User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Administrators cannot vote on community content.";
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction(nameof(Index));
+            }
+
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {
@@ -367,8 +419,14 @@ namespace Read_It.Controllers
                 return RedirectToAction(nameof(Details), new { id = postId });
             }
 
-            var post = await _context.Posts.FindAsync(postId);
+            var post = await _context.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == postId);
             if (post == null) return NotFound();
+
+            if (post.IsLocked)
+            {
+                TempData["ErrorMessage"] = "This discussion thread has been locked by administration. New replies are disabled.";
+                return RedirectToAction(nameof(Details), new { id = postId });
+            }
 
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId)) return RedirectToPage("/Account/Login", new { area = "Identity" });
@@ -385,6 +443,162 @@ namespace Read_It.Controllers
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
 
+            // ── Notify Post Author ──
+            if (!string.IsNullOrEmpty(post.UserId) && post.UserId != currentUserId)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = post.UserId,
+                    Title = "New Reply on Your Post",
+                    Message = $"u/{User.Identity?.Name ?? "A student"} replied to \"{post.Title}\"",
+                    LinkUrl = $"/Posts/Details/{postId}#comment-{comment.Id}",
+                    Type = NotificationType.Reply,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // ── Notify Parent Comment Author ──
+            if (parentCommentId.HasValue)
+            {
+                var parentComment = await _context.Comments.FindAsync(parentCommentId.Value);
+                if (parentComment != null && !string.IsNullOrEmpty(parentComment.UserId) && parentComment.UserId != currentUserId && parentComment.UserId != post.UserId)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = parentComment.UserId,
+                        Title = "New Reply to Your Comment",
+                        Message = $"u/{User.Identity?.Name ?? "A student"} replied to your comment on \"{post.Title}\"",
+                        LinkUrl = $"/Posts/Details/{postId}#comment-{comment.Id}",
+                        Type = NotificationType.Reply,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Details), new { id = postId });
+        }
+
+        // POST: /Posts/ToggleBookmark
+        [HttpPost]
+        public async Task<IActionResult> ToggleBookmark(int postId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+                return Json(new { success = false, message = "Please sign in to bookmark posts." });
+
+            var existing = await _context.PostBookmarks
+                .FirstOrDefaultAsync(pb => pb.UserId == currentUserId && pb.PostId == postId);
+
+            bool isBookmarked;
+            if (existing != null)
+            {
+                _context.PostBookmarks.Remove(existing);
+                isBookmarked = false;
+            }
+            else
+            {
+                _context.PostBookmarks.Add(new PostBookmark
+                {
+                    UserId = currentUserId,
+                    PostId = postId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                isBookmarked = true;
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, isBookmarked });
+        }
+
+        // POST: /Posts/MarkAcceptedSolution
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAcceptedSolution(int postId, int commentId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
+
+            var post = await _context.Posts
+                .Include(p => p.Comments)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+
+            if (post == null) return NotFound();
+
+            // Only post author or admin can accept solution
+            bool isAdmin = User.IsInRole("Admin");
+            if (post.UserId != currentUserId && !isAdmin)
+            {
+                TempData["ErrorMessage"] = "Only the post author can mark the accepted solution.";
+                return RedirectToAction(nameof(Details), new { id = postId });
+            }
+
+            var targetComment = post.Comments.FirstOrDefault(c => c.Id == commentId);
+            if (targetComment == null) return NotFound();
+
+            // Toggle or set accepted
+            bool isCurrentlyAccepted = targetComment.IsAcceptedSolution;
+
+            foreach (var c in post.Comments)
+            {
+                c.IsAcceptedSolution = false;
+            }
+
+            if (!isCurrentlyAccepted)
+            {
+                targetComment.IsAcceptedSolution = true;
+                post.AcceptedCommentId = commentId;
+
+                // Notify comment author
+                if (!string.IsNullOrEmpty(targetComment.UserId) && targetComment.UserId != currentUserId)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = targetComment.UserId,
+                        Title = "Solution Accepted! 🎉",
+                        Message = $"Your answer on \"{post.Title}\" was marked as the accepted solution!",
+                        LinkUrl = $"/Posts/Details/{postId}#comment-{commentId}",
+                        Type = NotificationType.AcceptedSolution,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                TempData["SuccessMessage"] = "Answer marked as the accepted solution!";
+            }
+            else
+            {
+                post.AcceptedCommentId = null;
+                TempData["SuccessMessage"] = "Accepted solution unmarked.";
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Details), new { id = postId });
+        }
+
+        // POST: /Posts/ToggleLock
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleLock(int postId)
+        {
+            if (!User.IsInRole("Admin")) return Unauthorized();
+
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+
+            post.IsLocked = !post.IsLocked;
+
+            _context.AdminLogs.Add(new AdminLog
+            {
+                AdminUserId = GetCurrentUserId() ?? "admin",
+                AdminUserName = User.Identity?.Name ?? "admin",
+                ActionType = post.IsLocked ? "Lock Post" : "Unlock Post",
+                TargetDescription = $"Post #{postId} — \"{post.Title}\"",
+                Details = post.IsLocked ? "Discussion comments frozen." : "Discussion comments reopened.",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = post.IsLocked ? "Discussion thread locked." : "Discussion thread unlocked.";
             return RedirectToAction(nameof(Details), new { id = postId });
         }
 
@@ -393,6 +607,12 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReportPost(int postId, string reason)
         {
+            if (User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Admins cannot report posts. Use moderation actions instead.";
+                return RedirectToAction(nameof(Details), new { id = postId });
+            }
+
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {
@@ -424,6 +644,12 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReportComment(int commentId, string reason)
         {
+            if (User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Admins cannot report comments. Use moderation actions instead.";
+                return RedirectToAction("Index", "Posts");
+            }
+
             var currentUserId = GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
             {

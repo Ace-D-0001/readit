@@ -42,8 +42,8 @@ namespace Read_It.Controllers
             return View(courses);
         }
 
-        // GET /Courses/Details?code=CSC391&sort=hot|top|new
-        public async Task<IActionResult> Details(string code, string sort = "hot")
+        // GET /Courses/Details?code=CSC391&sort=hot|top|new&examCategory=Midterm
+        public async Task<IActionResult> Details(string code, string sort = "hot", string? examCategory = null)
         {
             if (string.IsNullOrEmpty(code)) return NotFound();
             ViewBag.ActiveSort = sort.ToLower();
@@ -97,7 +97,13 @@ namespace Read_It.Controllers
 
             // Outline & Notes resources for right column (ONLY Approved notes are publicly visible!)
             ViewBag.OutlineResources = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
-            ViewBag.NotesResources   = course.Resources.Where(r => r.Type == CourseResourceType.Notes && r.Status == ResourceStatus.Approved).ToList();
+            var approvedNotes = course.Resources.Where(r => r.Type == CourseResourceType.Notes && r.Status == ResourceStatus.Approved).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(examCategory) && !examCategory.Equals("all", StringComparison.OrdinalIgnoreCase))
+            {
+                approvedNotes = approvedNotes.Where(r => r.ExamCategory != null && r.ExamCategory.Equals(examCategory, StringComparison.OrdinalIgnoreCase));
+            }
+            ViewBag.NotesResources = approvedNotes.ToList();
+            ViewBag.ActiveExamCategory = string.IsNullOrWhiteSpace(examCategory) ? "all" : examCategory;
 
             // Post sorting
             if (sort.ToLower() == "top")
@@ -118,6 +124,12 @@ namespace Read_It.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Follow(string code)
         {
+            if (User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Administrators automatically manage and oversee all subReadIt subjects.";
+                return RedirectToAction(nameof(Details), new { code });
+            }
+
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
             if (course == null) return NotFound();
 
@@ -139,7 +151,7 @@ namespace Read_It.Controllers
         // POST /Courses/UploadNote
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadNote(string code, string title, string? description, Microsoft.AspNetCore.Http.IFormFile? file, string? url)
+        public async Task<IActionResult> UploadNote(string code, string title, string? description, string? examCategory, Microsoft.AspNetCore.Http.IFormFile? file, string? url)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
             if (course == null) return NotFound();
@@ -179,6 +191,7 @@ namespace Read_It.Controllers
                 Type = CourseResourceType.Notes,
                 Title = title.Trim(),
                 Description = description?.Trim(),
+                ExamCategory = string.IsNullOrWhiteSpace(examCategory) ? "General" : examCategory.Trim(),
                 Url = !string.IsNullOrWhiteSpace(url) ? url.Trim() : (filePath ?? string.Empty),
                 FilePath = filePath,
                 UploadedByUserId = currentUserId,
