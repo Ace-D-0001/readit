@@ -7,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -15,8 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders()
-    .AddDefaultUI();
+    .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -39,6 +37,34 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Redirect legacy /Identity/Account endpoints to custom MVC /Account endpoints
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/Identity/Account/Login", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/Account/Login");
+        return;
+    }
+    if (path.StartsWith("/Identity/Account/Register", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/Account/Register");
+        return;
+    }
+    if (path.StartsWith("/Identity/Account/Logout", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/Account/Logout");
+        return;
+    }
+    if (path.StartsWith("/Identity/Account/ForgotPassword", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/Account/ForgotPassword");
+        return;
+    }
+    await next();
+});
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -50,8 +76,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
-app.MapRazorPages();
 
 Read_It.DbSeeder.Seed(app);
 
