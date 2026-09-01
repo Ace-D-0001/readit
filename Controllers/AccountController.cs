@@ -289,6 +289,9 @@ namespace Read_It.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
+            HttpContext.Response.Cookies.Delete(".AspNetCore.Identity.Application");
+            HttpContext.Response.Cookies.Delete(".AspNetCore.Antiforgery");
+            TempData["SuccessMessage"] = "You have been signed out successfully.";
             return RedirectToAction("Index", "Home");
         }
     }

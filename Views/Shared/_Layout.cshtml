@@ -80,8 +80,8 @@
                     <i class="bi bi-person-badge fs-5" style="color: var(--warning);"></i>
                 </a>
 
-                <a href="/Account/Logout" class="btn-ghost" title="Sign Out" style="font-size: 12px; color: var(--text-muted);">
-                    <i class="bi bi-box-arrow-right"></i>
+                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2" title="Sign Out" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-box-arrow-right"></i> Sign Out
                 </a>
             }
             else if (User.Identity?.IsAuthenticated == true)
@@ -114,8 +114,8 @@
                 <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 10px;">
                     <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
                 </a>
-                <a href="/Account/Logout" class="btn-ghost" title="Sign Out" style="font-size: 12px; color: var(--text-muted);">
-                    <i class="bi bi-box-arrow-right"></i>
+                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2" title="Sign Out" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-box-arrow-right"></i> Sign Out
                 </a>
             }
             else
@@ -251,6 +251,14 @@ else
                     <i class="bi bi-compass"></i>
                     <span style="font-weight: 600;">Explore all subReadIts</span>
                 </a>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a href="/Account/Logout" class="sidebar-item text-danger mt-2" style="font-size: 12px; font-weight: 600;">
+                        <i class="bi bi-box-arrow-right text-danger"></i>
+                        <span>Sign Out (@User.Identity.Name)</span>
+                    </a>
+                }
             </div>
         </aside>
 
@@ -425,6 +433,12 @@ else
             <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 — Data Structures</a>
             <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 — Database Systems</a>
             <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 — Numerical Analysis</a>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <hr class="divider" />
+                <a href="/Account/Logout" class="sidebar-item text-danger" style="font-weight: 600;"><i class="bi bi-box-arrow-right text-danger"></i> Sign Out (@User.Identity.Name)</a>
+            }
         </div>
     </div>
 }

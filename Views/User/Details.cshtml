@@ -55,10 +55,15 @@
                     </h1>
                     @if (isOwnProfile)
                     {
-                        <button type="button" class="btn-outline" style="padding: 4px 14px; font-size: var(--text-xs);"
-                                onclick="toggleBioForm()">
-                            <i class="bi bi-pencil-fill"></i> Edit Bio
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn-outline" style="padding: 4px 14px; font-size: var(--text-xs);"
+                                    onclick="toggleBioForm()">
+                                <i class="bi bi-pencil-fill"></i> Edit Bio
+                            </button>
+                            <a href="/Account/Logout" class="btn btn-sm btn-outline-danger" style="padding: 4px 14px; font-size: var(--text-xs); font-weight: 600;">
+                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                            </a>
+                        </div>
                     }
                 </div>
 
