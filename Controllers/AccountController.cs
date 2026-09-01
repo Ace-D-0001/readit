@@ -26,6 +26,13 @@ namespace Read_It.Controllers
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
+            if (_signInManager.IsSignedIn(User))
+            {
+                if (User.IsInRole("Admin"))
+                    return RedirectToAction("Index", "Admin");
+                return RedirectToAction("Index", "Home");
+            }
+
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
@@ -39,14 +46,15 @@ namespace Read_It.Controllers
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                ModelState.AddModelError("", "Email and Password are required.");
+                ModelState.AddModelError("", "Email/Username and Password are required.");
                 return View();
             }
 
-            var user = await _userManager.FindByEmailAsync(email) ?? await _userManager.FindByNameAsync(email);
+            string identifier = email.Trim();
+            var user = await _userManager.FindByEmailAsync(identifier) ?? await _userManager.FindByNameAsync(identifier);
             if (user == null)
             {
-                ModelState.AddModelError("", "Invalid login attempt.");
+                ModelState.AddModelError("", "Invalid login attempt. Account not found.");
                 return View();
             }
 
@@ -56,7 +64,7 @@ namespace Read_It.Controllers
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password, isPersistent: true, lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -68,7 +76,7 @@ namespace Read_It.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError("", "Invalid credentials.");
+            ModelState.AddModelError("", "Invalid password. Please check your credentials.");
             return View();
         }
 
@@ -76,6 +84,11 @@ namespace Read_It.Controllers
         [HttpGet]
         public IActionResult AdminLogin(string? returnUrl = null)
         {
+            if (_signInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
@@ -87,7 +100,14 @@ namespace Read_It.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var user = await _userManager.FindByEmailAsync(email) ?? await _userManager.FindByNameAsync(email);
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                ModelState.AddModelError("", "Admin Email and Password are required.");
+                return View();
+            }
+
+            string identifier = email.Trim();
+            var user = await _userManager.FindByEmailAsync(identifier) ?? await _userManager.FindByNameAsync(identifier);
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid admin credentials.");
@@ -102,13 +122,16 @@ namespace Read_It.Controllers
 
             if (!await _userManager.IsInRoleAsync(user, "Admin"))
             {
-                ModelState.AddModelError("", "Access Denied: Account is not an Admin.");
+                ModelState.AddModelError("", "Access Denied: Account does not have Admin privileges.");
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password, isPersistent: true, lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
                 return RedirectToAction("Index", "Admin");
             }
 

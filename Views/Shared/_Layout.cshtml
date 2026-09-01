@@ -12,60 +12,74 @@
 </head>
 <body>
 
+@{
+    var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    bool isAuthPage = currentCtrl.Equals("Account", StringComparison.OrdinalIgnoreCase);
+}
+
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
 <header class="app-header">
     <div class="header-left">
-        <!-- Mobile hamburger -->
-        <button class="hamburger-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open menu">
-            <i class="bi bi-list"></i>
-        </button>
+        @if (!isAuthPage)
+        {
+            <!-- Mobile hamburger -->
+            <button class="hamburger-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+        }
         <!-- Logo -->
         <a href="/" aria-label="ReadIt Home">
             <img src="~/images/logo.svg" alt="ReadIt" style="height: 36px; width: auto;" />
         </a>
     </div>
 
-    <!-- Search bar — hidden on mobile via CSS -->
-    <form action="/Search" method="get" class="search-input-group" role="search">
-        <i class="bi bi-search"></i>
-        <input type="text" name="q" placeholder="Search courses or posts…" autocomplete="off" aria-label="Search" />
-        <button type="submit" class="search-btn">Search</button>
-    </form>
+    @if (!isAuthPage)
+    {
+        <!-- Search bar — hidden on mobile via CSS -->
+        <form action="/Search" method="get" class="search-input-group" role="search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" placeholder="Search courses or posts…" autocomplete="off" aria-label="Search" />
+            <button type="submit" class="search-btn">Search</button>
+        </form>
 
-    <div class="header-right">
-        @if (User.IsInRole("Admin"))
-        {
-            <a href="/Admin" class="btn-warning btn-sm py-1 px-3" style="font-weight: 700; font-size: var(--text-xs);">
-                <i class="bi bi-shield-lock-fill"></i> Admin Panel
-            </a>
-        }
+        <div class="header-right">
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Admin" class="btn-warning btn-sm py-1 px-3" style="font-weight: 700; font-size: var(--text-xs);">
+                    <i class="bi bi-shield-lock-fill"></i> Admin Panel
+                </a>
+            }
 
-        <!-- Create Post Action -->
-        <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
-            <i class="bi bi-plus-lg"></i> Create Post
-        </a>
+            <!-- Create Post Action -->
+            <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
+                <i class="bi bi-plus-lg"></i> Create Post
+            </a>
 
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 10px;">
-                <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 10px;">
+                    <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
+                </a>
+                <a href="/Account/Logout" class="btn-ghost" title="Sign Out" style="font-size: 12px; color: var(--text-muted);">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-outline py-1 px-2" style="font-size: 11px;">Sign In</a>
+                <a href="/Account/AdminLogin" class="btn-ghost py-1 px-2" style="font-size: 11px; color: var(--warning);">Admin</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="header-right">
+            <a href="/" class="btn-ghost" style="font-size: var(--text-xs); color: var(--text-muted);">
+                <i class="bi bi-arrow-left"></i> Back to Home
             </a>
-            <a href="/Account/Logout" class="btn-ghost" title="Sign Out" style="font-size: 12px; color: var(--text-muted);">
-                <i class="bi bi-box-arrow-right"></i>
-            </a>
-        }
-        else
-        {
-            <a href="/Account/Login" class="btn-outline py-1 px-2" style="font-size: 11px;">Sign In</a>
-            <a href="/Account/AdminLogin" class="btn-ghost py-1 px-2" style="font-size: 11px; color: var(--warning);">Admin</a>
-        }
-    </div>
+        </div>
+    }
 </header>
-
-@{
-    var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-    bool isAuthPage = currentCtrl.Equals("Account", StringComparison.OrdinalIgnoreCase);
-}
 
 @if (isAuthPage)
 {
@@ -253,37 +267,40 @@ else
     </div>
 }
 
-<!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header">
-        <img src="~/images/logo.svg" alt="ReadIt" style="height: 30px; width: auto;" />
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+@if (!isAuthPage)
+{
+    <!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+        <div class="offcanvas-header">
+            <img src="~/images/logo.svg" alt="ReadIt" style="height: 30px; width: auto;" />
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" style="display: flex; flex-direction: column; gap: var(--sp-1);">
+
+            <!-- Mobile search -->
+            <form action="/Search" method="get" class="offcanvas-search" role="search">
+                <i class="bi bi-search" style="color: var(--text-muted); font-size: 14px;"></i>
+                <input type="text" name="q" placeholder="Search…" autocomplete="off" />
+                <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Go</button>
+            </form>
+
+            <div class="sidebar-label">Navigation</div>
+            <a href="/"             class="sidebar-item"><i class="bi bi-house-door"></i> Home Feed</a>
+            <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
+            <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
+            <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Posts</a>
+            <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
+
+            <hr class="divider" />
+            <div class="sidebar-label">IUBAT SubSubjects</div>
+
+            <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 — Computer Architecture</a>
+            <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 — Data Structures</a>
+            <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 — Database Systems</a>
+            <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 — Numerical Analysis</a>
+        </div>
     </div>
-    <div class="offcanvas-body" style="display: flex; flex-direction: column; gap: var(--sp-1);">
-
-        <!-- Mobile search -->
-        <form action="/Search" method="get" class="offcanvas-search" role="search">
-            <i class="bi bi-search" style="color: var(--text-muted); font-size: 14px;"></i>
-            <input type="text" name="q" placeholder="Search…" autocomplete="off" />
-            <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Go</button>
-        </form>
-
-        <div class="sidebar-label">Navigation</div>
-        <a href="/"             class="sidebar-item"><i class="bi bi-house-door"></i> Home Feed</a>
-        <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
-        <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
-        <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Posts</a>
-        <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
-
-        <hr class="divider" />
-        <div class="sidebar-label">IUBAT SubSubjects</div>
-
-        <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 — Computer Architecture</a>
-        <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 — Data Structures</a>
-        <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 — Database Systems</a>
-        <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 — Numerical Analysis</a>
-    </div>
-</div>
+}
 
 <!-- ── Footer ─────────────────────────────────────────────────────────────── -->
 <footer class="app-footer">

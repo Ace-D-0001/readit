@@ -12,6 +12,20 @@
             <p style="color: var(--text-secondary); font-size: var(--text-sm);">Moderation, Reports, Notes Approval & Subpage Management</p>
         </div>
 
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
+                <i class="bi bi-check-circle-fill me-1"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
@@ -24,8 +38,9 @@
             <div style="font-size: var(--text-xs); font-weight: 700; color: var(--warning); margin-bottom: 4px;">
                 🛡️ TEST ADMIN CREDENTIALS
             </div>
-            <div style="font-size: 11px; color: var(--text-muted);">
-                Email: <code>admin@iubat.edu</code> | Password: <code>Admin123!</code>
+            <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: center; align-items: center; gap: 8px;">
+                <span><code>admin@iubat.edu</code></span>
+                <button type="button" class="btn btn-outline-warning btn-xs" style="padding: 1px 6px; font-size: 10px;" onclick="fillAdminCredentials()">Fill Form</button>
             </div>
         </div>
 
@@ -35,12 +50,12 @@
 
             <div class="mb-3">
                 <label class="form-label style-label">Admin Email or Username</label>
-                <input type="text" name="email" class="form-control" placeholder="admin@iubat.edu" required value="admin@iubat.edu" />
+                <input type="text" id="adminEmail" name="email" class="form-control" placeholder="admin@iubat.edu" required />
             </div>
 
             <div class="mb-3">
                 <label class="form-label style-label">Admin Password</label>
-                <input type="password" name="password" class="form-control" placeholder="••••••••" required value="Admin123!" />
+                <input type="password" id="adminPassword" name="password" class="form-control" placeholder="••••••••" required />
             </div>
 
             <button type="submit" class="btn btn-warning w-100 py-2 mt-2" style="font-weight: 700;">
@@ -53,3 +68,10 @@
         </div>
     </div>
 </div>
+
+<script>
+function fillAdminCredentials() {
+    document.getElementById('adminEmail').value = 'admin@iubat.edu';
+    document.getElementById('adminPassword').value = 'Admin123!';
+}
+</script>
