@@ -515,6 +515,56 @@ namespace Read_It.Controllers
             return RedirectToAction(nameof(Subpages));
         }
 
+        // POST: /Admin/DeleteResource
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteResource(int resourceId, string? returnUrl = null)
+        {
+            var resource = await _context.CourseResources.Include(r => r.Course).FirstOrDefaultAsync(r => r.Id == resourceId);
+            if (resource != null)
+            {
+                string title = resource.Title;
+                string code = resource.Course?.Code ?? "";
+                _context.CourseResources.Remove(resource);
+                await _context.SaveChangesAsync();
+
+                await LogActionAsync("Delete Resource", $"Resource #{resourceId} — \"{title}\"", $"Removed from c/{code}");
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Resource '{title}' removed successfully.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction("Notes");
+        }
+
+        // POST: /Admin/DeleteVideo
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteVideo(int videoId, string? returnUrl = null)
+        {
+            var video = await _context.CourseVideos.Include(v => v.Course).FirstOrDefaultAsync(v => v.Id == videoId);
+            if (video != null)
+            {
+                string title = video.Title;
+                string code = video.Course?.Code ?? "";
+                _context.CourseVideos.Remove(video);
+                await _context.SaveChangesAsync();
+
+                await LogActionAsync("Delete Video", $"Video #{videoId} — \"{title}\"", $"Removed from c/{code}");
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Video '{title}' removed successfully.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction("Subpages");
+        }
+
         // GET: /Admin/Users
         public async Task<IActionResult> Users(string? search = null, string? status = null, string? role = null)
         {

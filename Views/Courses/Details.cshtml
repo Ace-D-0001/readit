@@ -36,12 +36,23 @@
     {
         @foreach (var r in outlineResources)
         {
-            <a href="@r.Url" target="_blank" rel="noopener noreferrer"
-               class="resource-link right-col-item"
-               data-label="@r.Title.ToLower() outline syllabus">
-                <i class="bi bi-box-arrow-up-right"></i>
-                <span>@r.Title</span>
-            </a>
+            <div class="d-flex align-items-center justify-content-between right-col-item mb-1" data-label="@r.Title.ToLower() outline syllabus">
+                <a href="@r.Url" target="_blank" rel="noopener noreferrer" class="resource-link" style="flex: 1; min-width: 0;">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    <span class="text-truncate">@r.Title</span>
+                </a>
+                @if (User.IsInRole("Admin"))
+                {
+                    <form action="/Admin/DeleteResource" method="post" style="margin: 0;" onsubmit="return confirm('Delete this outline link?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="resourceId" value="@r.Id" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="btn btn-link text-danger p-0 ms-2" title="Delete Outline Link" style="font-size: 11px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                }
+            </div>
         }
     }
     else
@@ -95,14 +106,27 @@
             <div class="right-col-item mb-2" data-label="@r.Title.ToLower() notes pdf">
                 <div class="d-flex align-items-center justify-content-between">
                     <a href="@(!string.IsNullOrEmpty(r.FilePath) ? r.FilePath : r.Url)" target="_blank" rel="noopener noreferrer"
-                       class="resource-link" style="font-weight: 700; color: var(--text-heading);">
+                       class="resource-link" style="font-weight: 700; color: var(--text-heading); flex: 1; min-width: 0;">
                         <i class="bi bi-file-earmark-pdf-fill" style="color: var(--warning);"></i>
-                        <span>@r.Title</span>
+                        <span class="text-truncate">@r.Title</span>
                     </a>
-                    @if (!string.IsNullOrEmpty(r.ExamCategory))
-                    {
-                        <span class="badge bg-secondary" style="font-size: 9px; font-weight: 600;">@r.ExamCategory</span>
-                    }
+                    <div class="d-flex align-items-center gap-1 ms-2">
+                        @if (!string.IsNullOrEmpty(r.ExamCategory))
+                        {
+                            <span class="badge bg-secondary" style="font-size: 9px; font-weight: 600;">@r.ExamCategory</span>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <form action="/Admin/DeleteResource" method="post" style="margin: 0;" onsubmit="return confirm('Delete this note?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="resourceId" value="@r.Id" />
+                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                <button type="submit" class="btn btn-link text-danger p-0" title="Delete Note" style="font-size: 11px;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        }
+                    </div>
                 </div>
                 @if (!string.IsNullOrEmpty(r.Description))
                 {
@@ -226,7 +250,7 @@
                     var video   = videoList[i];
                     bool isBest = i == 0;
 
-                    <div class="video-entry right-col-item" data-label="@video.Title.ToLower() @topicName.ToLower() video">
+                    <div class="video-entry right-col-item d-flex align-items-center" data-label="@video.Title.ToLower() @topicName.ToLower() video">
                         <div class="video-upvote-col">
                             <form action="@Url.Action("UpvoteVideo", "Courses")" method="post" style="margin: 0;">
                                 @Html.AntiForgeryToken()
@@ -255,6 +279,17 @@
                                 <div style="font-size: 10px; color: gold; margin-top: 2px;">⭐ Best in topic</div>
                             }
                         </div>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <form action="/Admin/DeleteVideo" method="post" style="margin: 0;" onsubmit="return confirm('Delete this video?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="videoId" value="@video.Id" />
+                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                <button type="submit" class="btn btn-link text-danger p-0 ms-2" title="Delete Video" style="font-size: 11px;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        }
                     </div>
                 }
 
