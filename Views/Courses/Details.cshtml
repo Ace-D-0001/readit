@@ -16,21 +16,18 @@
 
 <!-- ── Right Column ────────────────────────────────────────────────────────── -->
 
-<!-- Scoped Search -->
-<div class="right-card" style="padding-bottom: var(--sp-3);">
-    <div style="position: relative;">
-        <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none;"></i>
-        <input type="text" id="right-col-search" placeholder="Filter resources & videos…"
-               oninput="filterRightCol(this.value)"
-               style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: var(--r-sm); color: var(--text-primary); font-family: var(--font); font-size: var(--text-sm); padding: 7px 12px 7px 32px; outline: none; transition: border-color var(--transition);" />
-    </div>
-</div>
-
 <!-- Course Outline Links -->
 <div class="right-card right-section" data-section-label="outline course outline syllabus">
     <div class="right-card-title" style="justify-content: space-between;">
         <span><i class="bi bi-link-45deg" style="color: var(--accent);"></i> Course Outline</span>
-        <button class="topic-add-btn" onclick="toggleForm('add-outline-form')">+ add</button>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button class="topic-add-btn" onclick="toggleForm('add-outline-form')">+ add</button>
+        }
+        else
+        {
+            <a href="/Account/Login" class="topic-add-btn" style="text-decoration: none;">+ add</a>
+        }
     </div>
     @if (outlineResources.Any())
     {
@@ -66,8 +63,8 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="code" value="@Model.Code" />
             <input type="hidden" name="type" value="@Read_It.Models.CourseResourceType.Outline" />
-            <input type="text" name="title" placeholder="Outline Title (e.g. Google Doc link)" required class="form-control" style="margin-bottom: var(--sp-2);" />
-            <input type="url"  name="url"   placeholder="Web URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="text" name="title" placeholder="Outline Title (e.g. Notion or Syllabus link)" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="url"  name="url"   placeholder="Web URL (e.g. https://...)" required class="form-control" style="margin-bottom: var(--sp-2);" />
             <div style="display: flex; gap: var(--sp-2);">
                 <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add Link</button>
                 <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-outline-form')">Cancel</button>
@@ -80,9 +77,13 @@
 <div class="right-card right-section" data-section-label="notes approved pdf study materials" id="notes">
     <div class="right-card-title" style="justify-content: space-between;">
         <span><i class="bi bi-journal-text" style="color: var(--warning);"></i> Course Notes</span>
-        @if (!User.IsInRole("Admin"))
+        @if (User.Identity?.IsAuthenticated == true)
         {
             <button class="topic-add-btn" onclick="toggleForm('upload-note-form')">+ upload note</button>
+        }
+        else
+        {
+            <a href="/Account/Login" class="topic-add-btn" style="text-decoration: none;">+ upload note</a>
         }
     </div>
 
@@ -168,8 +169,8 @@
 
             <input type="url" name="url" placeholder="External Google Drive / Web Link" class="form-control mb-2" style="font-size: 11px;" />
 
-            <div style="font-size: 10px; color: var(--warning); margin-bottom: 8px;">
-                ⚠️ Note: Uploaded notes require admin approval before becoming public.
+            <div style="font-size: 10px; color: var(--accent); margin-bottom: 8px;">
+                <i class="bi bi-check-circle-fill"></i> Uploaded notes are immediately available to all students.
             </div>
 
             <div style="display: flex; gap: var(--sp-2);">
@@ -180,10 +181,10 @@
     </div>
 </div>
 
-<!-- Follow / Admin Subpage Control -->
-<div class="right-card">
-    @if (User.IsInRole("Admin"))
-    {
+@if (User.IsInRole("Admin"))
+{
+    <!-- Admin Subpage Control -->
+    <div class="right-card">
         <div style="border-left: 3px solid var(--warning); padding-left: 8px;">
             <div style="font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 6px;">
                 <i class="bi bi-shield-lock-fill"></i> Admin Subpage Controls
@@ -197,29 +198,8 @@
                 </a>
             </div>
         </div>
-    }
-    else
-    {
-        <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post">
-            @Html.AntiForgeryToken()
-            <div style="display: flex; align-items: center; gap: var(--sp-3);">
-                <button type="submit" class="@(isFollowing ? "btn-outline" : "btn-primary")" style="flex: 1;">
-                    @if (isFollowing)
-                    {
-                        <i class="bi bi-check-circle-fill"></i> <text>Following</text>
-                    }
-                    else
-                    {
-                        <i class="bi bi-plus-lg"></i> <text>Follow</text>
-                    }
-                </button>
-                <span style="font-size: var(--text-xs); color: var(--text-secondary); white-space: nowrap;">
-                    @followerCount followers
-                </span>
-            </div>
-        </form>
-    }
-</div>
+    </div>
+}
 
 <!-- YouTube Videos by Topic -->
 <div class="right-card right-section" data-section-label="video youtube">
@@ -367,31 +347,44 @@ function toggleForm(id) {
         <div class="course-banner-icon">
             @Model.Code.Substring(0, Math.Min(3, Model.Code.Length))
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-3);">
-            <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-3); width: 100%;">
+            <div style="flex: 1; min-width: 260px;">
                 <div style="display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-1);">
                     <h1 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-heading); margin: 0;">
                         c/@Model.Code — @Model.Title
                     </h1>
+                    <span class="badge" style="background: rgba(255, 69, 0, 0.12); color: var(--accent); border: 1px solid rgba(255, 69, 0, 0.3); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="bi bi-people-fill"></i> @followerCount @(followerCount == 1 ? "follower" : "followers")
+                    </span>
                 </div>
                 <p style="color: var(--text-secondary); font-size: var(--text-sm); margin: 0; max-width: 600px; line-height: 1.6;">@Model.Description</p>
             </div>
             @if (User.IsInRole("Admin"))
             {
-                <div style="display: flex; gap: 8px;">
-                    <a href="/Admin/CreateAnnouncement?courseCode=@Model.Code" class="btn-warning py-2 px-3" style="font-size: 13px; font-weight: 700;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="/Admin/CreateAnnouncement?courseCode=@Model.Code" class="btn-warning py-2 px-3" style="font-size: 13px; font-weight: 700; border-radius: 8px;">
                         <i class="bi bi-megaphone-fill"></i> Post Notice
                     </a>
-                    <a href="/Admin/EditSubpage/@Model.Id" class="btn-outline py-2 px-3" style="font-size: 13px;">
+                    <a href="/Admin/EditSubpage/@Model.Id" class="btn-outline py-2 px-3" style="font-size: 13px; border-radius: 8px;">
                         <i class="bi bi-gear-fill"></i> Manage
                     </a>
                 </div>
             }
             else
             {
-                <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary">
-                    <i class="bi bi-plus-lg"></i> Create Post
-                </a>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn @(isFollowing ? "btn-outline-secondary" : "btn-outline-primary")" style="border-radius: 20px; font-size: 13px; font-weight: 600; padding: 6px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="bi @(isFollowing ? "bi-check-circle-fill text-success" : "bi-plus-lg")"></i>
+                            <span>@(isFollowing ? "Following" : "Follow")</span>
+                        </button>
+                    </form>
+
+                    <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary" style="border-radius: 20px; font-size: 13px; padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-pencil-square"></i> Create Post
+                    </a>
+                </div>
             }
         </div>
     </div>

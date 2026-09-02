@@ -88,9 +88,9 @@ namespace Read_It.Controllers
             ViewBag.IsFollowing = isFollowing;
             ViewBag.UserPostVotes = userPostVotes;
 
-            // Outline & Notes resources for right column (ONLY Approved notes are publicly visible!)
-            ViewBag.OutlineResources = course.Resources.Where(r => r.Type == CourseResourceType.Outline).ToList();
-            var approvedNotes = course.Resources.Where(r => r.Type == CourseResourceType.Notes && r.Status == ResourceStatus.Approved).AsQueryable();
+            // Outline & Notes resources for right column (All published and non-rejected resources are publicly visible)
+            ViewBag.OutlineResources = course.Resources.Where(r => r.Type == CourseResourceType.Outline && r.Status != ResourceStatus.Rejected).ToList();
+            var approvedNotes = course.Resources.Where(r => r.Type == CourseResourceType.Notes && r.Status != ResourceStatus.Rejected).AsQueryable();
             if (!string.IsNullOrWhiteSpace(examCategory) && !examCategory.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
                 approvedNotes = approvedNotes.Where(r => r.ExamCategory != null && r.ExamCategory.Equals(examCategory, StringComparison.OrdinalIgnoreCase));
@@ -188,14 +188,14 @@ namespace Read_It.Controllers
                 Url = !string.IsNullOrWhiteSpace(url) ? url.Trim() : (filePath ?? string.Empty),
                 FilePath = filePath,
                 UploadedByUserId = currentUserId,
-                Status = ResourceStatus.Pending, // MUST be Pending until approved by admin
+                Status = ResourceStatus.Approved,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.CourseResources.Add(noteResource);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Your note has been submitted successfully! It is currently PENDING admin approval before becoming publicly visible.";
+            TempData["SuccessMessage"] = "Your note has been uploaded successfully and is now visible to all students!";
             return RedirectToAction(nameof(Details), new { code });
         }
 
@@ -223,6 +223,7 @@ namespace Read_It.Controllers
                     CreatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Course outline link added successfully and is now visible to all students!";
             }
 
             return RedirectToAction(nameof(Details), new { code });
