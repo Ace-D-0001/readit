@@ -195,6 +195,12 @@ namespace Read_It.Controllers
             _context.CourseResources.Add(noteResource);
             await _context.SaveChangesAsync();
 
+            // ── Notify Admins ──
+            await NotifyAdminsAsync(
+                "📚 New Study Note Uploaded",
+                $"u/{User.Identity?.Name ?? "A student"} uploaded note \"{noteResource.Title}\" in c/{course.Code}",
+                $"/Courses/Details?code={course.Code}#notes");
+
             TempData["SuccessMessage"] = "Your note has been uploaded successfully and is now visible to all students!";
             return RedirectToAction(nameof(Details), new { code });
         }
@@ -212,17 +218,31 @@ namespace Read_It.Controllers
 
             if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(url))
             {
+                var cleanUrl = url.Trim();
+                if (!cleanUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                    !cleanUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanUrl = "https://" + cleanUrl;
+                }
+
                 _context.CourseResources.Add(new CourseResource
                 {
                     CourseId = course.Id,
                     Type = type,
                     Title = title.Trim(),
-                    Url = url.Trim(),
+                    Url = cleanUrl,
                     UploadedByUserId = currentUserId,
                     Status = ResourceStatus.Approved,
                     CreatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
+
+                // ── Notify Admins ──
+                await NotifyAdminsAsync(
+                    "🔗 New Course Outline Link",
+                    $"u/{User.Identity?.Name ?? "A student"} added outline link \"{title.Trim()}\" in c/{course.Code}",
+                    $"/Courses/Details?code={course.Code}");
+
                 TempData["SuccessMessage"] = "Course outline link added successfully and is now visible to all students!";
             }
 
@@ -242,12 +262,19 @@ namespace Read_It.Controllers
 
             if (!string.IsNullOrWhiteSpace(topic) && !string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(videoUrl))
             {
+                var cleanUrl = videoUrl.Trim();
+                if (!cleanUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                    !cleanUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanUrl = "https://" + cleanUrl;
+                }
+
                 var video = new CourseVideo
                 {
                     CourseId           = course.Id,
                     Topic              = topic.Trim(),
                     Title              = title.Trim(),
-                    VideoUrl           = videoUrl.Trim(),
+                    VideoUrl           = cleanUrl,
                     SubmittedByUserId  = currentUserId,
                     SubmittedAt        = DateTime.UtcNow,
                     UpVotes            = 1
@@ -264,6 +291,14 @@ namespace Read_It.Controllers
                     VoteValue = 1
                 });
                 await _context.SaveChangesAsync();
+
+                // ── Notify Admins ──
+                await NotifyAdminsAsync(
+                    "🎥 New Course Video Added",
+                    $"u/{User.Identity?.Name ?? "A student"} added video \"{video.Title}\" under topic \"{video.Topic}\" in c/{course.Code}",
+                    $"/Courses/Details?code={course.Code}");
+
+                TempData["SuccessMessage"] = "Video submitted successfully and is now live for all students!";
             }
 
             return RedirectToAction(nameof(Details), new { code });
@@ -294,11 +329,58 @@ namespace Read_It.Controllers
                         // Add vote
                         _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = VoteTargetType.Video, TargetId = videoId, VoteValue = 1 });
                         video.UpVotes++;
+
+                        // ── Notify Video Submitter ──
+                        if (!string.IsNullOrEmpty(video.SubmittedByUserId) && video.SubmittedByUserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = video.SubmittedByUserId,
+                                Title = "New Upvote on your video! ⭐",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} upvoted your video \"{video.Title}\" in c/{code}",
+                                LinkUrl = $"/Courses/Details?code={code}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     await _context.SaveChangesAsync();
                 }
             }
             return RedirectToAction(nameof(Details), new { code });
+        }
+
+        private async Task NotifyAdminsAsync(string title, string message, string linkUrl, NotificationType type = NotificationType.System)
+        {
+            try
+            {
+                var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+                if (adminRole != null)
+                {
+                    var adminUserIds = await _context.UserRoles
+                        .Where(ur => ur.RoleId == adminRole.Id)
+                        .Select(ur => ur.UserId)
+                        .ToListAsync();
+
+                    foreach (var adminId in adminUserIds)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId = adminId,
+                            Title = title,
+                            Message = message,
+                            LinkUrl = linkUrl,
+                            Type = type,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notification Error] {ex.Message}");
+            }
         }
 
         private string? GetCurrentUserId()

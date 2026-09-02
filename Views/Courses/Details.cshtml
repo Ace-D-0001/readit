@@ -64,7 +64,7 @@
             <input type="hidden" name="code" value="@Model.Code" />
             <input type="hidden" name="type" value="@Read_It.Models.CourseResourceType.Outline" />
             <input type="text" name="title" placeholder="Outline Title (e.g. Notion or Syllabus link)" required class="form-control" style="margin-bottom: var(--sp-2);" />
-            <input type="url"  name="url"   placeholder="Web URL (e.g. https://...)" required class="form-control" style="margin-bottom: var(--sp-2);" />
+            <input type="text" name="url"   placeholder="Web URL (e.g. https://... or Notion link)" required class="form-control" style="margin-bottom: var(--sp-2);" />
             <div style="display: flex; gap: var(--sp-2);">
                 <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add Link</button>
                 <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-outline-form')">Cancel</button>
@@ -98,6 +98,7 @@
         <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Final Exam#notes" class="badge @(activeExamCat == "Final Exam" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Finals</a>
         <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Lab / Assignment#notes" class="badge @(activeExamCat == "Lab / Assignment" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Labs</a>
         <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=Lecture Notes#notes" class="badge @(activeExamCat == "Lecture Notes" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">Lectures</a>
+        <a href="/Courses/Details?code=@Model.Code&sort=@currentSort&examCategory=General#notes" class="badge @(activeExamCat == "General" ? "bg-warning text-dark" : "bg-dark text-white border border-secondary") text-decoration-none" style="font-size: 10px; padding: 4px 6px;">General</a>
     </div>
 
     @if (notesResources.Any())
@@ -152,11 +153,11 @@
             <div class="mb-2">
                 <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Exam & Study Category:</label>
                 <select name="examCategory" class="form-select form-select-sm bg-dark text-white border-secondary" style="font-size: 11px;">
+                    <option value="Lecture Notes" selected>Lecture Notes & Slides</option>
                     <option value="Midterm">Midterm Exam Preparation</option>
                     <option value="Final Exam">Final Exam Comprehensive</option>
                     <option value="Lab / Assignment">Lab / Assignment Solution</option>
-                    <option value="Lecture Notes">Lecture Notes & Slides</option>
-                    <option value="General" selected>General Study Material</option>
+                    <option value="General">General Study Material</option>
                 </select>
             </div>
 
@@ -167,7 +168,7 @@
 
             <div class="mb-2 text-center" style="font-size: 10px; color: var(--text-muted);">- OR -</div>
 
-            <input type="url" name="url" placeholder="External Google Drive / Web Link" class="form-control mb-2" style="font-size: 11px;" />
+            <input type="text" name="url" placeholder="External Google Drive / Web Link" class="form-control mb-2" style="font-size: 11px;" />
 
             <div style="font-size: 10px; color: var(--accent); margin-bottom: 8px;">
                 <i class="bi bi-check-circle-fill"></i> Uploaded notes are immediately available to all students.
@@ -222,6 +223,10 @@
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         <button class="topic-add-btn" onclick="toggleForm('add-video-form-@(Uri.EscapeDataString(topicName))')">+ add</button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" class="topic-add-btn" style="text-decoration: none;">+ add</a>
                     }
                 </div>
 
@@ -279,7 +284,7 @@
                         <input type="hidden" name="code"  value="@Model.Code" />
                         <input type="hidden" name="topic" value="@topicName" />
                         <input type="text" name="title"    placeholder="Video title" required class="form-control" style="margin-bottom: var(--sp-2);" />
-                        <input type="url"  name="videoUrl" placeholder="YouTube URL" required class="form-control" style="margin-bottom: var(--sp-2);" />
+                        <input type="text" name="videoUrl" placeholder="YouTube URL (e.g. https://...)" required class="form-control" style="margin-bottom: var(--sp-2);" />
                         <div style="display: flex; gap: var(--sp-2);">
                             <button type="submit" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Add</button>
                             <button type="button" class="btn-ghost" style="font-size: 12px;" onclick="toggleForm('add-video-form-@(Uri.EscapeDataString(topicName))')">Cancel</button>
@@ -294,9 +299,9 @@
         <p style="color: var(--text-muted); font-size: var(--text-sm); margin: 0;">No videos submitted yet.</p>
     }
 
-    @if (User.Identity?.IsAuthenticated == true)
-    {
-        <div style="border-top: 1px solid var(--border-default); margin-top: var(--sp-3); padding-top: var(--sp-3);">
+    <div style="border-top: 1px solid var(--border-default); margin-top: var(--sp-3); padding-top: var(--sp-3);">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
             <button class="action-btn" style="font-size: var(--text-xs); color: var(--accent); width: 100%; justify-content: center;"
                     onclick="toggleForm('new-topic-form')">
                 <i class="bi bi-plus-circle"></i> Submit video under new topic
@@ -307,12 +312,18 @@
                     <input type="hidden" name="code" value="@Model.Code" />
                     <input type="text" name="topic"    placeholder="Topic (e.g. Recursion)" required class="form-control" style="margin-bottom: var(--sp-2);" />
                     <input type="text" name="title"    placeholder="Video title"            required class="form-control" style="margin-bottom: var(--sp-2);" />
-                    <input type="url"  name="videoUrl" placeholder="YouTube URL"            required class="form-control" style="margin-bottom: var(--sp-2);" />
+                    <input type="text" name="videoUrl" placeholder="YouTube URL (e.g. https://...)" required class="form-control" style="margin-bottom: var(--sp-2);" />
                     <button type="submit" class="btn-primary" style="padding: 4px 14px; font-size: 12px;">Submit</button>
                 </form>
             </div>
-        </div>
-    }
+        }
+        else
+        {
+            <a href="/Account/Login" class="action-btn" style="font-size: var(--text-xs); color: var(--accent); width: 100%; justify-content: center; text-decoration: none;">
+                <i class="bi bi-plus-circle"></i> Sign in to submit a video
+            </a>
+        }
+    </div>
 </div>
 
 

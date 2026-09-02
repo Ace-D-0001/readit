@@ -87,16 +87,6 @@
                     </div>
                 }
 
-                <div style="display: flex; gap: var(--sp-4); font-size: var(--text-xs); color: var(--text-muted); flex-wrap: wrap;">
-                    <span><i class="bi bi-trophy-fill" style="color: var(--warning);"></i> <strong>@totalKarma</strong> Karma</span>
-                    <span><i class="bi bi-file-post"></i> <strong>@posts.Count()</strong> Posts</span>
-                    <span><i class="bi bi-chat-text"></i> <strong>@comments.Count()</strong> Comments</span>
-                    <span><i class="bi bi-bookmark-heart-fill" style="color: var(--accent);"></i> <strong>@followedCourses.Count()</strong> Followed SubSubjects</span>
-                    @if (isOwnProfile)
-                    {
-                        <span><i class="bi bi-bookmark-star-fill text-warning"></i> <strong>@bookmarkedPosts.Count()</strong> Saved</span>
-                    }
-                </div>
             </div>
         </div>
     </div>

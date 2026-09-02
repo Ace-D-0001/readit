@@ -180,6 +180,13 @@ namespace Read_It.Controllers
                     VoteValue = 1
                 });
                 await _context.SaveChangesAsync();
+
+                // ── Notify Admins of New Post Request / Submission ──
+                var courseObj = await _context.Courses.FindAsync(courseId);
+                await NotifyAdminsAsync(
+                    "📝 New Post Created",
+                    $"u/{User.Identity?.Name ?? "A student"} posted \"{post.Title}\" in c/{courseObj?.Code ?? "Subject"}",
+                    $"/Posts/Details/{post.Id}");
             }
 
             return RedirectToAction(nameof(Details), new { id = post.Id });
@@ -309,6 +316,20 @@ namespace Read_It.Controllers
                         _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = request.TargetId, VoteValue = voteVal });
                         if (voteVal == 1) post.UpVotes++; else post.DownVotes++;
                         userVote = voteVal;
+
+                        // ── Notify Post Author ──
+                        if (!string.IsNullOrEmpty(post.UserId) && post.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = post.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your post! ⬆️" : "Vote on your post ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} {(voteVal == 1 ? "upvoted" : "downvoted")} your post \"{post.Title}\"",
+                                LinkUrl = $"/Posts/Details/{post.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (existingVote.VoteValue == voteVal)
                     {
@@ -322,6 +343,20 @@ namespace Read_It.Controllers
                         if (voteVal == 1) { post.UpVotes++; post.DownVotes--; }
                         else { post.DownVotes++; post.UpVotes--; }
                         userVote = voteVal;
+
+                        // ── Notify Post Author ──
+                        if (!string.IsNullOrEmpty(post.UserId) && post.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = post.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your post! ⬆️" : "Vote on your post ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} changed vote to {(voteVal == 1 ? "upvote" : "downvote")} on \"{post.Title}\"",
+                                LinkUrl = $"/Posts/Details/{post.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     await _context.SaveChangesAsync();
                     newScore = post.UpVotes - post.DownVotes;
@@ -329,7 +364,7 @@ namespace Read_It.Controllers
             }
             else if (typeEnum == VoteTargetType.Comment)
             {
-                var comment = await _context.Comments.FindAsync(request.TargetId);
+                var comment = await _context.Comments.Include(c => c.Post).FirstOrDefaultAsync(c => c.Id == request.TargetId);
                 if (comment != null)
                 {
                     if (existingVote == null)
@@ -337,6 +372,20 @@ namespace Read_It.Controllers
                         _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = request.TargetId, VoteValue = voteVal });
                         if (voteVal == 1) comment.UpVotes++; else comment.DownVotes++;
                         userVote = voteVal;
+
+                        // ── Notify Comment Author ──
+                        if (!string.IsNullOrEmpty(comment.UserId) && comment.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = comment.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your comment! ⬆️" : "Vote on your comment ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} {(voteVal == 1 ? "upvoted" : "downvoted")} your comment on \"{comment.Post?.Title ?? "a post"}\"",
+                                LinkUrl = $"/Posts/Details/{comment.PostId}#comment-{comment.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (existingVote.VoteValue == voteVal)
                     {
@@ -350,6 +399,20 @@ namespace Read_It.Controllers
                         if (voteVal == 1) { comment.UpVotes++; comment.DownVotes--; }
                         else { comment.DownVotes++; comment.UpVotes--; }
                         userVote = voteVal;
+
+                        // ── Notify Comment Author ──
+                        if (!string.IsNullOrEmpty(comment.UserId) && comment.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = comment.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your comment! ⬆️" : "Vote on your comment ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} changed vote to {(voteVal == 1 ? "upvote" : "downvote")} on your comment",
+                                LinkUrl = $"/Posts/Details/{comment.PostId}#comment-{comment.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     await _context.SaveChangesAsync();
                     newScore = comment.UpVotes - comment.DownVotes;
@@ -393,6 +456,19 @@ namespace Read_It.Controllers
                     {
                         _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = targetId, VoteValue = voteVal });
                         if (voteVal == 1) post.UpVotes++; else post.DownVotes++;
+
+                        if (!string.IsNullOrEmpty(post.UserId) && post.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = post.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your post! ⬆️" : "Vote on your post ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} {(voteVal == 1 ? "upvoted" : "downvoted")} your post \"{post.Title}\"",
+                                LinkUrl = $"/Posts/Details/{post.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (existingVote.VoteValue == voteVal)
                     {
@@ -404,6 +480,43 @@ namespace Read_It.Controllers
                         existingVote.VoteValue = voteVal;
                         if (voteVal == 1) { post.UpVotes++; post.DownVotes--; }
                         else { post.DownVotes++; post.UpVotes--; }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else if (typeEnum == VoteTargetType.Comment)
+            {
+                var comment = await _context.Comments.Include(c => c.Post).FirstOrDefaultAsync(c => c.Id == targetId);
+                if (comment != null)
+                {
+                    if (existingVote == null)
+                    {
+                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = typeEnum, TargetId = targetId, VoteValue = voteVal });
+                        if (voteVal == 1) comment.UpVotes++; else comment.DownVotes++;
+
+                        if (!string.IsNullOrEmpty(comment.UserId) && comment.UserId != currentUserId)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                UserId = comment.UserId,
+                                Title = voteVal == 1 ? "New Upvote on your comment! ⬆️" : "Vote on your comment ⬇️",
+                                Message = $"u/{User.Identity?.Name ?? "A student"} {(voteVal == 1 ? "upvoted" : "downvoted")} your comment on \"{comment.Post?.Title ?? "a post"}\"",
+                                LinkUrl = $"/Posts/Details/{comment.PostId}#comment-{comment.Id}",
+                                Type = NotificationType.System,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                    else if (existingVote.VoteValue == voteVal)
+                    {
+                        _context.Votes.Remove(existingVote);
+                        if (voteVal == 1) comment.UpVotes--; else comment.DownVotes--;
+                    }
+                    else
+                    {
+                        existingVote.VoteValue = voteVal;
+                        if (voteVal == 1) { comment.UpVotes++; comment.DownVotes--; }
+                        else { comment.DownVotes++; comment.UpVotes--; }
                     }
                     await _context.SaveChangesAsync();
                 }
@@ -455,8 +568,8 @@ namespace Read_It.Controllers
                 _context.Notifications.Add(new Notification
                 {
                     UserId = post.UserId,
-                    Title = "New Reply on Your Post",
-                    Message = $"u/{User.Identity?.Name ?? "A student"} replied to \"{post.Title}\"",
+                    Title = parentCommentId.HasValue ? "New Reply in Your Discussion 💬" : "New Comment on Your Post 💬",
+                    Message = $"u/{User.Identity?.Name ?? "A student"} {(parentCommentId.HasValue ? "replied in" : "commented on")} \"{post.Title}\"",
                     LinkUrl = $"/Posts/Details/{postId}#comment-{comment.Id}",
                     Type = NotificationType.Reply,
                     CreatedAt = DateTime.UtcNow
@@ -472,7 +585,7 @@ namespace Read_It.Controllers
                     _context.Notifications.Add(new Notification
                     {
                         UserId = parentComment.UserId,
-                        Title = "New Reply to Your Comment",
+                        Title = "New Reply to Your Comment 💬",
                         Message = $"u/{User.Identity?.Name ?? "A student"} replied to your comment on \"{post.Title}\"",
                         LinkUrl = $"/Posts/Details/{postId}#comment-{comment.Id}",
                         Type = NotificationType.Reply,
@@ -641,6 +754,14 @@ namespace Read_It.Controllers
             _context.Reports.Add(report);
             await _context.SaveChangesAsync();
 
+            // ── Notify Admins ──
+            var reportedPost = await _context.Posts.FindAsync(postId);
+            await NotifyAdminsAsync(
+                "🚩 Post Reported by Student",
+                $"u/{User.Identity?.Name ?? "A student"} reported post \"{reportedPost?.Title ?? "a post"}\": {report.Reason}",
+                "/Admin/Reports",
+                NotificationType.Warning);
+
             TempData["SuccessMessage"] = "Thank you! Your report has been submitted to the admin for review.";
             return RedirectToAction(nameof(Details), new { id = postId });
         }
@@ -678,8 +799,48 @@ namespace Read_It.Controllers
             _context.Reports.Add(report);
             await _context.SaveChangesAsync();
 
+            // ── Notify Admins ──
+            await NotifyAdminsAsync(
+                "🚩 Comment Reported by Student",
+                $"u/{User.Identity?.Name ?? "A student"} reported a comment: {report.Reason}",
+                "/Admin/Reports",
+                NotificationType.Warning);
+
             TempData["SuccessMessage"] = "Thank you! Your comment report has been submitted to the admin.";
             return RedirectToAction(nameof(Details), new { id = comment.PostId });
+        }
+
+        private async Task NotifyAdminsAsync(string title, string message, string linkUrl, NotificationType type = NotificationType.System)
+        {
+            try
+            {
+                var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+                if (adminRole != null)
+                {
+                    var adminUserIds = await _context.UserRoles
+                        .Where(ur => ur.RoleId == adminRole.Id)
+                        .Select(ur => ur.UserId)
+                        .ToListAsync();
+
+                    foreach (var adminId in adminUserIds)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId = adminId,
+                            Title = title,
+                            Message = message,
+                            LinkUrl = linkUrl,
+                            Type = type,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notification Error] {ex.Message}");
+            }
         }
 
         private string? GetCurrentUserId()
