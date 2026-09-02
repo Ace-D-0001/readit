@@ -98,29 +98,29 @@ function completePageChangeAnimation() {
     }
 }
 
-// First-time site arrival & page load splash handling (2.5s duration)
+// First-time site arrival & page load splash handling (2.0s duration)
 document.addEventListener('DOMContentLoaded', () => {
     const splash = document.getElementById('readit-page-transition');
     const splashEye = document.getElementById('splash-eye-right');
 
     if (splash) {
-        // Full 2.5s welcoming mascot choreography:
+        // Crisp 2.0s welcoming mascot choreography:
         // 0.0s: Pop in & float
-        // 0.6s: First wink
-        // 1.2s: Open eyes & wing flutter
-        // 1.6s: Second playful wink & cheerful glow
-        // 2.5s: Smooth cinematic fade into the app
+        // 0.5s: Playful eye wink
+        // 1.0s: Eyes open with orange glow
+        // 1.4s: Second gentle wink & flutter
+        // 2.0s: Smooth fade into the app
         if (splashEye) {
-            setTimeout(() => splashEye.classList.add('winking'), 600);
-            setTimeout(() => splashEye.classList.remove('winking'), 1200);
-            setTimeout(() => splashEye.classList.add('winking'), 1600);
-            setTimeout(() => splashEye.classList.remove('winking'), 2150);
+            setTimeout(() => splashEye.classList.add('winking'), 500);
+            setTimeout(() => splashEye.classList.remove('winking'), 1000);
+            setTimeout(() => splashEye.classList.add('winking'), 1400);
+            setTimeout(() => splashEye.classList.remove('winking'), 1800);
         }
 
         setTimeout(() => {
             splash.classList.add('hidden-splash');
             triggerPageChangeAnimation();
-        }, 2500);
+        }, 2000);
     }
 
     // Interactive Header Mascot hover wink
