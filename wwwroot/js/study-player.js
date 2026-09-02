@@ -1,20 +1,66 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   STUDY MUSIC PLAYER — ITUNES 30s PREVIEWS ONLY
-   - Single HTML5 Audio Element for playback
-   - Fast iTunes search for 30s previews
-   - SessionStorage state persistence across page reloads
-   - BroadcastChannel UI state synchronization
+   SPOTIFY PC & MOBILE BOTTOM MUSIC PLAYER
+   - Full-Length YouTube Songs & Playlists (via YouTube IFrame API)
+   - HTML5 Audio fallback for preview streams
+   - Spotify PC 3-column bottom bar + Spotify Mobile mini-player
+   - Cross-tab synchronization via BroadcastChannel
+   - Persistent playback state across seamless PJAX navigation
    ══════════════════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
     initStudyMusicPlayer();
 });
 
+let ytPlayer = null;
+let ytReady = false;
+let pendingYtVideoId = null;
+
+// YouTube IFrame API Callback
+window.onYouTubeIframeAPIReady = function () {
+    const hostEl = document.getElementById('sp-yt-host');
+    if (!hostEl) return;
+
+    ytPlayer = new YT.Player('sp-yt-host', {
+        height: '200',
+        width: '200',
+        playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            modestbranding: 1,
+            rel: 0
+        },
+        events: {
+            onReady: (event) => {
+                ytReady = true;
+                const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
+                if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(savedVol * 100);
+                if (pendingYtVideoId) {
+                    ytPlayer.loadVideoById(pendingYtVideoId);
+                    pendingYtVideoId = null;
+                }
+            },
+            onStateChange: (event) => {
+                if (window.studyPlayerInstance) {
+                    if (event.data === YT.PlayerState.PLAYING) {
+                        window.studyPlayerInstance.setPlayingState(true);
+                    } else if (event.data === YT.PlayerState.PAUSED) {
+                        window.studyPlayerInstance.setPlayingState(false);
+                    } else if (event.data === YT.PlayerState.ENDED) {
+                        window.studyPlayerInstance.handleTrackEnded();
+                    }
+                }
+            }
+        }
+    });
+};
+
 function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
     if (!playerCard) return;
 
-    // Single Native HTML5 Audio Element
+    // Single Native HTML5 Audio Element (for fallback streams)
     const audio = new Audio();
     audio.preload = 'auto';
 
@@ -38,10 +84,9 @@ function initStudyMusicPlayer() {
     const searchInput = document.getElementById('sp-search-input');
     const searchResults = document.getElementById('sp-search-results');
     const eqBars = document.querySelectorAll('.sp-eq-bar');
-    const minimizeBtn = document.getElementById('sp-min-btn');
     const discIcon = document.querySelector('.sp-disc-icon');
 
-    // Spotify Bottom Bar & Mobile Controls
+    // Mobile & Drawer Elements
     const mobilePlayBtn = document.getElementById('sp-mobile-play-btn');
     const mobilePlayIcon = document.getElementById('sp-mobile-play-icon');
     const mobileNextBtn = document.getElementById('sp-mobile-next-btn');
@@ -52,30 +97,57 @@ function initStudyMusicPlayer() {
 
     let isPlaying = false;
     let isUserSeeking = false;
+    let activeMode = 'yt'; // 'yt' or 'audio'
     let currentPlaylist = [];
     let currentIndex = 0;
     let lastNonMuteVol = 0.8;
+    let ytProgressInterval = null;
 
     // Player Object
     const player = {
         play() {
-            audio.play().then(() => setPlayingState(true)).catch((err) => {
-                console.warn("Autoplay deferred:", err);
-                setPlayingState(false);
-                if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
-            });
+            if (activeMode === 'yt') {
+                if (ytReady && ytPlayer && ytPlayer.playVideo) {
+                    ytPlayer.playVideo();
+                    setPlayingState(true);
+                } else if (currentPlaylist[currentIndex]?.youtubeId) {
+                    pendingYtVideoId = currentPlaylist[currentIndex].youtubeId;
+                }
+            } else {
+                audio.play().then(() => setPlayingState(true)).catch((err) => {
+                    console.warn("Autoplay deferred:", err);
+                    setPlayingState(false);
+                    if (titleEl) titleEl.textContent = "▶ Tap Play to Start";
+                });
+            }
         },
         pause() {
-            audio.pause();
+            if (activeMode === 'yt') {
+                if (ytReady && ytPlayer && ytPlayer.pauseVideo) {
+                    ytPlayer.pauseVideo();
+                }
+            } else {
+                audio.pause();
+            }
             setPlayingState(false);
         },
         seekToPercent(pct) {
-            if (audio.duration && !isNaN(audio.duration)) {
-                audio.currentTime = (pct / 100) * audio.duration;
+            if (activeMode === 'yt') {
+                if (ytReady && ytPlayer && ytPlayer.getDuration) {
+                    const dur = ytPlayer.getDuration() || 0;
+                    ytPlayer.seekTo((pct / 100) * dur, true);
+                }
+            } else {
+                if (audio.duration && !isNaN(audio.duration)) {
+                    audio.currentTime = (pct / 100) * audio.duration;
+                }
             }
         },
         setVolume(vol) {
             audio.volume = vol;
+            if (ytReady && ytPlayer && ytPlayer.setVolume) {
+                ytPlayer.setVolume(vol * 100);
+            }
             if (volumeSlider) volumeSlider.value = vol;
             if (volIcon) {
                 if (vol === 0) volIcon.className = "bi bi-volume-mute-fill";
@@ -87,118 +159,70 @@ function initStudyMusicPlayer() {
         }
     };
 
-    if (volBtn) {
-        volBtn.addEventListener('click', () => {
-            if (audio.volume > 0) {
-                player.setVolume(0);
+    // Expose instance for YT callbacks
+    window.studyPlayerInstance = {
+        setPlayingState: setPlayingState,
+        handleTrackEnded: () => {
+            if (currentPlaylist.length > 0) {
+                currentIndex = (currentIndex + 1) % currentPlaylist.length;
+                playPlaylistTrack(currentIndex, true);
             } else {
-                player.setVolume(lastNonMuteVol || 0.8);
+                setPlayingState(false);
             }
-        });
-    }
-
-    // Restore Volume
-    const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
-    player.setVolume(savedVol);
-
-    // Restore Session State or Load Initial Tracks
-    restoreSessionStateOrLoadDefault();
-
-    function saveSessionState() {
-        if (currentPlaylist.length > 0 && currentPlaylist[currentIndex]) {
-            const track = currentPlaylist[currentIndex];
-            const state = {
-                track: track,
-                playlist: currentPlaylist,
-                index: currentIndex,
-                currentTime: audio.currentTime || 0,
-                isPlaying: isPlaying,
-                volume: audio.volume,
-                minimized: playerCard.classList.contains('minimized')
-            };
-            sessionStorage.setItem('sp_state', JSON.stringify(state));
         }
-    }
+    };
 
-    async function restoreSessionStateOrLoadDefault() {
-        try {
-            const savedState = sessionStorage.getItem('sp_state');
-            if (savedState) {
-                const state = JSON.parse(savedState);
-                if (state.minimized) {
-                    playerCard.classList.add('minimized');
-                    if (minimizeBtn) {
-                        const icon = minimizeBtn.querySelector('i');
-                        if (icon) icon.className = "bi bi-chevron-up";
-                    }
-                }
-                if (state.track && (state.track.url || state.track.streamUrl)) {
-                    currentPlaylist = state.playlist || [state.track];
-                    currentIndex = state.index || 0;
-
-                    const tr = state.track;
-                    updateUI(tr.title, tr.artist, tr.cover);
-
-                    audio.src = tr.url || tr.streamUrl;
-                    if (state.currentTime > 0) audio.currentTime = state.currentTime;
-                    if (state.isPlaying) player.play();
-                    return;
-                }
-            }
-        } catch (e) {
-            console.warn("Could not restore session state:", e);
-        }
-
-        // Default initial load
-        await loadInitialPlaylist();
-    }
-
-    async function loadInitialPlaylist() {
-        try {
-            const res = await fetch('/api/music/lofi-full');
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    currentPlaylist = data;
-                    currentIndex = 0;
-                    playPlaylistTrack(0, false);
-                    return;
-                }
-            }
-        } catch (err) {
-            console.warn("Failed loading initial iTunes tracks:", err);
-        }
-    }
-
-    window.addEventListener('beforeunload', () => {
-        saveSessionState();
-    });
-
-    // BroadcastChannel Tab Synchronization
-    if (bc) {
-        bc.onmessage = (event) => {
-            const data = event.data;
-            if (!data) return;
-            if (data.type === 'VOLUME_CHANGE') {
-                player.setVolume(data.volume);
-            } else if (data.type === 'TOGGLE_MINIMIZE') {
-                playerCard.classList.toggle('minimized', data.minimized);
-                if (minimizeBtn) {
-                    const icon = minimizeBtn.querySelector('i');
-                    if (icon) icon.className = data.minimized ? "bi bi-chevron-up" : "bi bi-chevron-down";
-                }
-            }
-        };
-    }
-
-    // Play / Pause / Navigation Handlers
+    // Play / Pause Handlers
     function setPlayingState(playing) {
         isPlaying = playing;
         if (playIcon) playIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
         if (mobilePlayIcon) mobilePlayIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
         eqBars.forEach(bar => bar.classList.toggle('playing', playing));
         if (discIcon) discIcon.classList.toggle('spin-fast', playing);
+
+        if (playing) {
+            startProgressTracking();
+        } else {
+            stopProgressTracking();
+        }
         saveSessionState();
+    }
+
+    function startProgressTracking() {
+        stopProgressTracking();
+        ytProgressInterval = setInterval(() => {
+            if (isUserSeeking) return;
+
+            let current = 0;
+            let duration = 30;
+
+            if (activeMode === 'yt') {
+                if (ytReady && ytPlayer && ytPlayer.getCurrentTime) {
+                    current = ytPlayer.getCurrentTime() || 0;
+                    duration = ytPlayer.getDuration() || 0;
+                }
+            } else {
+                current = audio.currentTime || 0;
+                duration = audio.duration || 30;
+            }
+
+            if (duration > 0 && !isNaN(duration)) {
+                const pct = (current / duration) * 100;
+                if (progressBar) progressBar.value = pct;
+                if (mobileProgressFill) mobileProgressFill.style.width = pct + '%';
+                if (timeCurrent) timeCurrent.textContent = formatTime(current);
+                if (timeTotal) timeTotal.textContent = formatTime(duration);
+            } else {
+                if (timeCurrent) timeCurrent.textContent = formatTime(current);
+            }
+        }, 300);
+    }
+
+    function stopProgressTracking() {
+        if (ytProgressInterval) {
+            clearInterval(ytProgressInterval);
+            ytProgressInterval = null;
+        }
     }
 
     if (playBtn) {
@@ -215,12 +239,66 @@ function initStudyMusicPlayer() {
         });
     }
 
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPlaylist.length > 0) {
+                currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+                playPlaylistTrack(currentIndex, true);
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (currentPlaylist.length > 0) {
+                currentIndex = (currentIndex + 1) % currentPlaylist.length;
+                playPlaylistTrack(currentIndex, true);
+            }
+        });
+    }
+
     if (mobileNextBtn) {
         mobileNextBtn.addEventListener('click', () => {
             if (nextBtn) nextBtn.click();
         });
     }
 
+    if (volBtn) {
+        volBtn.addEventListener('click', () => {
+            if (audio.volume > 0) {
+                player.setVolume(0);
+            } else {
+                player.setVolume(lastNonMuteVol || 0.8);
+            }
+        });
+    }
+
+    // Volume Slider
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            player.setVolume(vol);
+            if (bc) bc.postMessage({ type: 'VOLUME_CHANGE', volume: vol });
+        });
+    }
+
+    // Timeline Seeking
+    if (progressBar) {
+        progressBar.addEventListener('mousedown', () => { isUserSeeking = true; });
+        progressBar.addEventListener('touchstart', () => { isUserSeeking = true; });
+
+        const handleSeek = (e) => {
+            const pct = parseFloat(e.target.value);
+            player.seekToPercent(pct);
+            isUserSeeking = false;
+        };
+
+        progressBar.addEventListener('change', handleSeek);
+        progressBar.addEventListener('mouseup', handleSeek);
+        progressBar.addEventListener('touchend', handleSeek);
+    }
+
+    // Search Drawer Interactions
     if (searchToggleBtn && searchDrawer) {
         searchToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -246,34 +324,11 @@ function initStudyMusicPlayer() {
         }
     });
 
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            if (currentPlaylist.length > 0) {
-                currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
-                playPlaylistTrack(currentIndex, true);
-            }
-        });
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            if (currentPlaylist.length > 0) {
-                currentIndex = (currentIndex + 1) % currentPlaylist.length;
-                playPlaylistTrack(currentIndex, true);
-            }
-        });
-    }
-
-    // Audio Events
+    // Native Audio events
     audio.addEventListener('play', () => setPlayingState(true));
     audio.addEventListener('pause', () => setPlayingState(false));
     audio.addEventListener('ended', () => {
-        if (currentPlaylist.length > 0) {
-            currentIndex = (currentIndex + 1) % currentPlaylist.length;
-            playPlaylistTrack(currentIndex, true);
-        } else {
-            setPlayingState(false);
-        }
+        window.studyPlayerInstance.handleTrackEnded();
     });
 
     function playPlaylistTrack(idx, shouldAutoplay = true) {
@@ -282,52 +337,47 @@ function initStudyMusicPlayer() {
 
         updateUI(track.title, track.artist, track.cover);
 
-        audio.src = track.url || track.streamUrl;
-        if (progressBar) progressBar.value = 0;
-        if (timeCurrent) timeCurrent.textContent = "0:00";
-        if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "0:30";
+        if (track.youtubeId) {
+            // Full YouTube Track
+            activeMode = 'yt';
+            audio.pause();
+
+            if (progressBar) progressBar.value = 0;
+            if (mobileProgressFill) mobileProgressFill.style.width = '0%';
+            if (timeCurrent) timeCurrent.textContent = "0:00";
+            if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "Full Song";
+
+            if (ytReady && ytPlayer && ytPlayer.loadVideoById) {
+                if (shouldAutoplay) ytPlayer.loadVideoById(track.youtubeId);
+                else ytPlayer.cueVideoById(track.youtubeId);
+            } else {
+                pendingYtVideoId = track.youtubeId;
+            }
+        } else if (track.streamUrl) {
+            // Native Audio Stream
+            activeMode = 'audio';
+            if (ytReady && ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+
+            audio.src = track.streamUrl;
+            if (progressBar) progressBar.value = 0;
+            if (mobileProgressFill) mobileProgressFill.style.width = '0%';
+            if (timeCurrent) timeCurrent.textContent = "0:00";
+            if (timeTotal) timeTotal.textContent = track.duration ? formatTime(track.duration) : "0:30";
+
+            if (shouldAutoplay) {
+                player.play();
+            }
+        }
 
         if (shouldAutoplay) {
-            player.play();
+            setPlayingState(true);
         }
     }
 
     function updateUI(title, artist, cover) {
-        if (titleEl) titleEl.textContent = title || "iTunes Song";
-        if (artistEl) artistEl.textContent = artist || "iTunes Artist";
+        if (titleEl) titleEl.textContent = title || "Study Track";
+        if (artistEl) artistEl.textContent = artist || "Study Music";
         if (coverEl && cover) coverEl.src = cover;
-    }
-
-    // Timeline Progress Slider
-    audio.addEventListener('timeupdate', () => {
-        if (isUserSeeking) return;
-        const current = audio.currentTime || 0;
-        const duration = audio.duration || 30;
-
-        if (duration > 0 && !isNaN(duration)) {
-            const pct = (current / duration) * 100;
-            if (progressBar) progressBar.value = pct;
-            if (mobileProgressFill) mobileProgressFill.style.width = pct + '%';
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
-            if (timeTotal) timeTotal.textContent = formatTime(duration);
-        } else {
-            if (timeCurrent) timeCurrent.textContent = formatTime(current);
-        }
-    });
-
-    if (progressBar) {
-        progressBar.addEventListener('mousedown', () => { isUserSeeking = true; });
-        progressBar.addEventListener('touchstart', () => { isUserSeeking = true; });
-
-        const handleSeek = (e) => {
-            const pct = parseFloat(e.target.value);
-            player.seekToPercent(pct);
-            isUserSeeking = false;
-        };
-
-        progressBar.addEventListener('change', handleSeek);
-        progressBar.addEventListener('mouseup', handleSeek);
-        progressBar.addEventListener('touchend', handleSeek);
     }
 
     function formatTime(secs) {
@@ -337,37 +387,135 @@ function initStudyMusicPlayer() {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // Volume Control
-    if (volumeSlider) {
-        volumeSlider.addEventListener('input', (e) => {
-            const vol = parseFloat(e.target.value);
-            player.setVolume(vol);
-            if (bc) bc.postMessage({ type: 'VOLUME_CHANGE', volume: vol });
-        });
+    // Restore Saved Volume
+    const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
+    player.setVolume(savedVol);
+
+    // Initial Playlist Loading
+    restoreSessionStateOrLoadDefault();
+
+    function saveSessionState() {
+        if (currentPlaylist.length > 0 && currentPlaylist[currentIndex]) {
+            const track = currentPlaylist[currentIndex];
+            let curTime = 0;
+            if (activeMode === 'yt' && ytReady && ytPlayer && ytPlayer.getCurrentTime) {
+                curTime = ytPlayer.getCurrentTime() || 0;
+            } else {
+                curTime = audio.currentTime || 0;
+            }
+
+            const state = {
+                track: track,
+                playlist: currentPlaylist,
+                index: currentIndex,
+                currentTime: curTime,
+                isPlaying: isPlaying,
+                volume: audio.volume,
+                mode: activeMode
+            };
+            sessionStorage.setItem('sp_state', JSON.stringify(state));
+        }
     }
 
-    // Search iTunes Previews
+    async function restoreSessionStateOrLoadDefault() {
+        try {
+            const savedState = sessionStorage.getItem('sp_state');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                if (state.track) {
+                    currentPlaylist = state.playlist || [state.track];
+                    currentIndex = state.index || 0;
+                    activeMode = state.mode || (state.track.youtubeId ? 'yt' : 'audio');
+
+                    const tr = state.track;
+                    updateUI(tr.title, tr.artist, tr.cover);
+
+                    if (activeMode === 'yt') {
+                        if (ytReady && ytPlayer && ytPlayer.cueVideoById) {
+                            ytPlayer.cueVideoById(tr.youtubeId, state.currentTime || 0);
+                        } else {
+                            pendingYtVideoId = tr.youtubeId;
+                        }
+                    } else if (tr.streamUrl) {
+                        audio.src = tr.streamUrl;
+                        if (state.currentTime > 0) audio.currentTime = state.currentTime;
+                    }
+
+                    if (state.isPlaying) player.play();
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Could not restore session state:", e);
+        }
+
+        // Default initial load: Full YouTube Study Tracks
+        await loadInitialPlaylist();
+    }
+
+    async function loadInitialPlaylist() {
+        try {
+            const res = await fetch('/api/music/lofi-full');
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    currentPlaylist = data;
+                    currentIndex = 0;
+                    playPlaylistTrack(0, false);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn("Failed loading initial study tracks:", err);
+        }
+    }
+
+    window.addEventListener('beforeunload', () => {
+        saveSessionState();
+    });
+
+    // BroadcastChannel Tab Synchronization
+    if (bc) {
+        bc.onmessage = (event) => {
+            const data = event.data;
+            if (!data) return;
+            if (data.type === 'VOLUME_CHANGE') {
+                player.setVolume(data.volume);
+            }
+        };
+    }
+
+    // Search Box Handling
     let searchDebounce = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchDebounce);
             const query = e.target.value.trim();
+            clearTimeout(searchDebounce);
             if (query.length < 2) {
                 if (searchResults) searchResults.style.display = 'none';
                 return;
             }
+            searchDebounce = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
 
-            searchDebounce = setTimeout(() => executeITunesSearch(query), 250);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                clearTimeout(searchDebounce);
+                const query = e.target.value.trim();
+                if (query.length >= 2) performSearch(query);
+            }
         });
     }
 
-    async function executeITunesSearch(query) {
+    async function performSearch(query) {
         if (!searchResults) return;
-        searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--accent); text-align: center;"><i class="bi bi-search spin"></i> Searching iTunes…</div>`;
         searchResults.style.display = 'block';
+        searchResults.innerHTML = `<div style="padding: 16px; font-size: 12px; color: #a1a1aa; text-align: center;"><i class="bi bi-arrow-repeat spin-fast"></i> Searching YouTube & Music tracks…</div>`;
 
         try {
-            const res = await fetch(`/api/music/itunes?q=${encodeURIComponent(query)}`);
+            const res = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`);
             if (res.ok) {
                 const tracks = await res.json();
                 renderSearchResults(tracks);
@@ -376,7 +524,7 @@ function initStudyMusicPlayer() {
             renderSearchResults([]);
         } catch (err) {
             console.error("Search error:", err);
-            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching iTunes. Please try again.</div>`;
+            searchResults.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #a1a1aa; text-align: center;">Error searching music. Please try again.</div>`;
         }
     }
 
@@ -386,11 +534,11 @@ function initStudyMusicPlayer() {
 
         if (items.length === 0) {
             const noRes = document.createElement('div');
-            noRes.style.padding = '12px';
-            noRes.style.fontSize = '11px';
+            noRes.style.padding = '16px';
+            noRes.style.fontSize = '12px';
             noRes.style.color = '#a1a1aa';
             noRes.style.textAlign = 'center';
-            noRes.textContent = "No iTunes previews found for that search.";
+            noRes.innerHTML = `No tracks found. <br><span style="font-size: 10px; color: #71717a;">Tip: Paste any YouTube URL or search artist name</span>`;
             searchResults.appendChild(noRes);
             searchResults.style.display = 'block';
             return;
@@ -400,13 +548,17 @@ function initStudyMusicPlayer() {
             const div = document.createElement('div');
             div.className = 'sp-search-item';
 
+            const isYt = !!t.youtubeId;
+            const badgeClass = isYt ? 'sp-badge-yt' : 'sp-badge-itunes';
+            const badgeLabel = isYt ? 'Full Song (YouTube)' : '30s Preview';
+
             div.innerHTML = `
                 <img src="${t.cover}" class="sp-search-art" alt="" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" />
                 <div style="flex: 1; min-width: 0;">
                     <div class="sp-search-title">${escapeHtml(t.title || 'Unknown Title')}</div>
-                    <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')} · 0:30</div>
+                    <div class="sp-search-artist">${escapeHtml(t.artist || 'Unknown Artist')}</div>
                 </div>
-                <span class="sp-source-badge sp-badge-itunes">30s Preview</span>
+                <span class="sp-source-badge ${badgeClass}">${badgeLabel}</span>
                 <i class="bi bi-play-circle-fill" style="color: var(--accent); font-size: 22px; flex-shrink: 0;"></i>
             `;
 
@@ -428,25 +580,5 @@ function initStudyMusicPlayer() {
         const div = document.createElement('div');
         div.textContent = str || '';
         return div.innerHTML;
-    }
-
-    document.addEventListener('click', (e) => {
-        if (searchResults && !searchResults.contains(e.target) && !searchInput.contains(e.target)) {
-            searchResults.style.display = 'none';
-        }
-    });
-
-    if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            playerCard.classList.toggle('minimized');
-            const isMin = playerCard.classList.contains('minimized');
-            const icon = minimizeBtn.querySelector('i');
-            if (icon) {
-                icon.className = isMin ? "bi bi-chevron-up" : "bi bi-chevron-down";
-            }
-            if (bc) bc.postMessage({ type: 'TOGGLE_MINIMIZE', minimized: isMin });
-            saveSessionState();
-        });
     }
 }

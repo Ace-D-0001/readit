@@ -461,6 +461,9 @@ else
                 <div id="sp-search-results" class="sp-search-results"></div>
             </div>
         </div>
+
+        <!-- Hidden YouTube IFrame API Player Host -->
+        <div id="sp-yt-host" style="position: fixed; bottom: -9999px; left: -9999px; width: 200px; height: 200px; opacity: 0; pointer-events: none;"></div>
     }
 }
 
@@ -558,6 +561,7 @@ else
 <script src="~/js/site.js" asp-append-version="true"></script>
 @if (!hideMusicPlayer)
 {
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="~/js/study-player.js" asp-append-version="true"></script>
 }
 
