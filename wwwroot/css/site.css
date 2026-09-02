@@ -581,15 +581,15 @@
   transform: scaleY(0.08) !important;
 }
 
-/* Page Change Cheer / Jump Animation (Made longer and more elastic) */
+/* Page Change Cheer / Jump Animation (Extended to 1.25s) */
 .nav-mascot-group.page-jumping {
-  animation: navPageJump 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+  animation: navPageJump 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
 @keyframes navPageJump {
   0% { transform: translateY(0) scale(1) rotate(0deg); }
-  35% { transform: translateY(-13px) scale(1.28) rotate(-7deg); filter: drop-shadow(0 0 18px rgba(255, 69, 0, 1)); }
-  65% { transform: translateY(-3px) scale(1.15) rotate(3deg); }
-  85% { transform: translateY(-1px) scale(1.05) rotate(-1deg); }
+  30% { transform: translateY(-15px) scale(1.32) rotate(-8deg); filter: drop-shadow(0 0 20px rgba(255, 69, 0, 1)); }
+  60% { transform: translateY(-4px) scale(1.18) rotate(4deg); }
+  82% { transform: translateY(-1.5px) scale(1.06) rotate(-1.5deg); }
   100% { transform: translateY(0) scale(1) rotate(0deg); }
 }
 

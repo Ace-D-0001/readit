@@ -94,39 +94,33 @@ function completePageChangeAnimation() {
     if (mascot) {
         setTimeout(() => {
             mascot.classList.remove('page-jumping');
-        }, 850);
+        }, 1250);
     }
 }
 
-// First-time site arrival & page load splash handling
+// First-time site arrival & page load splash handling (2.5s duration)
 document.addEventListener('DOMContentLoaded', () => {
     const splash = document.getElementById('readit-page-transition');
     const splashEye = document.getElementById('splash-eye-right');
 
     if (splash) {
-        const hasVisited = sessionStorage.getItem('readit_visited');
-        if (!hasVisited) {
-            // First time in this browser session: celebratory 1.8s welcoming sequence
-            sessionStorage.setItem('readit_visited', 'true');
-            if (splashEye) {
-                setTimeout(() => splashEye.classList.add('winking'), 450);
-                setTimeout(() => splashEye.classList.remove('winking'), 1100);
-            }
-            setTimeout(() => {
-                splash.classList.add('hidden-splash');
-                triggerPageChangeAnimation();
-            }, 1800);
-        } else {
-            // Returning / page reload: smooth 500ms reveal
-            if (splashEye) {
-                splashEye.classList.add('winking');
-                setTimeout(() => splashEye.classList.remove('winking'), 400);
-            }
-            setTimeout(() => {
-                splash.classList.add('hidden-splash');
-                triggerPageChangeAnimation();
-            }, 500);
+        // Full 2.5s welcoming mascot choreography:
+        // 0.0s: Pop in & float
+        // 0.6s: First wink
+        // 1.2s: Open eyes & wing flutter
+        // 1.6s: Second playful wink & cheerful glow
+        // 2.5s: Smooth cinematic fade into the app
+        if (splashEye) {
+            setTimeout(() => splashEye.classList.add('winking'), 600);
+            setTimeout(() => splashEye.classList.remove('winking'), 1200);
+            setTimeout(() => splashEye.classList.add('winking'), 1600);
+            setTimeout(() => splashEye.classList.remove('winking'), 2150);
         }
+
+        setTimeout(() => {
+            splash.classList.add('hidden-splash');
+            triggerPageChangeAnimation();
+        }, 2500);
     }
 
     // Interactive Header Mascot hover wink
@@ -164,10 +158,10 @@ document.addEventListener('click', async (e) => {
     triggerPageChangeAnimation();
 
     try {
-        // Enforce a minimum 650ms transition time so the mascot cheer & jump is clearly visible!
+        // Enforce transition delay so the mascot cheer & jump is lavish and clear!
         const [res] = await Promise.all([
             fetch(href),
-            new Promise(resolve => setTimeout(resolve, 650))
+            new Promise(resolve => setTimeout(resolve, 900))
         ]);
 
         const html = await res.text();
@@ -209,7 +203,7 @@ window.addEventListener('popstate', async () => {
     try {
         const [res] = await Promise.all([
             fetch(window.location.href),
-            new Promise(resolve => setTimeout(resolve, 650))
+            new Promise(resolve => setTimeout(resolve, 900))
         ]);
         const html = await res.text();
         const parser = new DOMParser();
