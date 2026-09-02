@@ -76,7 +76,7 @@ function triggerPageChangeAnimation() {
         rightEye.classList.add('winking');
         setTimeout(() => {
             rightEye.classList.remove('winking');
-        }, 650);
+        }, 750);
     }
 }
 
@@ -88,13 +88,13 @@ function completePageChangeAnimation() {
         loader.classList.add('finished');
         setTimeout(() => {
             loader.classList.remove('loading', 'finished');
-        }, 300);
+        }, 450);
     }
 
     if (mascot) {
         setTimeout(() => {
             mascot.classList.remove('page-jumping');
-        }, 700);
+        }, 850);
     }
 }
 
@@ -106,21 +106,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (splash) {
         const hasVisited = sessionStorage.getItem('readit_visited');
         if (!hasVisited) {
-            // First time in this browser session: celebratory welcome sequence
+            // First time in this browser session: celebratory 1.8s welcoming sequence
             sessionStorage.setItem('readit_visited', 'true');
             if (splashEye) {
-                setTimeout(() => splashEye.classList.add('winking'), 350);
-                setTimeout(() => splashEye.classList.remove('winking'), 750);
+                setTimeout(() => splashEye.classList.add('winking'), 450);
+                setTimeout(() => splashEye.classList.remove('winking'), 1100);
             }
             setTimeout(() => {
                 splash.classList.add('hidden-splash');
                 triggerPageChangeAnimation();
-            }, 800);
+            }, 1800);
         } else {
-            // Returning / page reload: fast seamless fade
+            // Returning / page reload: smooth 500ms reveal
+            if (splashEye) {
+                splashEye.classList.add('winking');
+                setTimeout(() => splashEye.classList.remove('winking'), 400);
+            }
             setTimeout(() => {
                 splash.classList.add('hidden-splash');
-            }, 180);
+                triggerPageChangeAnimation();
+            }, 500);
         }
     }
 
@@ -131,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const eye = document.getElementById('nav-eye-right');
             if (eye && !eye.classList.contains('winking')) {
                 eye.classList.add('winking');
-                setTimeout(() => eye.classList.remove('winking'), 600);
+                setTimeout(() => eye.classList.remove('winking'), 700);
             }
         });
     }
@@ -159,7 +164,12 @@ document.addEventListener('click', async (e) => {
     triggerPageChangeAnimation();
 
     try {
-        const res = await fetch(href);
+        // Enforce a minimum 650ms transition time so the mascot cheer & jump is clearly visible!
+        const [res] = await Promise.all([
+            fetch(href),
+            new Promise(resolve => setTimeout(resolve, 650))
+        ]);
+
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
@@ -197,7 +207,10 @@ document.addEventListener('click', async (e) => {
 window.addEventListener('popstate', async () => {
     triggerPageChangeAnimation();
     try {
-        const res = await fetch(window.location.href);
+        const [res] = await Promise.all([
+            fetch(window.location.href),
+            new Promise(resolve => setTimeout(resolve, 650))
+        ]);
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
@@ -212,4 +225,5 @@ window.addEventListener('popstate', async () => {
         window.location.reload();
     }
 });
+
 
