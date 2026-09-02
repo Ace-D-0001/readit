@@ -410,7 +410,7 @@ else
                         <div class="sp-slider-wrapper">
                             <input type="range" id="sp-progress" class="sp-slider sp-seek-slider" value="0" min="0" max="100" step="0.1" title="Seek track" />
                         </div>
-                        <span id="sp-time-total" class="sp-time-label">0:30</span>
+                        <span id="sp-time-total" class="sp-time-label">--:--</span>
                     </div>
                 </div>
 
@@ -463,7 +463,7 @@ else
         </div>
 
         <!-- Hidden YouTube IFrame API Player Host -->
-        <div id="sp-yt-host" style="position: fixed; bottom: -9999px; left: -9999px; width: 200px; height: 200px; opacity: 0; pointer-events: none;"></div>
+        <div id="sp-yt-host" style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0.001; pointer-events: none; z-index: -1;"></div>
     }
 }
 

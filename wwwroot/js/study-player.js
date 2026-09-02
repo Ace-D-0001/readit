@@ -7,16 +7,12 @@
    - Persistent playback state across seamless PJAX navigation
    ══════════════════════════════════════════════════════════════════════════ */
 
-document.addEventListener('DOMContentLoaded', () => {
-    initStudyMusicPlayer();
-});
-
 let ytPlayer = null;
 let ytReady = false;
 let pendingYtVideoId = null;
 
-// YouTube IFrame API Callback
-window.onYouTubeIframeAPIReady = function () {
+function ensureYouTubePlayer() {
+    if (ytPlayer || !window.YT || !window.YT.Player) return;
     const hostEl = document.getElementById('sp-yt-host');
     if (!hostEl) return;
 
@@ -45,6 +41,11 @@ window.onYouTubeIframeAPIReady = function () {
                 if (window.studyPlayerInstance) {
                     if (event.data === YT.PlayerState.PLAYING) {
                         window.studyPlayerInstance.setPlayingState(true);
+                        if (ytPlayer && ytPlayer.getDuration) {
+                            const dur = ytPlayer.getDuration();
+                            const tt = document.getElementById('sp-time-total');
+                            if (dur > 0 && tt) tt.textContent = window.studyPlayerFormatTime ? window.studyPlayerFormatTime(dur) : "Full Song";
+                        }
                     } else if (event.data === YT.PlayerState.PAUSED) {
                         window.studyPlayerInstance.setPlayingState(false);
                     } else if (event.data === YT.PlayerState.ENDED) {
@@ -54,7 +55,17 @@ window.onYouTubeIframeAPIReady = function () {
             }
         }
     });
+}
+
+// YouTube IFrame API Callback
+window.onYouTubeIframeAPIReady = function () {
+    ensureYouTubePlayer();
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+    ensureYouTubePlayer();
+    initStudyMusicPlayer();
+});
 
 function initStudyMusicPlayer() {
     const playerCard = document.getElementById('study-player');
@@ -386,6 +397,7 @@ function initStudyMusicPlayer() {
         const s = Math.floor(secs % 60);
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
+    window.studyPlayerFormatTime = formatTime;
 
     // Restore Saved Volume
     const savedVol = parseFloat(localStorage.getItem('sp_vol') || 0.8);
@@ -422,23 +434,21 @@ function initStudyMusicPlayer() {
             const savedState = sessionStorage.getItem('sp_state');
             if (savedState) {
                 const state = JSON.parse(savedState);
-                if (state.track) {
+                // Discard old 30s preview session states
+                if (state.track && !state.track.youtubeId) {
+                    sessionStorage.removeItem('sp_state');
+                } else if (state.track && state.track.youtubeId) {
                     currentPlaylist = state.playlist || [state.track];
                     currentIndex = state.index || 0;
-                    activeMode = state.mode || (state.track.youtubeId ? 'yt' : 'audio');
+                    activeMode = 'yt';
 
                     const tr = state.track;
                     updateUI(tr.title, tr.artist, tr.cover);
 
-                    if (activeMode === 'yt') {
-                        if (ytReady && ytPlayer && ytPlayer.cueVideoById) {
-                            ytPlayer.cueVideoById(tr.youtubeId, state.currentTime || 0);
-                        } else {
-                            pendingYtVideoId = tr.youtubeId;
-                        }
-                    } else if (tr.streamUrl) {
-                        audio.src = tr.streamUrl;
-                        if (state.currentTime > 0) audio.currentTime = state.currentTime;
+                    if (ytReady && ytPlayer && ytPlayer.cueVideoById) {
+                        ytPlayer.cueVideoById(tr.youtubeId, state.currentTime || 0);
+                    } else {
+                        pendingYtVideoId = tr.youtubeId;
                     }
 
                     if (state.isPlaying) player.play();

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Read_It.Controllers;
 
 /// <summary>
-/// Music search and streaming controller supporting Full YouTube Tracks & iTunes Previews.
+/// Music search and streaming controller supporting Full-Length YouTube Songs & Playlists.
 /// </summary>
 [Route("api/music")]
 public class MusicProxyController : Controller
@@ -90,7 +90,7 @@ public class MusicProxyController : Controller
     }
 
     /// <summary>
-    /// Unified Search for YouTube Songs, URLs, and iTunes Previews.
+    /// Unified Search for Full-Length YouTube Songs, URLs, and Tracks.
     /// GET /api/music/search?q=...
     /// </summary>
     [HttpGet("search")]
@@ -114,23 +114,16 @@ public class MusicProxyController : Controller
             }
         }
 
-        // 2. Check matches from Curated YouTube Tracks
-        var qLower = q.ToLower();
-        var curatedMatches = CuratedYouTubeTracks
-            .Where(t =>
-            {
-                var str = JsonSerializer.Serialize(t).ToLower();
-                return str.Contains(qLower);
-            })
-            .ToList();
+        // 2. Search YouTube directly for Full Songs
+        var ytResults = await SearchYouTubeVideos(q);
+        if (ytResults.Count > 0)
+        {
+            return Json(ytResults);
+        }
 
-        results.AddRange(curatedMatches);
-
-        // 3. Search iTunes
+        // 3. Fallback: Search iTunes if YouTube scraping encountered issues
         var itunesResults = await FetchITunesTracks(q);
-        results.AddRange(itunesResults);
-
-        return Json(results);
+        return Json(itunesResults);
     }
 
     /// <summary>
@@ -141,6 +134,58 @@ public class MusicProxyController : Controller
     public Task<IActionResult> SearchITunes([FromQuery] string q)
     {
         return Search(q);
+    }
+
+    private async Task<List<object>> SearchYouTubeVideos(string query)
+    {
+        var list = new List<object>();
+        try
+        {
+            var url = "https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(query);
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            req.Headers.Add("Accept-Language", "en-US,en;q=0.9");
+
+            var res = await _http.SendAsync(req);
+            if (!res.IsSuccessStatusCode) return list;
+
+            var html = await res.Content.ReadAsStringAsync();
+
+            var regex = new Regex("\"videoRenderer\":\\{\"videoId\":\"([a-zA-Z0-9_-]{11})\".*?\"title\":\\{\"runs\":\\[\\{\"text\":\"(.*?)\"\\}", RegexOptions.Singleline);
+            var matches = regex.Matches(html);
+
+            var seenIds = new HashSet<string>();
+            foreach (Match m in matches)
+            {
+                if (m.Groups.Count >= 3)
+                {
+                    var id = m.Groups[1].Value;
+                    var title = Regex.Unescape(m.Groups[2].Value);
+
+                    if (seenIds.Add(id))
+                    {
+                        list.Add(new
+                        {
+                            title = title,
+                            artist = "YouTube Music",
+                            cover = $"https://i.ytimg.com/vi/{id}/hqdefault.jpg",
+                            youtubeId = id,
+                            duration = 0,
+                            source = "Full Song (YouTube)",
+                            badgeClass = "sp-badge-yt"
+                        });
+
+                        if (list.Count >= 15) break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Music] YouTube search error: {ex.Message}");
+        }
+
+        return list;
     }
 
     private async Task<object?> ResolveYouTubeVideo(string videoId)
