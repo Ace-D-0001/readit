@@ -98,29 +98,28 @@ function completePageChangeAnimation() {
     }
 }
 
-// First-time site arrival & page load splash handling (2.0s duration)
+// First-time site arrival splash handling (2.0s duration, only once per session!)
 document.addEventListener('DOMContentLoaded', () => {
     const splash = document.getElementById('readit-page-transition');
     const splashEye = document.getElementById('splash-eye-right');
 
     if (splash) {
-        // Crisp 2.0s welcoming mascot choreography:
-        // 0.0s: Pop in & float
-        // 0.5s: Playful eye wink
-        // 1.0s: Eyes open with orange glow
-        // 1.4s: Second gentle wink & flutter
-        // 2.0s: Smooth fade into the app
-        if (splashEye) {
-            setTimeout(() => splashEye.classList.add('winking'), 500);
-            setTimeout(() => splashEye.classList.remove('winking'), 1000);
-            setTimeout(() => splashEye.classList.add('winking'), 1400);
-            setTimeout(() => splashEye.classList.remove('winking'), 1800);
-        }
-
-        setTimeout(() => {
+        if (sessionStorage.getItem('readit_splash_shown')) {
             splash.classList.add('hidden-splash');
-            triggerPageChangeAnimation();
-        }, 2000);
+            splash.style.display = 'none';
+        } else {
+            sessionStorage.setItem('readit_splash_shown', 'true');
+            if (splashEye) {
+                setTimeout(() => splashEye.classList.add('winking'), 500);
+                setTimeout(() => splashEye.classList.remove('winking'), 1000);
+                setTimeout(() => splashEye.classList.add('winking'), 1400);
+                setTimeout(() => splashEye.classList.remove('winking'), 1800);
+            }
+
+            setTimeout(() => {
+                splash.classList.add('hidden-splash');
+            }, 2000);
+        }
     }
 
     // Interactive Header Mascot hover wink
@@ -136,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ── PJAX Seamless Navigation (Music NEVER stops when changing pages!) ──────────
+// ── PJAX Seamless Navigation (Instant, Music NEVER stops!) ────────────────────
 document.addEventListener('click', async (e) => {
     const link = e.target.closest('a');
     if (!link) return;
@@ -158,12 +157,7 @@ document.addEventListener('click', async (e) => {
     triggerPageChangeAnimation();
 
     try {
-        // Enforce transition delay so the mascot cheer & jump is lavish and clear!
-        const [res] = await Promise.all([
-            fetch(href),
-            new Promise(resolve => setTimeout(resolve, 900))
-        ]);
-
+        const res = await fetch(href);
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
@@ -201,10 +195,7 @@ document.addEventListener('click', async (e) => {
 window.addEventListener('popstate', async () => {
     triggerPageChangeAnimation();
     try {
-        const [res] = await Promise.all([
-            fetch(window.location.href),
-            new Promise(resolve => setTimeout(resolve, 900))
-        ]);
+        const res = await fetch(window.location.href);
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');

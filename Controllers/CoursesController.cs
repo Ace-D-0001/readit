@@ -73,6 +73,7 @@ namespace Read_It.Controllers
             // Is current user following & vote states
             bool isFollowing = false;
             var userPostVotes = new Dictionary<int, int>();
+            var userVideoVotes = new List<int>();
             string? currentUserId = GetCurrentUserId();
 
             if (!string.IsNullOrEmpty(currentUserId))
@@ -83,10 +84,16 @@ namespace Read_It.Controllers
                 userPostVotes = await _context.Votes
                     .Where(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Post)
                     .ToDictionaryAsync(v => v.TargetId, v => v.VoteValue);
+
+                userVideoVotes = await _context.Votes
+                    .Where(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Video)
+                    .Select(v => v.TargetId)
+                    .ToListAsync();
             }
 
             ViewBag.IsFollowing = isFollowing;
             ViewBag.UserPostVotes = userPostVotes;
+            ViewBag.UserVideoVotes = userVideoVotes;
 
             // Outline & Notes resources for right column (All published and non-rejected resources are publicly visible)
             ViewBag.OutlineResources = course.Resources.Where(r => r.Type == CourseResourceType.Outline && r.Status != ResourceStatus.Rejected).ToList();
@@ -112,13 +119,15 @@ namespace Read_It.Controllers
             return View(course);
         }
 
-        // POST /Courses/Follow?code=CSC391
+        // POST /Courses/Follow
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Follow(string code)
         {
             if (User.IsInRole("Admin"))
             {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Admins cannot follow courses." });
+
                 TempData["ErrorMessage"] = "Administrators automatically manage and oversee all subReadIt subjects.";
                 return RedirectToAction(nameof(Details), new { code });
             }
@@ -127,17 +136,37 @@ namespace Read_It.Controllers
             if (course == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return RedirectToAction("Login", "Account");
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, requireAuth = true });
+
+                return RedirectToAction("Login", "Account");
+            }
 
             var existing = await _context.CourseFollows
                 .FirstOrDefaultAsync(cf => cf.UserId == currentUserId && cf.CourseId == course.Id);
 
+            bool isFollowing;
             if (existing != null)
+            {
                 _context.CourseFollows.Remove(existing);
+                isFollowing = false;
+            }
             else
+            {
                 _context.CourseFollows.Add(new CourseFollow { UserId = currentUserId, CourseId = course.Id, FollowedAt = DateTime.UtcNow });
+                isFollowing = true;
+            }
 
             await _context.SaveChangesAsync();
+
+            int followerCount = await _context.CourseFollows.CountAsync(cf => cf.CourseId == course.Id);
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, isFollowing, followerCount });
+            }
+
             return RedirectToAction(nameof(Details), new { code });
         }
 
@@ -306,47 +335,59 @@ namespace Read_It.Controllers
 
         // POST /Courses/UpvoteVideo/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpvoteVideo(int videoId, string code)
         {
             var video = await _context.CourseVideos.FindAsync(videoId);
-            if (video != null)
+            if (video == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
             {
-                var currentUserId = GetCurrentUserId();
-                if (!string.IsNullOrEmpty(currentUserId))
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, requireAuth = true, message = "Please sign in to vote." });
+
+                return RedirectToAction("Login", "Account");
+            }
+
+            var existingVote = await _context.Votes
+                .FirstOrDefaultAsync(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Video && v.TargetId == videoId);
+
+            bool hasVoted = false;
+            if (existingVote != null)
+            {
+                // Undo vote
+                _context.Votes.Remove(existingVote);
+                video.UpVotes = Math.Max(0, video.UpVotes - 1);
+                hasVoted = false;
+            }
+            else
+            {
+                // Add vote
+                _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = VoteTargetType.Video, TargetId = videoId, VoteValue = 1 });
+                video.UpVotes++;
+                hasVoted = true;
+
+                // ── Notify Video Submitter ──
+                if (!string.IsNullOrEmpty(video.SubmittedByUserId) && video.SubmittedByUserId != currentUserId)
                 {
-                    var existingVote = await _context.Votes
-                        .FirstOrDefaultAsync(v => v.UserId == currentUserId && v.TargetType == VoteTargetType.Video && v.TargetId == videoId);
-
-                    if (existingVote != null)
+                    _context.Notifications.Add(new Notification
                     {
-                        // Undo vote
-                        _context.Votes.Remove(existingVote);
-                        video.UpVotes = Math.Max(0, video.UpVotes - 1);
-                    }
-                    else
-                    {
-                        // Add vote
-                        _context.Votes.Add(new Vote { UserId = currentUserId, TargetType = VoteTargetType.Video, TargetId = videoId, VoteValue = 1 });
-                        video.UpVotes++;
-
-                        // ── Notify Video Submitter ──
-                        if (!string.IsNullOrEmpty(video.SubmittedByUserId) && video.SubmittedByUserId != currentUserId)
-                        {
-                            _context.Notifications.Add(new Notification
-                            {
-                                UserId = video.SubmittedByUserId,
-                                Title = "New Upvote on your video! ⭐",
-                                Message = $"u/{User.Identity?.Name ?? "A student"} upvoted your video \"{video.Title}\" in c/{code}",
-                                LinkUrl = $"/Courses/Details?code={code}",
-                                Type = NotificationType.System,
-                                CreatedAt = DateTime.UtcNow
-                            });
-                        }
-                    }
-                    await _context.SaveChangesAsync();
+                        UserId = video.SubmittedByUserId,
+                        Title = "New Upvote on your video! ⭐",
+                        Message = $"u/{User.Identity?.Name ?? "A student"} upvoted your video \"{video.Title}\" in c/{code}",
+                        LinkUrl = $"/Courses/Details?code={code}",
+                        Type = NotificationType.System,
+                        CreatedAt = DateTime.UtcNow
+                    });
                 }
             }
+            await _context.SaveChangesAsync();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, upVotes = video.UpVotes, hasVoted });
+            }
+
             return RedirectToAction(nameof(Details), new { code });
         }
 

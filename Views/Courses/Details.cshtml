@@ -10,6 +10,7 @@
     bool isFollowing     = ViewBag.IsFollowing ?? false;
     string activeSort    = ViewBag.ActiveSort as string ?? "hot";
     var userPostVotes    = ViewBag.UserPostVotes as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var userVideoVotes   = ViewBag.UserVideoVotes as List<int> ?? new List<int>();
 }
 
 @section RightAside {
@@ -237,15 +238,15 @@
 
                     <div class="video-entry right-col-item d-flex align-items-center" data-label="@video.Title.ToLower() @topicName.ToLower() video">
                         <div class="video-upvote-col">
-                            <form action="@Url.Action("UpvoteVideo", "Courses")" method="post" style="margin: 0;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="videoId" value="@video.Id" />
-                                <input type="hidden" name="code"    value="@Model.Code" />
-                                <button type="submit" class="vote-arrow up" title="Upvote" style="font-size: 14px;">
-                                    <i class="bi bi-arrow-up-circle-fill"></i>
-                                </button>
-                            </form>
-                            <span style="font-size: 10px; color: var(--text-muted);">@video.UpVotes</span>
+                            @{
+                                bool hasVotedVideo = userVideoVotes.Contains(video.Id);
+                            }
+                            <button type="button" class="vote-arrow up @(hasVotedVideo ? "upvoted" : "")"
+                                    onclick="upvoteVideo(this, @video.Id, '@Model.Code')"
+                                    title="Upvote" style="background: none; border: none; padding: 0; cursor: pointer; font-size: 14px; @(hasVotedVideo ? "color: var(--accent);" : "")">
+                                <i class="bi bi-arrow-up-circle-fill"></i>
+                            </button>
+                            <span class="video-upvote-count" style="font-size: 10px; color: var(--text-muted);">@video.UpVotes</span>
                         </div>
                         <div style="flex: 1; min-width: 0;">
                             <a href="@video.VideoUrl" target="_blank" rel="noopener noreferrer" class="video-link @(isBest ? "best" : "")">
@@ -344,6 +345,62 @@ function toggleForm(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
+
+async function upvoteVideo(btn, videoId, code) {
+    try {
+        const res = await fetch(`/Courses/UpvoteVideo?videoId=${videoId}&code=${encodeURIComponent(code)}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        if (data.requireAuth) {
+            window.location.href = '/Account/Login';
+            return;
+        }
+        if (data.success) {
+            const countEl = btn.parentElement.querySelector('.video-upvote-count');
+            if (countEl) countEl.textContent = data.upVotes;
+            if (data.hasVoted) {
+                btn.classList.add('upvoted');
+                btn.style.color = 'var(--accent)';
+            } else {
+                btn.classList.remove('upvoted');
+                btn.style.color = '';
+            }
+        }
+    } catch (err) {
+        console.error('Video upvote failed:', err);
+    }
+}
+
+async function toggleCourseFollow(btn, code) {
+    try {
+        const res = await fetch(`/Courses/Follow?code=${encodeURIComponent(code)}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        if (data.requireAuth) {
+            window.location.href = '/Account/Login';
+            return;
+        }
+        if (data.success) {
+            const badge = document.getElementById('course-follower-badge');
+            if (badge) {
+                badge.innerHTML = `<i class="bi bi-people-fill"></i> ${data.followerCount} ${data.followerCount === 1 ? 'follower' : 'followers'}`;
+            }
+            if (data.isFollowing) {
+                btn.className = 'btn btn-outline-secondary';
+                btn.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span>Following</span>';
+            } else {
+                btn.className = 'btn btn-outline-primary';
+                btn.innerHTML = '<i class="bi bi-plus-lg"></i> <span>Follow</span>';
+            }
+        }
+    } catch (e) {
+        console.error('Follow failed', e);
+    }
+}
 </script>
 }
 
@@ -364,7 +421,7 @@ function toggleForm(id) {
                     <h1 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-heading); margin: 0;">
                         c/@Model.Code — @Model.Title
                     </h1>
-                    <span class="badge" style="background: rgba(255, 69, 0, 0.12); color: var(--accent); border: 1px solid rgba(255, 69, 0, 0.3); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                    <span id="course-follower-badge" class="badge" style="background: rgba(255, 69, 0, 0.12); color: var(--accent); border: 1px solid rgba(255, 69, 0, 0.3); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                         <i class="bi bi-people-fill"></i> @followerCount @(followerCount == 1 ? "follower" : "followers")
                     </span>
                 </div>
@@ -384,13 +441,12 @@ function toggleForm(id) {
             else
             {
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <form action="@Url.Action("Follow", "Courses", new { code = Model.Code })" method="post" style="margin: 0;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn @(isFollowing ? "btn-outline-secondary" : "btn-outline-primary")" style="border-radius: 20px; font-size: 13px; font-weight: 600; padding: 6px 16px; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="bi @(isFollowing ? "bi-check-circle-fill text-success" : "bi-plus-lg")"></i>
-                            <span>@(isFollowing ? "Following" : "Follow")</span>
-                        </button>
-                    </form>
+                    <button type="button" id="course-follow-btn" onclick="toggleCourseFollow(this, '@Model.Code')"
+                            class="btn @(isFollowing ? "btn-outline-secondary" : "btn-outline-primary")"
+                            style="border-radius: 20px; font-size: 13px; font-weight: 600; padding: 6px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi @(isFollowing ? "bi-check-circle-fill text-success" : "bi-plus-lg")"></i>
+                        <span>@(isFollowing ? "Following" : "Follow")</span>
+                    </button>
 
                     <a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" class="btn-primary" style="border-radius: 20px; font-size: 13px; padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="bi bi-pencil-square"></i> Create Post
