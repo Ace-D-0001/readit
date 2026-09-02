@@ -12,6 +12,33 @@
 </head>
 <body>
 
+    <!-- ── Top Navigation Loading Bar ── -->
+    <div id="readit-top-loader" class="readit-top-loader"></div>
+
+    <!-- ── First-Time / Page-Load Welcoming Mascot Transition ── -->
+    <div id="readit-page-transition" class="readit-page-transition">
+        <div class="transition-content">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="280" height="80" class="splash-svg" style="overflow: visible;">
+                <g class="splash-mascot-group">
+                    <g fill="#FF4500">
+                        <path class="splash-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
+                        <path class="splash-book-right" d="M 112 42 C 112 34, 116 28, 124 26 L 132 24 C 140 22, 148 28, 148 36 L 148 84 C 148 92, 140 98, 132 96 L 112 92 Z" />
+                        <path d="M 44 26 L 96 36 L 96 92 L 44 82 Z" fill="#FF5414" />
+                        <path d="M 108 42 C 108 34, 114 27, 124 25 L 134 23 C 142 21, 148 27, 148 35 L 148 83 C 148 90, 142 96, 134 94 L 108 90 Z" fill="#FF4500" />
+                        
+                        <path d="M 32 30 C 22 30 16 38 16 48 L 16 72 C 16 82 22 90 32 90 L 32 106 C 32 110 37 112 40 109 L 56 94 L 98 94 C 108 94 116 86 116 76 L 116 68 L 128 68 C 136 68 142 62 142 54 L 142 38 C 142 30 136 24 128 24 L 96 24 C 92 24 88 22 84 20 L 48 20 C 38 20 32 24 32 30 Z" />
+                        <path d="M 116 40 L 126 38 C 132 37, 136 41, 136 47 L 136 75 C 136 81, 132 85, 126 84 L 116 82 Z" fill="#FF4500" />
+
+                        <ellipse id="splash-eye-left" class="splash-eye" cx="58" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                        <ellipse id="splash-eye-right" class="splash-eye splash-eye-right" cx="94" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                    </g>
+                </g>
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+            </svg>
+            <div class="splash-spinner"></div>
+        </div>
+    </div>
+
 @{
     var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     bool isAuthPage = currentCtrl.Equals("Account", StringComparison.OrdinalIgnoreCase);
@@ -30,9 +57,28 @@
                 <i class="bi bi-list"></i>
             </button>
         }
-        <!-- Logo -->
-        <a href="/" aria-label="ReadIt Home">
-            <img src="~/images/logo.svg" alt="ReadIt" style="height: 36px; width: auto;" />
+        <!-- Interactive Animated Logo -->
+        <a href="/" aria-label="ReadIt Home" class="brand-logo-link" title="ReadIt — Click to refresh">
+            <svg id="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" style="height: 36px; width: auto; overflow: visible; display: block;">
+                <g id="nav-mascot" class="nav-mascot-group">
+                    <g fill="#FF4500">
+                        <path class="nav-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
+                        <path class="nav-book-right" d="M 112 42 C 112 34, 116 28, 124 26 L 132 24 C 140 22, 148 28, 148 36 L 148 84 C 148 92, 140 98, 132 96 L 112 92 Z" />
+                        <path d="M 44 26 L 96 36 L 96 92 L 44 82 Z" fill="#FF5414" />
+                        <path d="M 108 42 C 108 34, 114 27, 124 25 L 134 23 C 142 21, 148 27, 148 35 L 148 83 C 148 90, 142 96, 134 94 L 108 90 Z" fill="#FF4500" />
+                        
+                        <path d="M 32 30 C 22 30 16 38 16 48 L 16 72 C 16 82 22 90 32 90 L 32 106 C 32 110 37 112 40 109 L 56 94 L 98 94 C 108 94 116 86 116 76 L 116 68 L 128 68 C 136 68 142 62 142 54 L 142 38 C 142 30 136 24 128 24 L 96 24 C 92 24 88 22 84 20 L 48 20 C 38 20 32 24 32 30 Z" />
+                        <path d="M 116 40 L 126 38 C 132 37, 136 41, 136 47 L 136 75 C 136 81, 132 85, 126 84 L 116 82 Z" fill="#FF4500" />
+
+                        <!-- Cute Blinking Eyes -->
+                        <ellipse id="nav-eye-left" class="nav-eye" cx="58" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                        <ellipse id="nav-eye-right" class="nav-eye nav-eye-right" cx="94" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                    </g>
+                </g>
+
+                <!-- Brand Name Typography -->
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+            </svg>
         </a>
     </div>
 
@@ -378,7 +424,23 @@ else
     <!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
         <div class="offcanvas-header">
-            <img src="~/images/logo.svg" alt="ReadIt" style="height: 30px; width: auto;" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" style="height: 28px; width: auto; overflow: visible;">
+                <g class="nav-mascot-group">
+                    <g fill="#FF4500">
+                        <path class="nav-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
+                        <path class="nav-book-right" d="M 112 42 C 112 34, 116 28, 124 26 L 132 24 C 140 22, 148 28, 148 36 L 148 84 C 148 92, 140 98, 132 96 L 112 92 Z" />
+                        <path d="M 44 26 L 96 36 L 96 92 L 44 82 Z" fill="#FF5414" />
+                        <path d="M 108 42 C 108 34, 114 27, 124 25 L 134 23 C 142 21, 148 27, 148 35 L 148 83 C 148 90, 142 96, 134 94 L 108 90 Z" fill="#FF4500" />
+                        
+                        <path d="M 32 30 C 22 30 16 38 16 48 L 16 72 C 16 82 22 90 32 90 L 32 106 C 32 110 37 112 40 109 L 56 94 L 98 94 C 108 94 116 86 116 76 L 116 68 L 128 68 C 136 68 142 62 142 54 L 142 38 C 142 30 136 24 128 24 L 96 24 C 92 24 88 22 84 20 L 48 20 C 38 20 32 24 32 30 Z" />
+                        <path d="M 116 40 L 126 38 C 132 37, 136 41, 136 47 L 136 75 C 136 81, 132 85, 126 84 L 116 82 Z" fill="#FF4500" />
+
+                        <ellipse class="nav-eye" cx="58" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                        <ellipse class="nav-eye nav-eye-right" cx="94" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
+                    </g>
+                </g>
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+            </svg>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body" style="display: flex; flex-direction: column; gap: var(--sp-1);">

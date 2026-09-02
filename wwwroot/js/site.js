@@ -55,6 +55,88 @@ async function asyncVote(btn, targetId, targetType, direction, event) {
     }
 }
 
+// ── ReadIt Animated Brand Mascot & Page Navigation Orchestrator ─────────
+function triggerPageChangeAnimation() {
+    const loader = document.getElementById('readit-top-loader');
+    const mascot = document.getElementById('nav-mascot');
+    const rightEye = document.getElementById('nav-eye-right');
+
+    if (loader) {
+        loader.classList.remove('finished');
+        loader.classList.add('loading');
+    }
+
+    if (mascot) {
+        mascot.classList.remove('page-jumping');
+        void mascot.offsetWidth; // Force DOM reflow to re-trigger keyframe
+        mascot.classList.add('page-jumping');
+    }
+
+    if (rightEye) {
+        rightEye.classList.add('winking');
+        setTimeout(() => {
+            rightEye.classList.remove('winking');
+        }, 650);
+    }
+}
+
+function completePageChangeAnimation() {
+    const loader = document.getElementById('readit-top-loader');
+    const mascot = document.getElementById('nav-mascot');
+
+    if (loader) {
+        loader.classList.add('finished');
+        setTimeout(() => {
+            loader.classList.remove('loading', 'finished');
+        }, 300);
+    }
+
+    if (mascot) {
+        setTimeout(() => {
+            mascot.classList.remove('page-jumping');
+        }, 700);
+    }
+}
+
+// First-time site arrival & page load splash handling
+document.addEventListener('DOMContentLoaded', () => {
+    const splash = document.getElementById('readit-page-transition');
+    const splashEye = document.getElementById('splash-eye-right');
+
+    if (splash) {
+        const hasVisited = sessionStorage.getItem('readit_visited');
+        if (!hasVisited) {
+            // First time in this browser session: celebratory welcome sequence
+            sessionStorage.setItem('readit_visited', 'true');
+            if (splashEye) {
+                setTimeout(() => splashEye.classList.add('winking'), 350);
+                setTimeout(() => splashEye.classList.remove('winking'), 750);
+            }
+            setTimeout(() => {
+                splash.classList.add('hidden-splash');
+                triggerPageChangeAnimation();
+            }, 800);
+        } else {
+            // Returning / page reload: fast seamless fade
+            setTimeout(() => {
+                splash.classList.add('hidden-splash');
+            }, 180);
+        }
+    }
+
+    // Interactive Header Mascot hover wink
+    const brandLogo = document.querySelector('.brand-logo-link');
+    if (brandLogo) {
+        brandLogo.addEventListener('mouseenter', () => {
+            const eye = document.getElementById('nav-eye-right');
+            if (eye && !eye.classList.contains('winking')) {
+                eye.classList.add('winking');
+                setTimeout(() => eye.classList.remove('winking'), 600);
+            }
+        });
+    }
+});
+
 // ── PJAX Seamless Navigation (Music NEVER stops when changing pages!) ──────────
 document.addEventListener('click', async (e) => {
     const link = e.target.closest('a');
@@ -74,6 +156,8 @@ document.addEventListener('click', async (e) => {
     }
 
     e.preventDefault();
+    triggerPageChangeAnimation();
+
     try {
         const res = await fetch(href);
         const html = await res.text();
@@ -100,6 +184,8 @@ document.addEventListener('click', async (e) => {
             if (newAside && currentAside) {
                 currentAside.innerHTML = newAside.innerHTML;
             }
+
+            completePageChangeAnimation();
         } else {
             window.location.href = href;
         }
@@ -109,6 +195,7 @@ document.addEventListener('click', async (e) => {
 });
 
 window.addEventListener('popstate', async () => {
+    triggerPageChangeAnimation();
     try {
         const res = await fetch(window.location.href);
         const html = await res.text();
@@ -119,8 +206,10 @@ window.addEventListener('popstate', async () => {
         if (newMain && currentMain) {
             currentMain.innerHTML = newMain.innerHTML;
             document.title = doc.title;
+            completePageChangeAnimation();
         }
     } catch (err) {
         window.location.reload();
     }
 });
+
