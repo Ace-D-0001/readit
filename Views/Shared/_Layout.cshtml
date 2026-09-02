@@ -360,59 +360,104 @@ else
 
     @if (!hideMusicPlayer)
     {
-        <!-- ── STICKY FLOATING MUSIC DOCK (Pinned to Bottom Right - Excluded for Admins & Auth Pages) ── -->
-        <div id="study-player" class="study-player-card">
-            <!-- Player Header -->
-            <div class="sp-header">
-                <div class="sp-title-badge">
-                    <i class="bi bi-disc-fill sp-disc-icon"></i> Study Music
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="sp-eq">
+        <!-- ── SPOTIFY-STYLE FIXED BOTTOM MUSIC BAR (PC & Mobile) ── -->
+        <div id="study-player" class="sp-bottom-bar">
+            <!-- Mobile Micro-Progress Bar (Top edge on mobile) -->
+            <div class="sp-mobile-progress-line">
+                <div id="sp-mobile-progress-fill" class="sp-mobile-progress-fill"></div>
+            </div>
+
+            <div class="sp-bar-inner">
+                <!-- Left Column: Now Playing (Cover Art + Track Info + Equalizer) -->
+                <div class="sp-bar-left">
+                    <div class="sp-cover-wrap">
+                        <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
+                        <div class="sp-disc-overlay">
+                            <i class="bi bi-disc-fill sp-disc-icon"></i>
+                        </div>
+                    </div>
+                    <div class="sp-track-info">
+                        <div id="sp-title" class="sp-track-title" title="Track Title">Lofi Study Beats</div>
+                        <div id="sp-artist" class="sp-track-artist" title="Artist">Chill Study Music</div>
+                    </div>
+                    <!-- Equalizer bars -->
+                    <div class="sp-eq" title="Audio playing">
                         <div class="sp-eq-bar"></div>
                         <div class="sp-eq-bar"></div>
                         <div class="sp-eq-bar"></div>
                         <div class="sp-eq-bar"></div>
                     </div>
-                    <button type="button" id="sp-min-btn" class="sp-btn-subtle" title="Minimize / Expand"><i class="bi bi-chevron-down"></i></button>
                 </div>
-            </div>
 
-            <!-- Active Track Display (Cover Art + Title + Artist) -->
-            <div class="sp-track-row">
-                <img id="sp-cover" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=150&auto=format&fit=crop&q=80" class="sp-cover-art" alt="Cover" />
-                <div class="sp-track-info">
-                    <div id="sp-title" class="sp-track-title">Lofi Study Beats</div>
-                    <div id="sp-artist" class="sp-track-artist">Chill Study Music</div>
+                <!-- Center Column: Spotify Player Controls & Timeline Slider -->
+                <div class="sp-bar-center">
+                    <!-- Controls row -->
+                    <div class="sp-controls-group">
+                        <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track">
+                            <i class="bi bi-skip-start-fill"></i>
+                        </button>
+                        <button type="button" id="sp-play-btn" class="sp-btn-play-circle" title="Play/Pause">
+                            <i id="sp-play-icon" class="bi bi-play-fill"></i>
+                        </button>
+                        <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track">
+                            <i class="bi bi-skip-end-fill"></i>
+                        </button>
+                    </div>
+
+                    <!-- Timeline row: Current Time + Range Slider + Total Time -->
+                    <div class="sp-timeline-group">
+                        <span id="sp-time-current" class="sp-time-label">0:00</span>
+                        <div class="sp-slider-wrapper">
+                            <input type="range" id="sp-progress" class="sp-slider sp-seek-slider" value="0" min="0" max="100" step="0.1" title="Seek track" />
+                        </div>
+                        <span id="sp-time-total" class="sp-time-label">0:30</span>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Timeline Progress Bar -->
-            <div class="sp-progress-wrapper sp-hide-minimized">
-                <span id="sp-time-current">0:00</span>
-                <input type="range" id="sp-progress" class="sp-slider" value="0" min="0" max="100" step="0.1" title="Drag timeline" />
-                <span id="sp-time-total">0:30</span>
-            </div>
+                <!-- Right Column: Search Toggle + Volume Control + Mobile Actions -->
+                <div class="sp-bar-right">
+                    <!-- Search Drawer Toggle Button -->
+                    <button type="button" id="sp-search-toggle-btn" class="sp-btn-icon sp-search-toggle-btn" title="Search Songs & Playlists">
+                        <i class="bi bi-search"></i>
+                        <span class="sp-search-btn-label">Search Music</span>
+                    </button>
 
-            <!-- Controls & Volume Bar -->
-            <div class="sp-controls-row">
-                <div class="sp-nav-group">
-                    <button type="button" id="sp-prev-btn" class="sp-btn-nav" title="Previous Track"><i class="bi bi-skip-start-fill"></i></button>
-                    <button type="button" id="sp-play-btn" class="sp-btn-circle" title="Play/Pause"><i id="sp-play-icon" class="bi bi-play-fill"></i></button>
-                    <button type="button" id="sp-next-btn" class="sp-btn-nav" title="Next Track"><i class="bi bi-skip-end-fill"></i></button>
-                </div>
-                <div class="sp-volume-container sp-hide-minimized">
-                    <button type="button" id="sp-vol-btn" class="sp-btn-subtle" title="Mute / Unmute"><i id="sp-vol-icon" class="bi bi-volume-up-fill"></i></button>
-                    <div class="sp-vol-popover">
-                        <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+                    <!-- Volume Controller -->
+                    <div class="sp-volume-group">
+                        <button type="button" id="sp-vol-btn" class="sp-btn-icon" title="Mute / Unmute">
+                            <i id="sp-vol-icon" class="bi bi-volume-up-fill"></i>
+                        </button>
+                        <div class="sp-vol-slider-wrap">
+                            <input type="range" id="sp-volume" class="sp-slider sp-vol-slider" value="0.8" min="0" max="1" step="0.05" title="Volume" />
+                        </div>
+                    </div>
+
+                    <!-- Mobile-Only Quick Buttons -->
+                    <div class="sp-mobile-controls">
+                        <button type="button" id="sp-mobile-play-btn" class="sp-btn-play-circle sm" title="Play/Pause">
+                            <i id="sp-mobile-play-icon" class="bi bi-play-fill"></i>
+                        </button>
+                        <button type="button" id="sp-mobile-next-btn" class="sp-btn-nav" title="Next Track">
+                            <i class="bi bi-skip-end-fill"></i>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Live Track Search -->
-            <div class="sp-search-wrapper sp-hide-minimized" style="margin-top: 12px; margin-bottom: 0;">
-                <i class="bi bi-search sp-search-icon"></i>
-                <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search iTunes songs or artists…" autocomplete="off" />
+            <!-- ── Spotify Flyout Search Drawer (Slides up from the bottom bar!) ── -->
+            <div id="sp-search-drawer" class="sp-search-drawer">
+                <div class="sp-drawer-header">
+                    <div class="sp-drawer-title">
+                        <i class="bi bi-music-note-beamed text-accent"></i> Search Songs & Study Music
+                    </div>
+                    <button type="button" id="sp-drawer-close-btn" class="sp-btn-icon" title="Close Search">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="sp-search-box-wrap">
+                    <i class="bi bi-search sp-search-box-icon"></i>
+                    <input type="text" id="sp-search-input" class="sp-search-input" placeholder="Search track name, artist, lofi, or anime OST…" autocomplete="off" />
+                </div>
                 <div id="sp-search-results" class="sp-search-results"></div>
             </div>
         </div>

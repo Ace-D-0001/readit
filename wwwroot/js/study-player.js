@@ -41,6 +41,15 @@ function initStudyMusicPlayer() {
     const minimizeBtn = document.getElementById('sp-min-btn');
     const discIcon = document.querySelector('.sp-disc-icon');
 
+    // Spotify Bottom Bar & Mobile Controls
+    const mobilePlayBtn = document.getElementById('sp-mobile-play-btn');
+    const mobilePlayIcon = document.getElementById('sp-mobile-play-icon');
+    const mobileNextBtn = document.getElementById('sp-mobile-next-btn');
+    const mobileProgressFill = document.getElementById('sp-mobile-progress-fill');
+    const searchDrawer = document.getElementById('sp-search-drawer');
+    const searchToggleBtn = document.getElementById('sp-search-toggle-btn');
+    const drawerCloseBtn = document.getElementById('sp-drawer-close-btn');
+
     let isPlaying = false;
     let isUserSeeking = false;
     let currentPlaylist = [];
@@ -186,6 +195,7 @@ function initStudyMusicPlayer() {
     function setPlayingState(playing) {
         isPlaying = playing;
         if (playIcon) playIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
+        if (mobilePlayIcon) mobilePlayIcon.className = playing ? "bi bi-pause-fill" : "bi bi-play-fill";
         eqBars.forEach(bar => bar.classList.toggle('playing', playing));
         if (discIcon) discIcon.classList.toggle('spin-fast', playing);
         saveSessionState();
@@ -197,6 +207,44 @@ function initStudyMusicPlayer() {
             else player.play();
         });
     }
+
+    if (mobilePlayBtn) {
+        mobilePlayBtn.addEventListener('click', () => {
+            if (isPlaying) player.pause();
+            else player.play();
+        });
+    }
+
+    if (mobileNextBtn) {
+        mobileNextBtn.addEventListener('click', () => {
+            if (nextBtn) nextBtn.click();
+        });
+    }
+
+    if (searchToggleBtn && searchDrawer) {
+        searchToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchDrawer.classList.toggle('open');
+            if (searchDrawer.classList.contains('open') && searchInput) {
+                setTimeout(() => searchInput.focus(), 150);
+            }
+        });
+    }
+
+    if (drawerCloseBtn && searchDrawer) {
+        drawerCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchDrawer.classList.remove('open');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (searchDrawer && searchDrawer.classList.contains('open')) {
+            if (!searchDrawer.contains(e.target) && !searchToggleBtn.contains(e.target)) {
+                searchDrawer.classList.remove('open');
+            }
+        }
+    });
 
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
@@ -259,6 +307,7 @@ function initStudyMusicPlayer() {
         if (duration > 0 && !isNaN(duration)) {
             const pct = (current / duration) * 100;
             if (progressBar) progressBar.value = pct;
+            if (mobileProgressFill) mobileProgressFill.style.width = pct + '%';
             if (timeCurrent) timeCurrent.textContent = formatTime(current);
             if (timeTotal) timeTotal.textContent = formatTime(duration);
         } else {
@@ -367,6 +416,7 @@ function initStudyMusicPlayer() {
                 playPlaylistTrack(idx, true);
                 searchResults.style.display = 'none';
                 if (searchInput) searchInput.value = '';
+                if (searchDrawer) searchDrawer.classList.remove('open');
             });
             searchResults.appendChild(div);
         });

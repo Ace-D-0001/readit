@@ -612,3 +612,480 @@
   0%, 100% { transform: scaleX(1); }
   50% { transform: scaleX(0.95) skewY(-1.2deg); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPOTIFY PC & MOBILE FIXED BOTTOM MUSIC BAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Push body content up so the fixed bottom bar never overlaps page content */
+body {
+  padding-bottom: 85px !important;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 70px !important;
+  }
+}
+
+/* Override old floating card styles */
+.study-player-card {
+  all: unset !important;
+}
+
+/* ── Fixed Full-Width Bottom Bar ─────────────────────────────────────────── */
+.sp-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 80px;
+  background: rgba(18, 18, 22, 0.96);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
+  z-index: 9990;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  user-select: none;
+  transition: transform 0.3s ease;
+}
+
+/* ── Inner 3-Column Spotify Layout ───────────────────────────────────────── */
+.sp-bar-inner {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  align-items: center;
+  height: 100%;
+  padding: 0 24px;
+  max-width: 1800px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 20px;
+}
+
+/* ── Left Column: Now Playing ────────────────────────────────────────────── */
+.sp-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.sp-cover-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.sp-cover-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sp-disc-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sp-cover-wrap:hover .sp-disc-overlay {
+  opacity: 1;
+}
+
+.sp-track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sp-track-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.sp-track-artist {
+  font-size: 11px;
+  color: #a1a1aa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Center Column: Controls & Timeline ──────────────────────────────────── */
+.sp-bar-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.sp-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sp-btn-nav {
+  background: transparent;
+  border: none;
+  color: #b3b3b3;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.sp-btn-nav:hover {
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+.sp-btn-play-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 69, 0, 0.2);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease;
+}
+
+.sp-btn-play-circle:hover {
+  background: #ff4500;
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 6px 18px rgba(255, 69, 0, 0.5);
+}
+
+.sp-timeline-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.sp-time-label {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #a1a1aa;
+  min-width: 28px;
+}
+
+.sp-slider-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Custom Spotify Slider */
+.sp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+  cursor: pointer;
+  transition: height 0.15s ease, background 0.15s ease;
+}
+
+.sp-slider:hover {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.sp-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.3);
+  background: #ff4500;
+}
+
+/* ── Right Column: Search & Volume ───────────────────────────────────────── */
+.sp-bar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.sp-search-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e4e4e7;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.sp-search-toggle-btn:hover {
+  background: rgba(255, 69, 0, 0.2);
+  border-color: rgba(255, 69, 0, 0.4);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.sp-btn-icon {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.sp-btn-icon:hover {
+  color: #ffffff;
+}
+
+.sp-volume-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-vol-slider-wrap {
+  width: 90px;
+  display: flex;
+  align-items: center;
+}
+
+.sp-mobile-controls {
+  display: none;
+}
+
+.sp-mobile-progress-line {
+  display: none;
+}
+
+/* ── Flyout Search Drawer (Floating Above Bottom Bar) ─────────────────────── */
+.sp-search-drawer {
+  position: absolute;
+  right: 24px;
+  bottom: 88px;
+  width: 360px;
+  max-height: 420px;
+  background: rgba(20, 20, 24, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9995;
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.sp-search-drawer.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sp-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sp-drawer-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-search-box-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sp-search-box-icon {
+  position: absolute;
+  left: 10px;
+  color: #71717a;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.sp-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px 8px 32px;
+  color: #ffffff;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sp-search-input:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sp-search-results {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Mobile View: Spotify Mobile Mini-Player (<= 768px) ──────────────────── */
+@media (max-width: 768px) {
+  .sp-bottom-bar {
+    height: 64px;
+  }
+
+  .sp-bar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 14px;
+  }
+
+  .sp-bar-left {
+    flex: 1;
+    gap: 10px;
+    max-width: calc(100% - 110px);
+  }
+
+  .sp-cover-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sp-track-title {
+    font-size: 12px;
+  }
+
+  .sp-track-artist {
+    font-size: 10px;
+  }
+
+  .sp-bar-center {
+    display: none !important; /* Center timeline hidden on mobile mini-bar */
+  }
+
+  .sp-bar-right {
+    gap: 8px;
+  }
+
+  .sp-search-btn-label,
+  .sp-volume-group {
+    display: none !important;
+  }
+
+  .sp-mobile-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sp-btn-play-circle.sm {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* Micro Progress Line on Top of Mobile Bar */
+  .sp-mobile-progress-line {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+
+  .sp-mobile-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.2s linear;
+  }
+
+  /* Mobile Search Drawer (Full-width bottom sheet) */
+  .sp-search-drawer {
+    position: fixed;
+    bottom: 64px;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-height: 75vh;
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    padding: 16px;
+  }
+}
