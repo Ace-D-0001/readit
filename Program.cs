@@ -69,6 +69,22 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"]
+    ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
+    ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication()
+        .AddGoogle(options =>
+        {
+            options.ClientId = googleClientId.Trim();
+            options.ClientSecret = googleClientSecret.Trim();
+            options.SaveTokens = true;
+        });
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

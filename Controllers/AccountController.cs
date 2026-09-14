@@ -1,7 +1,10 @@
 using System;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Read_It.Models;
 
 namespace Read_It.Controllers
@@ -11,15 +14,18 @@ namespace Read_It.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IConfiguration _configuration;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            IConfiguration configuration)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _roleManager = roleManager;
+            _configuration = configuration;
         }
 
         // GET: /Account/Login
@@ -188,28 +194,103 @@ namespace Read_It.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: /Account/GoogleLogin (One-Click Google Authentication)
+        // GET: /Account/GoogleLogin
         [HttpGet]
-        public async Task<IActionResult> GoogleLogin(string? returnUrl = null, string role = "Student")
+        public async Task<IActionResult> GoogleLogin(string? returnUrl = null, string role = "Student", string? name = null, string? email = null)
+        {
+            var googleClientId = _configuration["Authentication:Google:ClientId"]
+                ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+
+            // If real Google OAuth is configured, initiate Google Challenge
+            if (!string.IsNullOrWhiteSpace(googleClientId))
+            {
+                var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl, role });
+                var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+                return Challenge(properties, "Google");
+            }
+
+            // If name and email were explicitly provided, process sign-in directly
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(email))
+            {
+                return await ProcessGoogleSignIn(name, email, role, returnUrl);
+            }
+
+            // Otherwise, show Google Sign-In with Name Picker
+            var vm = new GoogleLoginViewModel
+            {
+                ReturnUrl = returnUrl,
+                Role = role
+            };
+            return View("GoogleLogin", vm);
+        }
+
+        // POST: /Account/GoogleLogin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GoogleLogin(GoogleLoginViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Email))
+            {
+                ModelState.AddModelError("", "Both Full Name and Google Email are required.");
+                return View("GoogleLogin", model);
+            }
+
+            return await ProcessGoogleSignIn(model.FullName, model.Email, model.Role, model.ReturnUrl);
+        }
+
+        private async Task<IActionResult> ProcessGoogleSignIn(string fullName, string email, string role, string? returnUrl)
         {
             bool isAdminTarget = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
-            string targetEmail = isAdminTarget ? "admin@gmail.com" : "student@gmail.com";
-            string targetUsername = isAdminTarget ? "admin" : "student";
+            email = email.Trim();
+            fullName = fullName.Trim();
 
-            var user = await _userManager.FindByEmailAsync(targetEmail);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
+                // Generate a clean, user-friendly username from their actual name (e.g. "John Doe" -> "John_Doe")
+                string baseUsername = fullName.Replace(" ", "_");
+                baseUsername = new string(baseUsername.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+                if (string.IsNullOrWhiteSpace(baseUsername))
+                {
+                    baseUsername = email.Split('@')[0];
+                }
+
+                string username = baseUsername;
+                int counter = 1;
+                while (await _userManager.FindByNameAsync(username) != null)
+                {
+                    username = $"{baseUsername}_{counter++}";
+                }
+
                 user = new ApplicationUser
                 {
-                    UserName = targetUsername,
-                    Email = targetEmail,
-                    Bio = isAdminTarget ? "System Administrator — StudyHub" : "Computer Science Student — StudyHub",
+                    UserName = username,
+                    Email = email,
+                    Bio = $"{fullName} — StudyHub {(isAdminTarget ? "Administrator" : "Student Member")}",
                     EmailConfirmed = true
                 };
+
                 var createRes = await _userManager.CreateAsync(user, "1234567");
                 if (createRes.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, isAdminTarget ? "Admin" : "Student");
+                }
+                else
+                {
+                    foreach (var err in createRes.Errors)
+                    {
+                        ModelState.AddModelError("", err.Description);
+                    }
+                    return View("GoogleLogin", new GoogleLoginViewModel { FullName = fullName, Email = email, Role = role, ReturnUrl = returnUrl });
+                }
+            }
+            else
+            {
+                // If the user previously had the generic username "student", upgrade their display bio to their real name
+                if (user.UserName == "student" && !fullName.Equals("student", StringComparison.OrdinalIgnoreCase))
+                {
+                    user.Bio = $"{fullName} — StudyHub Member";
+                    await _userManager.UpdateAsync(user);
                 }
             }
 
@@ -220,13 +301,97 @@ namespace Read_It.Controllers
             }
 
             await _signInManager.SignInAsync(user, isPersistent: true);
-            TempData["SuccessMessage"] = $"Successfully signed in with Google as {user.Email}";
+            TempData["SuccessMessage"] = $"Successfully signed in with Google as {user.UserName} ({user.Email})";
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
 
             if (await _userManager.IsInRoleAsync(user, "Admin"))
                 return RedirectToAction("Index", "Admin");
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        // GET: /Account/ExternalLoginCallback (Real Google OAuth callback)
+        [HttpGet]
+        public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string role = "Student", string? remoteError = null)
+        {
+            if (remoteError != null)
+            {
+                TempData["ErrorMessage"] = $"Error from external authentication provider: {remoteError}";
+                return RedirectToAction("Login");
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                TempData["ErrorMessage"] = "Error loading external login information.";
+                return RedirectToAction("Login");
+            }
+
+            // Sign in the user with external login provider if user already has a login
+            var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: true, bypassTwoFactor: true);
+            if (signInResult.Succeeded)
+            {
+                var existingUser = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                TempData["SuccessMessage"] = $"Welcome back, {existingUser?.UserName ?? "Student"}!";
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Extract Google claims
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            var fullName = info.Principal.FindFirstValue(ClaimTypes.Name)
+                ?? info.Principal.FindFirstValue(ClaimTypes.GivenName)
+                ?? (info.Principal.FindFirstValue(ClaimTypes.Surname) != null ? $"{info.Principal.FindFirstValue(ClaimTypes.GivenName)} {info.Principal.FindFirstValue(ClaimTypes.Surname)}" : null);
+
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "Email claim not received from Google.";
+                return RedirectToAction("Login");
+            }
+
+            fullName ??= email.Split('@')[0];
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                string baseUsername = fullName.Replace(" ", "_");
+                baseUsername = new string(baseUsername.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+                if (string.IsNullOrWhiteSpace(baseUsername)) baseUsername = email.Split('@')[0];
+
+                string username = baseUsername;
+                int counter = 1;
+                while (await _userManager.FindByNameAsync(username) != null)
+                {
+                    username = $"{baseUsername}_{counter++}";
+                }
+
+                user = new ApplicationUser
+                {
+                    UserName = username,
+                    Email = email,
+                    Bio = $"{fullName} — StudyHub Member",
+                    EmailConfirmed = true
+                };
+
+                var createRes = await _userManager.CreateAsync(user);
+                if (!createRes.Succeeded)
+                {
+                    TempData["ErrorMessage"] = "Failed to create account from Google login.";
+                    return RedirectToAction("Login");
+                }
+
+                await _userManager.AddToRoleAsync(user, role);
+            }
+
+            await _userManager.AddLoginAsync(user, info);
+            await _signInManager.SignInAsync(user, isPersistent: true);
+            TempData["SuccessMessage"] = $"Welcome to StudyHub, {user.UserName}!";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
 
             return RedirectToAction("Index", "Home");
         }

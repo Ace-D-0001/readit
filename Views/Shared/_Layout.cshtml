@@ -130,8 +130,9 @@
                     <i class="bi bi-megaphone-fill"></i> <span>Notice</span>
                 </a>
 
-                <a href="/Admin" class="btn-ghost" title="Admin Control Center (@User.Identity?.Name)" style="padding: 6px 8px;">
+                <a href="/Admin" class="btn-ghost d-inline-flex align-items-center gap-2" title="Admin Control Center (@User.Identity?.Name)" style="padding: 4px 8px;">
                     <i class="bi bi-person-badge fs-5" style="color: var(--warning);"></i>
+                    <span class="d-none d-md-inline fw-semibold" style="font-size: 12.5px; color: var(--text-heading); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@User.Identity?.Name</span>
                 </a>
 
                 <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2 d-none d-sm-inline-flex align-items-center" title="Sign Out" style="font-size: 11px; font-weight: 600;">
@@ -165,8 +166,9 @@
                     <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline ms-1">Create Post</span>
                 </a>
 
-                <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 8px;">
+                <a href="/User/Details" class="btn-ghost d-inline-flex align-items-center gap-2" title="My Profile (@User.Identity.Name)" style="padding: 4px 8px;">
                     <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
+                    <span class="d-none d-md-inline fw-semibold" style="font-size: 12.5px; color: var(--text-heading); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">u/@User.Identity.Name</span>
                 </a>
                 <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2 d-none d-sm-inline-flex align-items-center" title="Sign Out" style="font-size: 11px; font-weight: 600;">
                     <i class="bi bi-box-arrow-right"></i>
