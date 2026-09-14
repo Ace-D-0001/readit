@@ -112,7 +112,7 @@
                         <i class="bi bi-bell-fill fs-5" style="color: var(--text-secondary);"></i>
                         <span id="notif-badge-admin" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 9px;">0</span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownAdmin" style="width: 320px; max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownAdmin" style="width: 320px; max-width: calc(100vw - 32px); max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
                         <div class="d-flex justify-content-between align-items-center mb-2 px-2 pb-1 border-bottom border-secondary">
                             <strong style="color: var(--text-heading);">Notifications</strong>
                             <a href="javascript:void(0)" onclick="markAllNotificationsRead()" class="text-accent" style="font-size: 11px;">Mark all read</a>
@@ -126,16 +126,16 @@
                     </div>
                 </div>
 
-                <a href="/Admin/CreateAnnouncement" class="btn btn-sm btn-outline-warning py-1 px-2" style="font-size: 12px; font-weight: 600;">
-                    <i class="bi bi-megaphone-fill"></i> Post Notice
+                <a href="/Admin/CreateAnnouncement" class="btn btn-sm btn-outline-warning py-1 px-2 d-none d-sm-inline-flex align-items-center gap-1" style="font-size: 12px; font-weight: 600;">
+                    <i class="bi bi-megaphone-fill"></i> <span>Notice</span>
                 </a>
 
-                <a href="/Admin" class="btn-ghost" title="Admin Control Center (@User.Identity?.Name)" style="padding: 6px 10px;">
+                <a href="/Admin" class="btn-ghost" title="Admin Control Center (@User.Identity?.Name)" style="padding: 6px 8px;">
                     <i class="bi bi-person-badge fs-5" style="color: var(--warning);"></i>
                 </a>
 
-                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2" title="Sign Out" style="font-size: 11px; font-weight: 600;">
-                    <i class="bi bi-box-arrow-right"></i> Sign Out
+                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2 d-none d-sm-inline-flex align-items-center" title="Sign Out" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-box-arrow-right"></i>
                 </a>
             }
             else if (User.Identity?.IsAuthenticated == true)
@@ -146,7 +146,7 @@
                         <i class="bi bi-bell-fill fs-5" style="color: var(--text-secondary);"></i>
                         <span id="notif-badge-student" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 9px;">0</span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownStudent" style="width: 320px; max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
+                    <div class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow p-2" aria-labelledby="notifDropdownStudent" style="width: 320px; max-width: calc(100vw - 32px); max-height: 420px; overflow-y: auto; font-size: 12px; background: var(--bg-panel-alt); border: 1px solid var(--border-default);">
                         <div class="d-flex justify-content-between align-items-center mb-2 px-2 pb-1 border-bottom border-secondary">
                             <strong style="color: var(--text-heading);">Notifications</strong>
                             <a href="javascript:void(0)" onclick="markAllNotificationsRead()" class="text-accent" style="font-size: 11px;">Mark all read</a>
@@ -161,15 +161,15 @@
                 </div>
 
                 <!-- Create Post Action for Students -->
-                <a href="/Posts/Create" class="btn-primary" style="padding: 6px 14px; font-size: var(--text-xs);">
-                    <i class="bi bi-plus-lg"></i> Create Post
+                <a href="/Posts/Create" class="btn-primary" style="padding: 6px 10px; font-size: var(--text-xs); display: inline-flex; align-items: center;">
+                    <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline ms-1">Create Post</span>
                 </a>
 
-                <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 10px;">
+                <a href="/User/Details" class="btn-ghost" title="My Profile (@User.Identity.Name)" style="padding: 6px 8px;">
                     <i class="bi bi-person-circle fs-5" style="color: var(--accent);"></i>
                 </a>
-                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2" title="Sign Out" style="font-size: 11px; font-weight: 600;">
-                    <i class="bi bi-box-arrow-right"></i> Sign Out
+                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger py-1 px-2 d-none d-sm-inline-flex align-items-center" title="Sign Out" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-box-arrow-right"></i>
                 </a>
             }
             else
@@ -515,6 +515,13 @@ else
             {
                 <hr class="divider" />
                 <a href="/Account/Logout" class="sidebar-item text-danger" style="font-weight: 600;"><i class="bi bi-box-arrow-right text-danger"></i> Sign Out (@User.Identity.Name)</a>
+            }
+            else
+            {
+                <hr class="divider" />
+                <a href="/Account/Login" class="sidebar-item" style="color: var(--accent); font-weight: 700;"><i class="bi bi-box-arrow-in-right"></i> Student Sign In</a>
+                <a href="/Account/Register" class="sidebar-item" style="font-weight: 600;"><i class="bi bi-person-plus"></i> Register Student Account</a>
+                <a href="/Account/AdminLogin" class="sidebar-item" style="color: var(--warning); font-weight: 600;"><i class="bi bi-shield-lock"></i> Admin Portal</a>
             }
         </div>
     </div>

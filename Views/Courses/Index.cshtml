@@ -13,12 +13,12 @@
     </div>
 
     <!-- Search Form -->
-    <form action="/Courses" method="get" class="d-flex gap-2">
-        <input type="text" name="search" value="@searchQuery" placeholder="Search subject code or title..." class="form-control form-control-sm bg-transparent text-white border-secondary" style="width: 240px;" />
-        <button type="submit" class="btn-primary py-1 px-3" style="font-size: 12px;">Search</button>
+    <form action="/Courses" method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 360px;">
+        <input type="text" name="search" value="@searchQuery" placeholder="Search subject code or title..." class="form-control form-control-sm bg-transparent text-white border-secondary" style="flex: 1; min-width: 120px;" />
+        <button type="submit" class="btn-primary py-1 px-3" style="font-size: 12px; white-space: nowrap;">Search</button>
         @if (!string.IsNullOrEmpty(searchQuery))
         {
-            <a href="/Courses" class="btn-outline py-1 px-2" style="font-size: 12px;">Clear</a>
+            <a href="/Courses" class="btn-outline py-1 px-2" style="font-size: 12px; white-space: nowrap;">Clear</a>
         }
     </form>
 </div>

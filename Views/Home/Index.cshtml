@@ -29,7 +29,7 @@
         @{
             var featuredCourses = ViewBag.FeaturedCourses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
         }
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-4); text-align: left;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-4); text-align: left;">
             @foreach (var fc in featuredCourses)
             {
                 var color = fc.Code.StartsWith("CSC") ? "var(--accent)" : (fc.Code.StartsWith("MAT") ? "#0ea5e9" : (fc.Code.StartsWith("ENG") ? "#10b981" : "#f59e0b"));

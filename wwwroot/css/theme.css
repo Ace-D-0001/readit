@@ -238,19 +238,40 @@ input, textarea, select { font-family: var(--font); }
   .hamburger-btn { display: flex; }
 }
 
-/* Mobile — full single column */
-@media (max-width: 760px) {
+/* Mobile — full single column with stacked aside */
+@media (max-width: 768px) {
   .app-grid, .app-page {
     grid-template-columns: 1fr;
-    grid-template-areas: "main";
-    padding: var(--sp-3);
-    gap: var(--sp-3);
+    grid-template-areas: 
+      "main"
+      "aside";
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-4);
   }
-  .app-sidebar, .app-aside { display: none; }
+  .app-sidebar { display: none; }
+  .app-aside {
+    grid-area: aside;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: var(--sp-2);
+  }
+  .app-aside > div {
+    position: static !important;
+  }
   .hamburger-btn { display: flex; }
 
   .app-header {
-    padding: 0 var(--sp-3);
+    padding: 0 var(--sp-2);
+  }
+  .app-header .header-left {
+    gap: var(--sp-2);
+  }
+  .app-header .header-right {
+    gap: 4px;
+  }
+  #nav-brand-logo {
+    height: 30px !important;
   }
 }
 
@@ -1469,17 +1490,60 @@ input, textarea, select { font-family: var(--font); }
 
 
 /* ── Responsive mobile helpers ────────────────────────────────────────────── */
-@media (max-width: 760px) {
-  .post-card { flex-direction: column; }
-  .post-vote-col {
+@media (max-width: 768px) {
+  .post-card {
     flex-direction: row;
-    min-width: unset;
-    width: 100%;
-    padding: var(--sp-2) var(--sp-3);
-    border-right: none;
-    border-bottom: 1px solid var(--border-default);
+    border-radius: var(--r-md);
   }
-  .post-body-col { padding: var(--sp-3); }
-  .post-actions { flex-wrap: wrap; }
-  .post-title { font-size: var(--text-md); }
+  .post-vote-col {
+    min-width: 38px;
+    padding: var(--sp-2) 4px;
+    gap: 2px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: none;
+  }
+  .post-vote-col .vote-arrow {
+    font-size: 16px;
+  }
+  .post-vote-col .vote-count {
+    font-size: 11px;
+  }
+  .post-body-col {
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .post-title {
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+  .post-preview {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 2;
+  }
+  .post-actions {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .post-actions .action-btn {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  /* Comments on mobile */
+  .comment-thread {
+    margin-top: var(--sp-2) !important;
+    padding-left: 8px !important;
+    border-left-width: 1.5px !important;
+  }
+  .comment-card {
+    padding: 10px !important;
+  }
+  .comment-actions {
+    gap: var(--sp-2) !important;
+  }
+
+  /* Footer on mobile - clears Spotify bar */
+  .app-footer {
+    padding: var(--sp-4) var(--sp-3);
+    padding-bottom: 85px !important;
+  }
 }

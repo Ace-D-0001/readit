@@ -426,15 +426,84 @@
 .new-comment-box textarea:focus { border-color: var(--border-focus); }
 .new-comment-box textarea::placeholder { color: var(--text-muted); }
 
-/* ── Responsive post detail ───────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .post-detail-header { flex-direction: column; padding: var(--sp-4); }
-  .post-detail-vote-col { flex-direction: row; gap: var(--sp-3); min-width: unset; }
-  .post-detail-title { font-size: var(--text-lg); }
-  .post-detail-actions { padding: var(--sp-2) var(--sp-4); }
-  .hero-card { padding: var(--sp-6) var(--sp-4); }
-  .hero-card h2 { font-size: var(--text-xl); }
-  .courses-grid { grid-template-columns: 1fr; }
+/* ── Responsive post detail & mobile layout (<= 768px) ──────────────────────────── */
+@media (max-width: 768px) {
+  .post-detail-header {
+    flex-direction: column !important;
+    padding: var(--sp-3) !important;
+  }
+  .post-detail-vote-col {
+    flex-direction: row !important;
+    width: 100% !important;
+    min-width: unset !important;
+    padding: var(--sp-2) 0 !important;
+    gap: var(--sp-3) !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-default) !important;
+  }
+  .post-detail-body-col {
+    width: 100% !important;
+    padding: var(--sp-3) 0 0 0 !important;
+  }
+  .post-detail-title {
+    font-size: 1.25rem !important;
+    line-height: 1.4 !important;
+  }
+  .post-detail-actions {
+    padding: var(--sp-2) var(--sp-3) !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+  }
+  .post-detail-actions .action-btn {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Course banner mobile layout */
+  .course-banner-gradient {
+    height: 72px !important;
+  }
+  .course-banner-body {
+    padding: var(--sp-3) !important;
+    padding-top: 36px !important;
+  }
+  .course-banner-icon {
+    width: 52px !important;
+    height: 52px !important;
+    top: -26px !important;
+    left: var(--sp-3) !important;
+    font-size: var(--text-md) !important;
+    border-width: 3px !important;
+  }
+
+  /* Hero card mobile layout */
+  .hero-card {
+    padding: var(--sp-4) var(--sp-3) !important;
+  }
+  .hero-card h2 {
+    font-size: 1.35rem !important;
+  }
+
+  /* Right cards when stacked on mobile */
+  .right-card {
+    padding: var(--sp-3) !important;
+    margin-bottom: var(--sp-3) !important;
+  }
+
+  /* Department & Feed tabs */
+  .dept-tabs {
+    gap: 4px !important;
+  }
+  .dept-tab {
+    padding: 4px 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  .courses-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
