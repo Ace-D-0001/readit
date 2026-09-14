@@ -3,6 +3,30 @@ using Microsoft.EntityFrameworkCore;
 using Read_It.Data;
 using Read_It.Models;
 
+// Enable Npgsql legacy timestamp behavior for seamless DateTime compatibility
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// Load .env if present
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envPath))
+{
+    foreach (var line in File.ReadAllLines(envPath))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+        var parts = trimmed.Split('=', 2);
+        if (parts.Length == 2)
+        {
+            var key = parts[0].Trim();
+            var val = parts[1].Trim().Trim('"', '\'');
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+            {
+                Environment.SetEnvironmentVariable(key, val);
+            }
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Render dynamic port binding
@@ -15,9 +39,13 @@ if (!string.IsNullOrEmpty(port))
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+var connectionString = ParsePostgresConnectionString(rawConnectionString);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -92,6 +120,57 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+// CLI migration argument check
+if (args.Contains("--migrate-from-sqlite"))
+{
+    Console.WriteLine(">>> Explicit SQLite to PostgreSQL migration requested...");
+    await SqliteToPostgresMigrator.MigrateAsync(app.Services);
+    Console.WriteLine(">>> Migration complete. Exiting.");
+    return;
+}
+
+// Automatic initial migration check: if PostgreSQL has 0 users but app.db exists
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    context.Database.EnsureCreated();
+    if (!context.Users.Any() && File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "app.db")))
+    {
+        Console.WriteLine(">>> Detected empty PostgreSQL database and existing app.db. Migrating data automatically...");
+        await SqliteToPostgresMigrator.MigrateAsync(app.Services);
+    }
+}
+
 Read_It.DbSeeder.Seed(app);
 
 app.Run();
+
+static string ParsePostgresConnectionString(string? input)
+{
+    if (string.IsNullOrWhiteSpace(input))
+        return string.Empty;
+
+    if (input.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        input.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        var uri = new Uri(input);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        var database = uri.AbsolutePath.TrimStart('/');
+        var port = uri.Port > 0 ? uri.Port : 5432;
+
+        var csb = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = port,
+            Database = database,
+            Username = username,
+            Password = password,
+            SslMode = Npgsql.SslMode.Require
+        };
+        return csb.ConnectionString;
+    }
+
+    return input;
+}
