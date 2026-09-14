@@ -1,48 +1,62 @@
 @{
-    ViewData["Title"] = "Student Sign In — ReadIt";
+    ViewData["Title"] = "Student Sign In — StudyHub";
 }
 
-<div style="max-width: 440px; margin: 40px auto;" class="fade-up">
-    <div class="card p-4 shadow-lg">
-        <div class="text-center mb-4">
-            <h2 style="font-weight: 800; color: var(--text-heading);">Student Sign In</h2>
-            <p style="color: var(--text-secondary); font-size: var(--text-sm);">Log in to access your course notes, posts, and subReadIts.</p>
+<div style="max-width: 440px; margin: 48px auto;" class="fade-up">
+    <!-- Brand Icon & Header -->
+    <div class="text-center mb-4">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 12px; background: rgba(255, 69, 0, 0.1); border: 1px solid rgba(255, 69, 0, 0.2); margin-bottom: 16px;">
+            <i class="bi bi-mortarboard-fill" style="font-size: 26px; color: var(--accent);"></i>
         </div>
+        <h2 style="font-weight: 700; color: var(--text-heading); margin-bottom: 6px; font-size: 1.5rem; letter-spacing: -0.025em;">Welcome to StudyHub</h2>
+        <p style="color: var(--text-secondary); font-size: 13.5px; margin: 0; line-height: 1.5;">Enter your student credentials to access course resources, lecture notes, and discussions.</p>
+    </div>
 
+    <!-- Portal Switch Tabs -->
+    <div class="dept-tabs justify-content-center mb-3" style="border-radius: var(--r-md); background: var(--bg-panel); padding: 4px; border: 1px solid var(--border-default);">
+        <a href="/Account/Login" class="dept-tab active" style="flex: 1; text-align: center; border-radius: var(--r-sm); justify-content: center; font-weight: 600;">
+            <i class="bi bi-person-fill"></i> Student Portal
+        </a>
+        <a href="/Account/AdminLogin" class="dept-tab" style="flex: 1; text-align: center; border-radius: var(--r-sm); justify-content: center; color: var(--text-secondary); font-weight: 500;">
+            <i class="bi bi-shield-lock-fill"></i> Admin Portal
+        </a>
+    </div>
+
+    <div class="card p-4 shadow-sm" style="border-radius: var(--r-lg); border: 1px solid var(--border-default); background: var(--bg-panel);">
         @if (TempData["SuccessMessage"] != null)
         {
-            <div class="alert alert-success p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
-                <i class="bi bi-check-circle-fill me-1"></i> @TempData["SuccessMessage"]
+            <div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-3" style="font-size: 12.5px; border-radius: var(--r-sm);">
+                <i class="bi bi-check-circle-fill fs-6 text-success"></i>
+                <div>@TempData["SuccessMessage"]</div>
             </div>
         }
 
         @if (TempData["ErrorMessage"] != null)
         {
-            <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
-                <i class="bi bi-exclamation-triangle-fill me-1"></i> @TempData["ErrorMessage"]
+            <div class="alert alert-danger d-flex align-items-center gap-2 p-2 mb-3" style="font-size: 12.5px; border-radius: var(--r-sm);">
+                <i class="bi bi-exclamation-triangle-fill fs-6 text-danger"></i>
+                <div>@TempData["ErrorMessage"]</div>
             </div>
         }
 
         @if (!ViewData.ModelState.IsValid)
         {
-            <div class="alert alert-danger p-2 mb-3" style="font-size: var(--text-xs); border-radius: var(--r-sm);">
+            <div class="alert alert-danger p-2 mb-3" style="font-size: 12.5px; border-radius: var(--r-sm);">
                 @Html.ValidationSummary(false, "", new { @class = "mb-0" })
             </div>
         }
 
-        <!-- Quick Test Student Buttons -->
-        <div style="background: rgba(34, 197, 94, 0.08); border: 1px dashed rgba(34, 197, 94, 0.3); border-radius: var(--r-md); padding: 12px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: var(--text-xs); font-weight: 700; color: #22c55e; margin-bottom: 6px;">
-                ⚡ TEST MODE: 1-CLICK SIGN IN
-            </div>
-            <a href="/Account/GoogleLogin" class="btn btn-sm w-100 mb-2" style="background: #ffffff; color: #333; font-weight: 700; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                Sign in with Google (Test Student)
-            </a>
-            <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: center; align-items: center; gap: 8px;">
-                <span>Credentials: <code>student@iubat.edu</code></span>
-                <button type="button" class="btn btn-outline-success btn-xs" style="padding: 1px 6px; font-size: 10px;" onclick="fillStudentCredentials()">Fill Form</button>
-            </div>
+        <!-- Continue with Google Button -->
+        <a href="/Account/GoogleLogin@(ViewData["ReturnUrl"] != null ? "?returnUrl=" + Uri.EscapeDataString(ViewData["ReturnUrl"]!.ToString()!) : "")" class="btn w-100 mb-3" style="background: #ffffff; color: #111827; font-weight: 600; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13.5px; padding: 10px 16px; border-radius: var(--r-md); transition: background 0.15s ease, box-shadow 0.15s ease;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            <span>Continue with Google</span>
+        </a>
+
+        <!-- Separator -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <hr style="flex: 1; border-color: var(--border-default); margin: 0;" />
+            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Or continue with email</span>
+            <hr style="flex: 1; border-color: var(--border-default); margin: 0;" />
         </div>
 
         <form action="/Account/Login" method="post">
@@ -50,32 +64,67 @@
             <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
 
             <div class="mb-3">
-                <label class="form-label style-label">Email or Username</label>
-                <input type="text" id="loginEmail" name="email" class="form-control" placeholder="e.g. student@iubat.edu or username" required />
+                <label class="form-label" style="font-size: 12.5px; font-weight: 600; color: var(--text-heading); margin-bottom: 6px;">Email address or Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-secondary text-muted" style="border-color: var(--border-default) !important;">
+                        <i class="bi bi-envelope"></i>
+                    </span>
+                    <input type="text" id="loginEmail" name="email" class="form-control" placeholder="student@gmail.com" required autofocus />
+                </div>
             </div>
 
             <div class="mb-3">
-                <div style="display: flex; justify-content: space-between; align-items: center;" class="mb-1">
-                    <label class="form-label style-label mb-0">Password</label>
-                    <a href="/Account/ForgotPassword" style="font-size: var(--text-xs); color: var(--accent);">Forgot password?</a>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label mb-0" style="font-size: 12.5px; font-weight: 600; color: var(--text-heading);">Password</label>
+                    <a href="/Account/ForgotPassword" style="font-size: 11.5px; color: var(--accent); text-decoration: none;">Forgot password?</a>
                 </div>
-                <input type="password" id="loginPassword" name="password" class="form-control" placeholder="••••••••" required />
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-secondary text-muted" style="border-color: var(--border-default) !important;">
+                        <i class="bi bi-lock"></i>
+                    </span>
+                    <input type="password" id="loginPassword" name="password" class="form-control" placeholder="Enter password" required />
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('loginPassword', 'pwEyeIcon')" style="border-color: var(--border-default); color: var(--text-muted);" title="Toggle password visibility">
+                        <i class="bi bi-eye" id="pwEyeIcon"></i>
+                    </button>
+                </div>
             </div>
 
-            <button type="submit" class="btn-primary w-100 py-2 mt-2">Sign In as Student</button>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="rememberMe" value="true" id="rememberMe" checked />
+                    <label class="form-check-label" for="rememberMe" style="font-size: 12.5px; color: var(--text-secondary);">
+                        Remember me
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary w-100 py-2" style="font-size: 14px; font-weight: 600; border-radius: var(--r-md);">
+                Sign In
+            </button>
         </form>
 
-        <div class="text-center mt-4 pt-3" style="border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-secondary);">
-            Don't have an account? <a href="/Account/Register" style="color: var(--accent); font-weight: 700;">Sign Up</a>
-            <br />
-            Are you an Admin? <a href="/Account/AdminLogin" style="color: var(--warning); font-weight: 700;">Admin Sign In &rarr;</a>
+        <div class="text-center mt-4 pt-3" style="border-top: 1px solid var(--border-default); font-size: 12.5px; color: var(--text-secondary);">
+            Don't have an account? <a href="/Account/Register" style="color: var(--accent); font-weight: 600; text-decoration: none;">Sign up for free</a>
+            <div class="mt-2">
+                Need administrative access? <a href="/Account/AdminLogin" style="color: var(--text-secondary); font-weight: 500; text-decoration: none;">Sign in as Admin &rarr;</a>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-function fillStudentCredentials() {
-    document.getElementById('loginEmail').value = 'student@iubat.edu';
-    document.getElementById('loginPassword').value = 'Student123!';
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
 }
 </script>

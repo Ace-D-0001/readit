@@ -26,6 +26,7 @@ namespace Read_It.Controllers
         {
             ViewBag.ActiveSort = sort.ToLower();
             ViewBag.ActiveFeed = feed.ToLower();
+            ViewBag.FeaturedCourses = await _context.Courses.OrderBy(c => c.Code).Take(8).ToListAsync();
 
             string? currentUserId = null;
             if (User?.Identity?.IsAuthenticated == true)

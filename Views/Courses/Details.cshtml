@@ -1,7 +1,7 @@
 @model Read_It.Models.Course
 
 @{
-    ViewData["Title"] = Model.Code + " — SubReadIt";
+    ViewData["Title"] = Model.Code + " — Course Hub";
 
     var videosByTopic    = ViewBag.VideosByTopic as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     var outlineResources = ViewBag.OutlineResources as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
@@ -566,6 +566,6 @@ else
     <div class="empty-state">
         <i class="bi bi-chat-square" style="font-size: 2.5rem; display: block; margin-bottom: var(--sp-3);"></i>
         <h5>No posts in c/@Model.Code yet</h5>
-        <p><a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" style="color: var(--accent);">Create the first post</a> in this subReadIt!</p>
+        <p><a href="@Url.Action("Create", "Posts", new { courseCode = Model.Code })" style="color: var(--accent);">Create the first post</a> in this course!</p>
     </div>
 }

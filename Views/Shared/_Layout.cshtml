@@ -1,16 +1,18 @@
+@inject Read_It.Data.ApplicationDbContext DbContext
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ReadIt</title>
-    <meta name="description" content="ReadIt — IUBAT student community for course resources, YouTube playlists, question banks and discussions." />
+    <title>@ViewData["Title"] - StudyHub</title>
+    <meta name="description" content="StudyHub — Academic student community for course resources, outlines, question banks, lecture notes, and discussions." />
     <link rel="icon" type="image/svg+xml" href="~/images/logo-mark.svg" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <script>
-        if (sessionStorage.getItem('readit_splash_shown')) {
+        if (sessionStorage.getItem('studyhub_splash_shown')) {
             document.documentElement.classList.add('splash-already-shown');
         }
     </script>
@@ -23,7 +25,7 @@
     <!-- ── First-Time / Page-Load Welcoming Mascot Transition ── -->
     <div id="readit-page-transition" class="readit-page-transition">
         <div class="transition-content">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="280" height="80" class="splash-svg" style="overflow: visible;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" width="290" height="80" class="splash-svg" style="overflow: visible;">
                 <g class="splash-mascot-group">
                     <g fill="#FF4500">
                         <path class="splash-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
@@ -38,7 +40,7 @@
                         <ellipse id="splash-eye-right" class="splash-eye splash-eye-right" cx="94" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
                     </g>
                 </g>
-                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="58" font-weight="800" fill="#FFFFFF" letter-spacing="-1.2">Study<tspan fill="#FF4500">Hub</tspan></text>
             </svg>
             <div class="splash-spinner"></div>
         </div>
@@ -50,6 +52,7 @@
     bool isAdmin = User.IsInRole("Admin");
     bool isAdminPage = currentCtrl.Equals("Admin", StringComparison.OrdinalIgnoreCase);
     bool hideMusicPlayer = isAuthPage || isAdmin || isAdminPage;
+    var allCoursesList = DbContext.Courses.OrderBy(c => c.Code).ToList();
 }
 
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
@@ -63,8 +66,8 @@
             </button>
         }
         <!-- Interactive Animated Logo -->
-        <a href="/" aria-label="ReadIt Home" class="brand-logo-link" title="ReadIt — Click to refresh">
-            <svg id="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" style="height: 36px; width: auto; overflow: visible; display: block;">
+        <a href="/" aria-label="StudyHub Home" class="brand-logo-link" title="StudyHub — Click to refresh">
+            <svg id="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" style="height: 36px; width: auto; overflow: visible; display: block;">
                 <g id="nav-mascot" class="nav-mascot-group">
                     <g fill="#FF4500">
                         <path class="nav-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
@@ -82,7 +85,7 @@
                 </g>
 
                 <!-- Brand Name Typography -->
-                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="58" font-weight="800" fill="#FFFFFF" letter-spacing="-1.2">Study<tspan fill="#FF4500">Hub</tspan></text>
             </svg>
         </a>
     </div>
@@ -194,8 +197,8 @@
 }
 else
 {
-    <!-- ── Main 3-column grid ─────────────────────────────────────────────────── -->
-    <div class="app-grid">
+    <!-- ── Main grid (2-column full-width for Admin, 3-column for students) ── -->
+    <div class="app-grid @(isAdminPage ? "admin-grid" : "")">
 
         <!-- Left Sidebar (LHS) -->
         <aside class="app-sidebar">
@@ -234,7 +237,7 @@ else
                         </a>
                     </nav>
 
-                    <div class="sidebar-label">COMMUNITY FEEDS</div>
+                    <div class="sidebar-label">ACADEMIC PORTAL</div>
                 }
 
                 <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
@@ -244,11 +247,11 @@ else
                     </a>
                     <a href="/Courses" class="sidebar-item">
                         <i class="bi bi-journals"></i>
-                        <span>All SubSubjects</span>
+                        <span>Academic Courses</span>
                     </a>
                     <a href="/Posts" class="sidebar-item">
                         <i class="bi bi-file-earmark-text"></i>
-                        <span>All Posts</span>
+                        <span>Discussions</span>
                     </a>
                     @if (!isAdmin)
                     {
@@ -263,44 +266,27 @@ else
                     }
                 </nav>
 
-                <div class="sidebar-label">IUBAT SubSubjects</div>
+                <div class="sidebar-label">Academic Courses (@allCoursesList.Count)</div>
 
-                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3);">
-                    <a href="/Courses/Details?code=CSC247" class="sidebar-item">
-                        <span class="avatar avatar-sm" style="background: #22c55e;">C</span>
-                        <div>
-                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC247</div>
-                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Computer Architecture</div>
-                        </div>
-                    </a>
-                    <a href="/Courses/Details?code=CSC391" class="sidebar-item">
-                        <span class="avatar avatar-sm" style="background: #3b82f6;">C</span>
-                        <div>
-                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC391</div>
-                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Data Structures</div>
-                        </div>
-                    </a>
-                    <a href="/Courses/Details?code=CSC433" class="sidebar-item">
-                        <span class="avatar avatar-sm" style="background: #a855f7;">C</span>
-                        <div>
-                            <div style="font-size: var(--text-sm); font-weight: 600;">CSC433</div>
-                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Database Systems</div>
-                        </div>
-                    </a>
-                    <a href="/Courses/Details?code=MAT247" class="sidebar-item">
-                        <span class="avatar avatar-sm" style="background: #0ea5e9;">M</span>
-                        <div>
-                            <div style="font-size: var(--text-sm); font-weight: 600;">MAT247</div>
-                            <div style="font-size: var(--text-xs); color: var(--text-muted);">Numerical Analysis</div>
-                        </div>
-                    </a>
+                <nav style="display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--sp-3); max-height: 420px; overflow-y: auto;">
+                    @foreach (var c in allCoursesList)
+                    {
+                        var color = c.Code.StartsWith("CSC") ? "var(--accent)" : (c.Code.StartsWith("MAT") ? "#0ea5e9" : (c.Code.StartsWith("ENG") ? "#10b981" : (c.Code.StartsWith("STA") ? "#8b5cf6" : "#f59e0b")));
+                        <a href="/Courses/Details?code=@c.Code" class="sidebar-item">
+                            <span class="avatar avatar-sm" style="background: @color; color: #fff; font-size: 11px; font-weight: 800; flex-shrink: 0;">@c.Code.Substring(0, 1)</span>
+                            <div style="min-width: 0;">
+                                <div style="font-size: var(--text-sm); font-weight: 700; color: var(--text-heading);">@c.Code</div>
+                                <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 145px;">@c.Title</div>
+                            </div>
+                        </a>
+                    }
                 </nav>
 
                 <hr class="divider" />
 
                 <a href="/Courses" class="sidebar-item" style="color: var(--accent);">
                     <i class="bi bi-compass"></i>
-                    <span style="font-weight: 600;">Explore all subReadIts</span>
+                    <span style="font-weight: 600;">Explore All Courses</span>
                 </a>
 
                 @if (User.Identity?.IsAuthenticated == true)
@@ -318,49 +304,33 @@ else
             @RenderBody()
         </main>
 
-        <!-- Right Aside Column (RHS) -->
-        <aside class="app-aside">
-            <div style="position: sticky; top: calc(var(--header-h) + 16px);">
-                @if (IsSectionDefined("RightAside"))
-                {
-                    @await RenderSectionAsync("RightAside", required: false)
-                }
-                else
-                {
-                    @if (isAdmin)
+        @if (!isAdminPage)
+        {
+            <!-- Right Aside Column (RHS) -->
+            <aside class="app-aside">
+                <div style="position: sticky; top: calc(var(--header-h) + 16px);">
+                    @if (IsSectionDefined("RightAside"))
                     {
-                        <div class="right-card" style="border-left: 4px solid var(--warning);">
-                            <div class="right-card-title">
-                                <i class="bi bi-shield-shaded" style="color: var(--warning);"></i> Admin Quick Actions
-                            </div>
-                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-3); line-height: 1.6;">
-                                Manage reported content, evaluate pending course notes, and broadcast official announcements.
-                            </p>
-                            <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
-                                <a href="/Admin/Reports" class="btn-warning btn-sm py-2" style="font-weight: 700; text-align: center;">Review Reports</a>
-                                <a href="/Admin/Notes" class="btn-outline btn-sm py-2" style="text-align: center;">Approve Notes</a>
-                                <a href="/Admin/CreateAnnouncement" class="btn-ghost btn-sm py-1" style="text-align: center; color: var(--warning);">+ Post Announcement</a>
-                            </div>
-                        </div>
+                        @await RenderSectionAsync("RightAside", required: false)
                     }
                     else
                     {
                         <div class="right-card">
                             <div class="right-card-title">
-                                <i class="bi bi-info-circle"></i> About ReadIt — IUBAT
+                                <i class="bi bi-info-circle"></i> About StudyHub
                             </div>
                             <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--sp-4); line-height: 1.6;">
-                                ReadIt is a subject-focused community for IUBAT students and faculty. Find outlines, notes, videos, and discussions.
+                                StudyHub is an academic collaborative platform for university students and faculty. Find course outlines, verified lecture notes, question banks, and scholarly discussions.
                             </p>
                             <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
                                 <a href="/Posts/Create" class="btn-primary" style="width: 100%; text-align: center;">+ Create Post</a>
-                                <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse SubSubjects</a>
+                                <a href="/Courses"     class="btn-outline" style="width: 100%; text-align: center;">Browse Courses</a>
                             </div>
                         </div>
                     }
-                }
-            </div>
-        </aside>
+                </div>
+            </aside>
+        }
     </div>
 
     @if (!hideMusicPlayer)
@@ -477,7 +447,7 @@ else
     <!-- ── Mobile Off-canvas Sidebar ──────────────────────────────────────────── -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
         <div class="offcanvas-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" style="height: 28px; width: auto; overflow: visible;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" style="height: 28px; width: auto; overflow: visible;">
                 <g class="nav-mascot-group">
                     <g fill="#FF4500">
                         <path class="nav-book-left" d="M 28 32 C 28 23, 35 16, 44 16 L 96 26 C 104 28, 108 34, 108 42 L 108 92 C 108 98, 103 103, 96 102 L 48 92 L 32 108 L 32 90 C 26 84, 28 76, 28 68 Z" />
@@ -492,7 +462,7 @@ else
                         <ellipse class="nav-eye nav-eye-right" cx="94" cy="56" rx="6.5" ry="6.5" fill="#FFFFFF" />
                     </g>
                 </g>
-                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="800" fill="#FF4500" letter-spacing="-1.5">ReadIt</text>
+                <text x="165" y="82" font-family="'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="58" font-weight="800" fill="#FFFFFF" letter-spacing="-1.2">Study<tspan fill="#FF4500">Hub</tspan></text>
             </svg>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
@@ -523,20 +493,23 @@ else
             {
                 <a href="/Posts/Create" class="sidebar-item" style="color: var(--accent);"><i class="bi bi-pencil-square"></i> + Create Post</a>
             }
-            <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All SubSubjects</a>
-            <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> All Posts</a>
+            <a href="/Courses"      class="sidebar-item"><i class="bi bi-journals"></i> All Courses</a>
+            <a href="/Posts"        class="sidebar-item"><i class="bi bi-file-earmark-text"></i> Discussions</a>
             @if (!isAdmin)
             {
                 <a href="/User/Details" class="sidebar-item"><i class="bi bi-person-badge"></i> My Profile</a>
             }
 
             <hr class="divider" />
-            <div class="sidebar-label">IUBAT SubSubjects</div>
+            <div class="sidebar-label">Academic Courses</div>
 
-            <a href="/Courses/Details?code=CSC247" class="sidebar-item">CSC247 — Computer Architecture</a>
-            <a href="/Courses/Details?code=CSC391" class="sidebar-item">CSC391 — Data Structures</a>
-            <a href="/Courses/Details?code=CSC433" class="sidebar-item">CSC433 — Database Systems</a>
-            <a href="/Courses/Details?code=MAT247" class="sidebar-item">MAT247 — Numerical Analysis</a>
+            @foreach (var c in allCoursesList)
+            {
+                <a href="/Courses/Details?code=@c.Code" class="sidebar-item">
+                    <i class="bi bi-book-half" style="font-size: 0.8rem; opacity: 0.7;"></i>
+                    <span style="font-weight: 600;">@c.Code</span> — @c.Title
+                </a>
+            }
 
             @if (User.Identity?.IsAuthenticated == true)
             {
@@ -550,14 +523,14 @@ else
 <!-- ── Footer ─────────────────────────────────────────────────────────────── -->
 <footer class="app-footer">
     <div style="display: flex; justify-content: center; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-2);">
-        <a href="#">About ReadIt</a>
+        <a href="#">About StudyHub</a>
         <span style="color: var(--border-light);">·</span>
-        <a href="#">IUBAT Community</a>
+        <a href="#">Academic Community</a>
         <span style="color: var(--border-light);">·</span>
         <a href="#">Privacy & Terms</a>
     </div>
-    <div style="font-size: var(--text-xs); color: var(--text-muted);">
-        &copy; @DateTime.Now.Year ReadIt — IUBAT Edition. Admin & Student Workspace.
+    <div style="font-size: var(--text-xs); color: var(--text-secondary);">
+        &copy; @DateTime.Now.Year StudyHub. Academic Collaboration & Resource Platform.
     </div>
 </footer>
 

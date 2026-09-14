@@ -1,7 +1,7 @@
 @model Read_It.Models.Post
 
 @{
-    ViewData["Title"] = "Create Post — ReadIt";
+    ViewData["Title"] = "Create Post — StudyHub";
     var courses = ViewBag.Courses as IEnumerable<Read_It.Models.Course> ?? Enumerable.Empty<Read_It.Models.Course>();
     string selectedCourseCode = ViewBag.SelectedCourseCode as string ?? "";
 }

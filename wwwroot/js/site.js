@@ -183,6 +183,13 @@ document.addEventListener('click', async (e) => {
                 currentAside.innerHTML = newAside.innerHTML;
             }
 
+            // Update Left Sidebar if present
+            const newSidebar = doc.querySelector('.app-sidebar');
+            const currentSidebar = document.querySelector('.app-sidebar');
+            if (newSidebar && currentSidebar) {
+                currentSidebar.innerHTML = newSidebar.innerHTML;
+            }
+
             completePageChangeAnimation();
         } else {
             window.location.href = href;

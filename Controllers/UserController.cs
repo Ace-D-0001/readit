@@ -66,7 +66,7 @@ namespace Read_It.Controllers
             // Load user's comments
             var comments = await _context.Comments
                 .Include(c => c.Post)
-                    .ThenInclude(p => p.Course)
+                    .ThenInclude(p => p!.Course)
                 .Where(c => c.UserId == user.Id)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();

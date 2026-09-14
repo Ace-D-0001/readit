@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Admin Control Center — ReadIt";
+    ViewData["Title"] = "Admin Control Center — StudyHub";
     var recentReports = ViewBag.RecentReports as IEnumerable<Read_It.Models.Report> ?? Enumerable.Empty<Read_It.Models.Report>();
     var recentNotes = ViewBag.RecentPendingNotes as IEnumerable<Read_It.Models.CourseResource> ?? Enumerable.Empty<Read_It.Models.CourseResource>();
     var recentAnnouncements = ViewBag.RecentAnnouncements as IEnumerable<Read_It.Models.Post> ?? Enumerable.Empty<Read_It.Models.Post>();
@@ -13,7 +13,7 @@
             <div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                     <span class="badge bg-warning text-dark font-weight-bold py-1 px-2" style="font-size: 11px;">
-                        <i class="bi bi-shield-lock-fill"></i> ReadIt SuperAdmin
+                        <i class="bi bi-shield-lock-fill"></i> StudyHub Admin
                     </span>
                     <span style="font-size: 12px; color: var(--text-muted);">
                         Connected as <strong>@User.Identity?.Name</strong>
