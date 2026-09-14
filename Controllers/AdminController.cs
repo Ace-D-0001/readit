@@ -222,9 +222,9 @@ namespace Read_It.Controllers
             var query = _context.Reports
                 .Include(r => r.ReportedByUser)
                 .Include(r => r.Post)
-                    .ThenInclude(p => p.User)
+                    .ThenInclude(p => p!.User)
                 .Include(r => r.Comment)
-                    .ThenInclude(c => c.User)
+                    .ThenInclude(c => c!.User)
                 .AsQueryable();
 
             if (status.HasValue)
@@ -274,24 +274,43 @@ namespace Read_It.Controllers
             else if (actionType == "delete_content")
             {
                 report.Status = ReportStatus.Approved;
-                if (report.PostId != null && report.Post != null)
+                if (report.PostId != null)
                 {
-                    string pTitle = report.Post.Title;
-                    _context.Posts.Remove(report.Post);
-                    await LogActionAsync("Report: Delete Post", $"Post #{report.PostId} — \"{pTitle}\"", $"Report reason: {report.Reason}");
-                    TempData["SuccessMessage"] = "Report resolved: Reported post has been permanently removed.";
+                    var post = report.Post ?? await _context.Posts.FindAsync(report.PostId.Value);
+                    if (post != null)
+                    {
+                        string pTitle = post.Title;
+                        _context.Posts.Remove(post);
+                        await LogActionAsync("Report: Delete Post", $"Post #{report.PostId} — \"{pTitle}\"", $"Report reason: {report.Reason}");
+                        TempData["SuccessMessage"] = "Report resolved: Reported post has been permanently removed.";
+                    }
                 }
-                else if (report.CommentId != null && report.Comment != null)
+                else if (report.CommentId != null)
                 {
-                    _context.Comments.Remove(report.Comment);
-                    await LogActionAsync("Report: Delete Comment", $"Comment #{report.CommentId}", $"Report reason: {report.Reason}");
-                    TempData["SuccessMessage"] = "Report resolved: Reported comment has been permanently removed.";
+                    var comment = report.Comment ?? await _context.Comments.FindAsync(report.CommentId.Value);
+                    if (comment != null)
+                    {
+                        _context.Comments.Remove(comment);
+                        await LogActionAsync("Report: Delete Comment", $"Comment #{report.CommentId}", $"Report reason: {report.Reason}");
+                        TempData["SuccessMessage"] = "Report resolved: Reported comment has been permanently removed.";
+                    }
                 }
             }
             else if (actionType == "ban_user")
             {
                 report.Status = ReportStatus.Approved;
                 string? targetUserId = report.Post?.UserId ?? report.Comment?.UserId;
+                if (string.IsNullOrEmpty(targetUserId) && report.PostId != null)
+                {
+                    var post = await _context.Posts.FindAsync(report.PostId.Value);
+                    targetUserId = post?.UserId;
+                }
+                if (string.IsNullOrEmpty(targetUserId) && report.CommentId != null)
+                {
+                    var comment = await _context.Comments.FindAsync(report.CommentId.Value);
+                    targetUserId = comment?.UserId;
+                }
+
                 if (!string.IsNullOrEmpty(targetUserId))
                 {
                     var userToBan = await _userManager.FindByIdAsync(targetUserId);
@@ -576,7 +595,7 @@ namespace Read_It.Controllers
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(u => u.UserName.Contains(search) || (u.Email != null && u.Email.Contains(search)));
+                query = query.Where(u => (u.UserName != null && u.UserName.Contains(search)) || (u.Email != null && u.Email.Contains(search)));
             }
 
             if (status == "banned")

@@ -40,7 +40,7 @@ namespace Read_It.Controllers
         // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password, string? returnUrl = null)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe = true, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
@@ -64,7 +64,7 @@ namespace Read_It.Controllers
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: true, lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: rememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -96,7 +96,7 @@ namespace Read_It.Controllers
         // POST: /Account/AdminLogin
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AdminLogin(string email, string password, string? returnUrl = null)
+        public async Task<IActionResult> AdminLogin(string email, string password, bool rememberMe = true, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
@@ -126,7 +126,7 @@ namespace Read_It.Controllers
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: true, lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(user.UserName!, password.Trim(), isPersistent: rememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -139,40 +139,142 @@ namespace Read_It.Controllers
             return View();
         }
 
-        // GET: /Account/GoogleLogin (Mock Google OAuth for test/dev)
+        // GET: /Account/QuickLogin?account=admin|student|prof_rahim|tasmia|nusrat
         [HttpGet]
-        public async Task<IActionResult> GoogleLogin()
+        public async Task<IActionResult> QuickLogin(string account, string? returnUrl = null)
         {
-            var studentUser = await _userManager.FindByEmailAsync("student@iubat.edu");
-            if (studentUser != null)
+            string email = account?.ToLowerInvariant() switch
             {
-                if (studentUser.IsBanned)
-                {
-                    TempData["ErrorMessage"] = "Test Student account is banned.";
-                    return RedirectToAction("Login");
-                }
-                await _signInManager.SignInAsync(studentUser, isPersistent: true);
-                TempData["SuccessMessage"] = "Successfully signed in via Google OAuth (Test Account)!";
-                return RedirectToAction("Index", "Home");
+                "admin"      => "admin@gmail.com",
+                "prof"       => "prof_rahim@iubat.edu",
+                "prof_rahim" => "prof_rahim@iubat.edu",
+                "tasmia"     => "tasmia@iubat.edu",
+                "nusrat"     => "nusrat@iubat.edu",
+                _            => "student@gmail.com"
+            };
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                // Fallback to legacy email if student@gmail.com / admin@gmail.com not yet found
+                if (email == "admin@gmail.com") user = await _userManager.FindByEmailAsync("admin@iubat.edu");
+                else if (email == "student@gmail.com") user = await _userManager.FindByEmailAsync("student@iubat.edu");
             }
-            return RedirectToAction("Login");
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = $"Account '{email}' not found. Please log in with your credentials.";
+                return RedirectToAction("Login");
+            }
+
+            if (user.IsBanned)
+            {
+                TempData["ErrorMessage"] = $"Account '{user.UserName}' is currently banned.";
+                return RedirectToAction("Login");
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: true);
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                TempData["SuccessMessage"] = $"Signed in as Administrator ({user.Email})";
+                return RedirectToAction("Index", "Admin");
+            }
+
+            TempData["SuccessMessage"] = $"Signed in as {user.UserName} ({user.Email})";
+            return RedirectToAction("Index", "Home");
+        }
+
+        // GET: /Account/GoogleLogin (One-Click Google Authentication)
+        [HttpGet]
+        public async Task<IActionResult> GoogleLogin(string? returnUrl = null, string role = "Student")
+        {
+            bool isAdminTarget = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+            string targetEmail = isAdminTarget ? "admin@gmail.com" : "student@gmail.com";
+            string targetUsername = isAdminTarget ? "admin" : "student";
+
+            var user = await _userManager.FindByEmailAsync(targetEmail);
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    UserName = targetUsername,
+                    Email = targetEmail,
+                    Bio = isAdminTarget ? "System Administrator — StudyHub" : "Computer Science Student — StudyHub",
+                    EmailConfirmed = true
+                };
+                var createRes = await _userManager.CreateAsync(user, "1234567");
+                if (createRes.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(user, isAdminTarget ? "Admin" : "Student");
+                }
+            }
+
+            if (user.IsBanned)
+            {
+                TempData["ErrorMessage"] = "This account has been banned by an administrator.";
+                return RedirectToAction(isAdminTarget ? "AdminLogin" : "Login");
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: true);
+            TempData["SuccessMessage"] = $"Successfully signed in with Google as {user.Email}";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+                return RedirectToAction("Index", "Admin");
+
+            return RedirectToAction("Index", "Home");
         }
 
         // GET: /Account/Register
         [HttpGet]
         public IActionResult Register()
         {
+            if (_signInManager.IsSignedIn(User))
+                return RedirectToAction("Index", "Home");
+
             return View();
         }
 
         // POST: /Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(string username, string email, string password, string? bio)
+        public async Task<IActionResult> Register(string fullName, string username, string email, string password, string confirmPassword, string? bio)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                ModelState.AddModelError("", "All fields are required.");
+                ModelState.AddModelError("", "Username, email, and password are required.");
+                return View();
+            }
+
+            if (!string.IsNullOrWhiteSpace(confirmPassword) && password != confirmPassword)
+            {
+                ModelState.AddModelError("", "The password and confirmation password do not match.");
+                return View();
+            }
+
+            if (password.Length < 6)
+            {
+                ModelState.AddModelError("", "Password must be at least 6 characters long.");
+                return View();
+            }
+
+            var existingUserByEmail = await _userManager.FindByEmailAsync(email.Trim());
+            if (existingUserByEmail != null)
+            {
+                ModelState.AddModelError("", "An account with this email address already exists.");
+                return View();
+            }
+
+            var existingUserByName = await _userManager.FindByNameAsync(username.Trim());
+            if (existingUserByName != null)
+            {
+                ModelState.AddModelError("", "This username is already taken. Please choose another.");
                 return View();
             }
 
@@ -180,15 +282,16 @@ namespace Read_It.Controllers
             {
                 UserName = username.Trim(),
                 Email = email.Trim(),
-                Bio = bio?.Trim() ?? "IUBAT Community Student",
+                Bio = !string.IsNullOrWhiteSpace(bio) ? bio.Trim() : (!string.IsNullOrWhiteSpace(fullName) ? fullName.Trim() : "StudyHub Student Member"),
                 EmailConfirmed = true
             };
 
-            var result = await _userManager.CreateAsync(newUser, password);
+            var result = await _userManager.CreateAsync(newUser, password.Trim());
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newUser, "Student");
                 await _signInManager.SignInAsync(newUser, isPersistent: true);
+                TempData["SuccessMessage"] = $"Welcome to StudyHub, {newUser.UserName}!";
                 return RedirectToAction("Index", "Home");
             }
 
